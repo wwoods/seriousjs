@@ -1,0 +1,4 @@
+#! /bin/bash
+
+mocha --compilers sjs:./seriousjs $*
+
