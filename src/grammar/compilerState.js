@@ -1,0 +1,132 @@
+//We need to track our state at various different parser states.  Specifically,
+//indentation and things that are absolute to a given character position.
+//Just in case we go down a bad parse route, we also want to erase data after
+//our current position when we restore.
+var states = {};
+
+//Some parse states happen inside a "block" - that is, a set of lines with
+//the same or similar indentation.  We keep track of these in this array,
+//which will always be maintained regardless of good / bad parse states
+//by using a ()? grouping for anything between the push and the pop.
+var blockIndents = [ { indent: 0 } ];
+
+//Keep track of features used so we can put a header in the module if needed
+var featuresUsed = {};
+
+var state = { globalIndent: 0 };
+states[-1] = deepCopy(state);
+
+function getBlock() {
+  return blockIndents[blockIndents.length - 1];
+}
+
+function getBlockIndent() {
+  return blockIndents[blockIndents.length - 1].indent;
+}
+
+function stateUpdated() {
+  //State was updated, set it.
+  var p = _pos();
+  states[p] = state;
+  state = deepCopy(state);
+  log("State saved at " + p);
+}
+
+function stateRestore() {
+  //Restore state closest to but not after pos, and delete anything after 
+  //it, since that is from a path that was rejected.
+  var p = _pos();
+  var toDelete = [];
+  var closePos = -1;
+  for (var cPos in states) {
+    cPos = parseInt(cPos);
+    if (cPos > p) {
+      toDelete.push(cPos);
+    }
+    else if (cPos >= closePos) {
+      closePos = cPos;
+      state = states[cPos];
+    }
+  }
+  for (var i = 0, m = toDelete.length; i < m; i++) {
+    delete states[toDelete[i]];
+  }
+  
+  //Also clean up blocks that "haven't been started" yet.  We must
+  //do this because the failure path for BLOCK_END pushes the block
+  //back.
+  var m = blockIndents.length - 1;
+  for (var i = m; i >= 0; --i) {
+    if (blockIndents[i].pos > p) {
+      blockIndents.pop();
+    }
+    else {
+      if (i < m) {
+        log("Trimmed " + (m - i) + " bad block(s)");
+      }
+      break;
+    }
+  }
+  
+  state = deepCopy(state);
+  if (closePos >= 0) {
+    log("Restored state from " + closePos);
+  }
+}
+
+function indentBlockStart(levels, options) {
+  //Returns true; when called, indentBodyStop() MUST be called even if the
+  //match fails (do this with a ()? expression).
+  var block = { 
+    indent: getBlockIndent() + levels,
+    pos: _pos() 
+  };
+  if (getBlock().pos === block.pos) {
+    log("POSSIBLE DUPLICATE");
+  }
+  if (options) {
+    if (options.isContinuation) {
+      block.isContinuation = true;
+    }
+  }
+  blockIndents.push(block);
+  if (debug) {
+    var bi = [];
+    for (var i = 0, m = blockIndents.length; i < m; i++) {
+      bi.push(blockIndents[i].indent);
+    }
+    var m = "BLOCK START ";
+    if (block.isContinuation) {
+      m += "CONTINUATION ";
+    }
+    log(m + bi.join(','));
+  }
+  return true;
+}
+
+function indentBlockStop(mustMatch) {
+  var result = false;
+  var oldBlock = blockIndents.pop();
+  var expectedIndent = getBlockIndent();
+  log("CHECKING BLOCK AT " + state.globalIndent + ", " + expectedIndent);
+  if (!mustMatch) {
+    result = true;
+  }
+  else if (state.globalIndent <= expectedIndent) {
+    result = true;
+    if (debug) {
+      var bi = [];
+      for (var i = 0, m = blockIndents.length; i < m; i++) {
+        bi.push(blockIndents[i].indent);
+      }
+      log("BLOCK END " + bi.join(','));
+    }
+  }
+  else {
+    //Not a match!  We want to push our block back on the stack, since
+    //a negative result might trigger PegJS to go back and try another
+    //parsing path, which could result in us being back here.
+    blockIndents.push(oldBlock);
+  }
+  return result;
+}

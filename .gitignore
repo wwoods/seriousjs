@@ -1,2 +1,4 @@
-grammar/_compiled.pegjs
+/pegjs
+/src/grammar/_compiled.pegjs
+/src/grammar/_parser.js
 
