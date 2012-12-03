@@ -6,16 +6,39 @@ assert = require("assert")
 fs = require("fs");
 sjs = require("../src/seriousjs")
 
-describe("Smoke test -", function() {
-  var listing = fs.readdirSync(__dirname + '/examples');
-  for (var i = 0, m = listing.length; i < m; i++) {
-    var fname = __dirname + '/examples/' + listing[i];
-    (function(fname) {
-      it("Should compile " + listing[i], function() {
-        var contents = fs.readFileSync(fname, 'utf8');
+function addTest(fname, shouldPass) {
+  it("Should " + (shouldPass ? "" : "not") + " compile " + fname, function() {
+    var contents = fs.readFileSync(fname, 'utf8');
+    if (shouldPass) {
+      sjs.compile(contents);
+    }
+    else {
+      var passing = false;
+      try {
         sjs.compile(contents);
-      });
-    })(fname);
-  }
-});
+      }
+      catch (e) {
+        passing = true;
+      }
+      if (!passing) {
+        throw "Compilation did not fail";
+      }
+    }
+  });
+}
 
+function addTestDir(dir, shouldPass) {
+  var listing = fs.readdirSync(dir);
+  for (var i = 0, m = listing.length; i < m; i++) {
+    var fname = dir + '/' + listing[i];
+    var stat = fs.statSync(fname);
+    if (stat.isFile()) {
+      addTest(fname, shouldPass);
+    }
+  }
+}
+
+describe("Smoke test -", function() {
+  addTestDir(__dirname + '/examples', true);
+  addTestDir(__dirname + '/examples/bad', false);
+});

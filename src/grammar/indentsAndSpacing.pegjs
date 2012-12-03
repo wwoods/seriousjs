@@ -7,7 +7,7 @@ _ "white space"
      
      Additionally, it handles INDENTED_BODY.
      */
-  = NEWLINE & { return getBlock().isContinuation; } NEWLINE_SAME
+  = & { return getBlock().isContinuation; } NEWLINE NEWLINE_SAME
   / [ \t]+
   / &{
     var p = _pos();
@@ -43,10 +43,15 @@ INDENT_LEVEL "indent"
 NEWLINE "newline"
   /* One or several newlines, ending in some indentation */
   = lines:([ \t]* COMMENT? "\n" (INDENT_LEVEL)*)+ {
-    state.globalIndent = lines[lines.length - 1][3].length;
-    log("Found indent " + state.globalIndent + " in block " + getBlockIndent()
-        + " at " + _upos());
-    stateUpdated(true);
+    //Add comments to last state, since newlines are after the comments
+    for (var i = 0, m = lines.length; i < m; i++) {
+      if (lines[i][1]) {
+        state.comments.push(lines[i][1]);
+      }
+    }
+    var indent = lines[lines.length - 1][3].length;
+    log("Found indent " + indent + " in block " + getBlockIndent());
+    stateUpdate(indent);
   }
   
 COMMENT "comment"
@@ -72,9 +77,9 @@ CHECK_NEWLINE
 NEWLINE_SAME "equal indentation"
   = CHECK_NEWLINE ASSERT_ON_NEWLINE & {
       log("  (Checking for same line on " + _upos() 
-          + " for " + state.globalIndent + " against " + getBlockIndent() 
+          + " for " + state.indent + " against " + getBlockIndent() 
           + ")"); 
-      return state.globalIndent === getBlockIndent(); 
+      return state.indent === getBlockIndent(); 
     }
 
 ASSERT_ON_NEWLINE "newline"
@@ -120,14 +125,15 @@ BLOCK_END
     }
     
 MAYBE_BLOCK_END
-  = CHECK_NEWLINE & {
+  //We don't need the block to match, we just want to pop state.
+  = & {
       return indentBlockStop(false);
     }
 
 INDENT
   = CHECK_NEWLINE & { 
       log("Looking for indent to " + (getBlockIndent() + 1) + " at " + _upos());
-      return state.globalIndent === getBlockIndent() + 1; 
+      return state.indent === getBlockIndent() + 1; 
     }
     
 CONTINUATION_START

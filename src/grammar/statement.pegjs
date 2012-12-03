@@ -26,11 +26,11 @@ statement_body
 
 statement
   /* Elements at this level are either statements or require parenthesis around them */
-  = if_stmt
+  = stmt:if_stmt { return R(stmt); }
   / "return" _ result:expression {
-      return { "op": "return", "result": result };
+      return R({ "op": "return", "result": result });
     }
-  / expression
+  / expr:expression { return R(expr); }
   
 if_stmt
  = "if" _ CONTINUATION_START cond:expression? CONTINUATION_END

@@ -37,7 +37,7 @@ fs.writeFileSync(__dirname + '/grammar/_compiled.pegjs', source, 'utf8')
 //Build the parser and compiler
 var parserSource = pegJs.buildParser(
   source, 
-  { output: 'source' }
+  { output: 'source', trace: true }
 );
 fs.writeFileSync(__dirname + '/grammar/_parser.js', parserSource, 'utf8');
 this.parser = eval(parserSource);
@@ -65,4 +65,5 @@ this.compile = function(text, filename) {
   
   sjsUtil.cleanupTree(tree);
   console.log(util.inspect(tree, false, 30));
+  return "console.log('COMPILED');";
 };

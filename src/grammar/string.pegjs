@@ -10,19 +10,19 @@ string
       { return { "op": "string", "chars": chars.join("") } }
 
 string_not_double_quote_triple
-  = !'"""' .
+  = !'"""' ch:. { return ch; }
   
 string_not_single_quote_triple
-  = !"'''" .
+  = !"'''" ch:. { return ch; }
   
 string_not_double_quote
   = "\\\\"
   / '\\"'
-  / !["\n] .
+  / !["\n] ch:. { return ch; }
 
 string_not_single_quote
   = "\\\\"
   / "\\'"
-  / !['\n] .
+  / !['\n] ch:. { return ch; }
   
   

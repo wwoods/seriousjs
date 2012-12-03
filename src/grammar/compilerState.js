@@ -13,7 +13,7 @@ var blockIndents = [ { indent: 0 } ];
 //Keep track of features used so we can put a header in the module if needed
 var featuresUsed = {};
 
-var state = { globalIndent: 0 };
+var state = { indent: 0, line: 1, comments: [] };
 states[-1] = deepCopy(state);
 
 function getBlock() {
@@ -24,11 +24,15 @@ function getBlockIndent() {
   return blockIndents[blockIndents.length - 1].indent;
 }
 
-function stateUpdated() {
+function stateUpdate(newIndent) {
   //State was updated, set it.
   var p = _pos();
+  state = {
+    indent: newIndent,
+    line: line(),
+    comments: []
+  };
   states[p] = state;
-  state = deepCopy(state);
   log("State saved at " + p);
 }
 
@@ -77,6 +81,10 @@ function stateRestore() {
 function indentBlockStart(levels, options) {
   //Returns true; when called, indentBodyStop() MUST be called even if the
   //match fails (do this with a ()? expression).
+  
+  //Ensure we aren't out of sync due to failed rules
+  stateRestore();
+  
   var block = { 
     indent: getBlockIndent() + levels,
     pos: _pos() 
@@ -108,11 +116,11 @@ function indentBlockStop(mustMatch) {
   var result = false;
   var oldBlock = blockIndents.pop();
   var expectedIndent = getBlockIndent();
-  log("CHECKING BLOCK AT " + state.globalIndent + ", " + expectedIndent);
+  log("CHECKING BLOCK AT " + state.indent + ", " + expectedIndent);
   if (!mustMatch) {
     result = true;
   }
-  else if (state.globalIndent <= expectedIndent) {
+  else if (state.indent <= expectedIndent) {
     result = true;
     if (debug) {
       var bi = [];

@@ -44,10 +44,17 @@ function _advance(count) {
 
 function _pos() {
   //Return offset into buffer
-  return offset();
+  return pos;
 }
 
 function _upos() {
   //Return user friendly offset into buffer
+  reportedPos = _pos();
   return line() + ':' + column();
+}
+
+function R(ast) {
+  //Attaches the current state to the given tree object.
+  ast['state'] = state;
+  return ast;
 }

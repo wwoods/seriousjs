@@ -8,13 +8,18 @@
   var debug = false;
 
   //Modified console.log; returns true always and can be turned off
-  var log = function() { return true; }; 
+  var log = function() { return true; };
   if (debug) {
     log = function(m) {
+      m = Array(depth * tabspace).join(" ") + m;
       m += " at " + _upos();
       console.log(m);
       return true;
     }
+    var tIndent = "NEWLINE CHECK_NEWLINE ASSERT_ON_NEWLINE INDENT_BLOCK_START ";
+    tIndent += "BLOCK_END MAYBE_BLOCK_END";
+    options.trace = tIndent + " list_literal";
+    options.trace = true;
   }
 
   var indentWidth = 2;
@@ -130,8 +135,10 @@ ARG_SEP
 arguments_delimited
   //A list of arguments delimited by something like [] or ().
   //May go into an indented body.
-  //We use MAYBE_BLOCK_END so that end delimiters (like ] or ) ) can be
-  //on the same line as the final content.
+  //We use MAYBE_BLOCK_END so that we don't swallow any newlines at the
+  //end of the match, leaving those to be paired with the delimiter.
+  //Otherwise, a.b(\n  c\n['hi'] looks like we're trying to access 'hi'
+  //on the result of calling a.b.
   = MAYBE_INDENT_BLOCK_START args:arguments_delimited_inner? MAYBE_BLOCK_END 
         & { return args; } {
       return args;
