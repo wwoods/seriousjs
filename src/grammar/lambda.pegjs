@@ -4,7 +4,7 @@ lambda_op
       return op;
     }
   
-lambda
+lambda "function"
   = parms:("(" _ arguments_delimited _ ")" _)? op:lambda_op 
         body:statement_body {
       if (!parms) {

@@ -49,8 +49,11 @@ function _pos() {
 
 function _upos() {
   //Return user friendly offset into buffer
+  var oReport = reportedPos;
   reportedPos = _pos();
-  return line() + ':' + column();
+  var r = line() + ':' + column();
+  reportedPos = oReport;
+  return r;
 }
 
 function R(ast) {

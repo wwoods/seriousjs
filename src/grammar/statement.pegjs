@@ -17,23 +17,26 @@ statement_list_inner
     }
 
 statement_body
-  = !ASSERT_ON_NEWLINE _ head:expression { return [ head ]; }
+  = CHECK_NEWLINE !ASSERT_ON_NEWLINE _ head:expression { return [ head ]; }
   / INDENT_BLOCK_START inner:statement_list_inner? BLOCK_END
         & { return inner; } { 
       return inner;
     }
-  
 
 statement
-  /* Elements at this level are either statements or require parenthesis around them */
+  = CONTINUATION_START stmt:statement_inner? CONTINUATION_END
+      & { return stmt; } { return stmt; }
+      
+statement_inner
   = stmt:if_stmt { return R(stmt); }
   / "return" _ result:expression {
       return R({ "op": "return", "result": result });
     }
+  / stmt:assign_stmt { return R(stmt); }
   / expr:expression { return R(expr); }
   
 if_stmt
- = "if" _ CONTINUATION_START cond:expression? CONTINUATION_END
+ = "if" _ cond:expression?
         & { return cond; } 
         expr:statement_body 
         elsePart:else_part? {

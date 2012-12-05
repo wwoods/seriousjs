@@ -24,6 +24,14 @@ function getBlockIndent() {
   return blockIndents[blockIndents.length - 1].indent;
 }
 
+function getBlockList() {
+  var bi = [];
+  for (var i = 0, m = blockIndents.length; i < m; i++) {
+    bi.push(blockIndents[i].indent);
+  }
+  return "Blocks: " + bi.join(',');
+}
+
 function stateUpdate(newIndent) {
   //State was updated, set it.
   var p = _pos();
@@ -82,20 +90,34 @@ function indentBlockStart(levels, options) {
   //Returns true; when called, indentBodyStop() MUST be called even if the
   //match fails (do this with a ()? expression).
   
+  if (!options) {
+    options = {};
+  }
+  
   //Ensure we aren't out of sync due to failed rules
   stateRestore();
   
+  //Base our state off of the last non-continuation block.
+  var baseBlockIndex = blockIndents.length - 1;
+  if (!options.isContinuation) {
+    while (true) {
+      if (!blockIndents[baseBlockIndex].isContinuation) {
+        break;
+      }
+      baseBlockIndex -= 1;
+    }
+  }
+  var baseBlock = blockIndents[baseBlockIndex];
+  
   var block = { 
-    indent: getBlockIndent() + levels,
+    indent: baseBlock.indent + levels,
     pos: _pos() 
   };
   if (getBlock().pos === block.pos) {
     log("POSSIBLE DUPLICATE");
   }
-  if (options) {
-    if (options.isContinuation) {
-      block.isContinuation = true;
-    }
+  if (options.isContinuation) {
+    block.isContinuation = true;
   }
   blockIndents.push(block);
   if (debug) {
@@ -107,8 +129,18 @@ function indentBlockStart(levels, options) {
     if (block.isContinuation) {
       m += "CONTINUATION ";
     }
-    log(m + bi.join(','));
+    log(m);
+    log(getBlockList());
   }
+  return true;
+}
+
+function indentBlockContinue() {
+  //For try & rollback with multiple scopes only
+  stateRestore();
+  var baseBlock = getBlock();
+  var block = deepCopy(baseBlock);
+  blockIndents.push(block);
   return true;
 }
 
@@ -116,19 +148,13 @@ function indentBlockStop(mustMatch) {
   var result = false;
   var oldBlock = blockIndents.pop();
   var expectedIndent = getBlockIndent();
+  log(getBlockList());
   log("CHECKING BLOCK AT " + state.indent + ", " + expectedIndent);
   if (!mustMatch) {
     result = true;
   }
   else if (state.indent <= expectedIndent) {
     result = true;
-    if (debug) {
-      var bi = [];
-      for (var i = 0, m = blockIndents.length; i < m; i++) {
-        bi.push(blockIndents[i].indent);
-      }
-      log("BLOCK END " + bi.join(','));
-    }
   }
   else {
     //Not a match!  We want to push our block back on the stack, since

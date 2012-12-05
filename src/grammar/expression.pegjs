@@ -1,9 +1,9 @@
 
 
 expression
-  = assign_stmt
-  / lambda
-  / base:atom_chain _ CONTINUATION_START args:arguments_list? CONTINUATION_END
+  /*** THIS IS BAD.  We parse the base atom chain, and give up after 
+    arguments list??? ***/
+  = base:atom_chain _ args:arguments_list
         & { return args; } {
       //This is the paren-less syntax for calling a function;
       //for instance: "fib n+1"
@@ -11,6 +11,7 @@ expression
       base.chain.push(call);
       return base;
     }
+  / lambda
   / compare_expr
   
 compare_op
@@ -48,13 +49,16 @@ atom_chain
   }
 
 base_atom
-  = Identifier
+  = dict_literal
+  / Identifier
   / string
   / list_literal
-  / dict_literal
   / DecimalLiteral
-  / "(" _ expr:expression _ ")" { 
-      return { "op": "()", "expr": expr }; 
+  / "(" _ expr:assign_stmt _ ")" {
+      return { "op": "()", "expr": expr };
+    }
+  / "(" _ expr:expression _ ")" {
+      return { "op": "()", "expr": expr };
     }
     
 list_literal

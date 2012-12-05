@@ -18,7 +18,6 @@ _ "white space"
     //We're on the new character, so look at it and the one before it to
     //decide if there has been a spacer.
     var chars = input.substring(p - 1, p + 1);
-    log(chars.charCodeAt(0) + ", " + chars.charCodeAt(1));
     //Note - spaces are NOT part of this regex, since those should only be
     //caught by the expression before this one (which swallows them rather
     //than just accepting them as this code path does)
@@ -27,6 +26,7 @@ _ "white space"
     }
     return false;
   }
+  
 
 INDENT_LEVEL "indent"
   = &{
@@ -40,19 +40,21 @@ INDENT_LEVEL "indent"
       return true; 
     }
 
+
 NEWLINE "newline"
   /* One or several newlines, ending in some indentation */
-  = lines:([ \t]* COMMENT? "\n" (INDENT_LEVEL)*)+ {
+  = lines:([ \t]* COMMENT? "\r"? "\n" (INDENT_LEVEL)*)+ {
     //Add comments to last state, since newlines are after the comments
     for (var i = 0, m = lines.length; i < m; i++) {
       if (lines[i][1]) {
         state.comments.push(lines[i][1]);
       }
     }
-    var indent = lines[lines.length - 1][3].length;
+    var indent = lines[lines.length - 1][4].length;
     log("Found indent " + indent + " in block " + getBlockIndent());
     stateUpdate(indent);
   }
+  
   
 COMMENT "comment"
   = "###" & {
@@ -66,6 +68,7 @@ COMMENT "comment"
         } "###"
    / "#" [^\n]+
 
+
 CHECK_NEWLINE
   /* Since newlines might happen at the end of one or more blocks, but only one 
    * block will actually get a newline character, make it conditional.
@@ -74,13 +77,15 @@ CHECK_NEWLINE
       //These happen a lot before indent checks, so restore our state
     }
 
-NEWLINE_SAME "equal indentation"
+
+NEWLINE_SAME "indentation"
   = CHECK_NEWLINE ASSERT_ON_NEWLINE & {
-      log("  (Checking for same line on " + _upos() 
+      log("(Checking for same line on " + _upos() 
           + " for " + state.indent + " against " + getBlockIndent() 
           + ")"); 
       return state.indent === getBlockIndent(); 
     }
+    
 
 ASSERT_ON_NEWLINE "newline"
   = & {
@@ -101,6 +106,11 @@ ASSERT_ON_NEWLINE "newline"
       //End of stream, OK.
       return true;
     }
+    
+    
+ASSERT_ON_ENDLINE "end of line"
+  = CHECK_NEWLINE ASSERT_ON_NEWLINE 
+    
 
 BLOCK_START
   //Whenever this is used, anything between it and a corresponding BLOCK_END
@@ -109,36 +119,37 @@ BLOCK_START
       return indentBlockStart(0);
     }
     
-INDENT_BLOCK_START
-  = CHECK_NEWLINE ASSERT_ON_NEWLINE & {
-      return indentBlockStart(1);
-    }
     
-MAYBE_INDENT_BLOCK_START
-  = CHECK_NEWLINE & {
-      return indentBlockStart(1);
-    }
+INDENT_BLOCK_START
+  = & {
+        return indentBlockStart(1);
+      } line:NEWLINE_SAME? &{
+        if (!line) {
+          indentBlockStop(false);
+          return false;
+        }
+        return true;
+      }
+
 
 BLOCK_END
   = CHECK_NEWLINE & {
       return indentBlockStop(true);
     }
-    
-MAYBE_BLOCK_END
-  //We don't need the block to match, we just want to pop state.
-  = & {
-      return indentBlockStop(false);
-    }
+
 
 INDENT
   = CHECK_NEWLINE & { 
       log("Looking for indent to " + (getBlockIndent() + 1) + " at " + _upos());
       return state.indent === getBlockIndent() + 1; 
     }
+
     
 CONTINUATION_START
-  = & { return indentBlockStart(2, { isContinuation: true }); }
+  = CHECK_NEWLINE ASSERT_ON_NEWLINE 
+      & { return indentBlockStart(2, { isContinuation: true }); }
+
   
 CONTINUATION_END
-  = & { return indentBlockStop(false); }
+  = & { return indentBlockStop(false); } ASSERT_ON_ENDLINE
 

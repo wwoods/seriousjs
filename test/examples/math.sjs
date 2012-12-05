@@ -6,6 +6,8 @@ a
 b
 c
 
+a = b = c
+
 d e f # Should be d(e(f))
 
 sqr = (a) ->
@@ -18,3 +20,10 @@ fib = (n) ->
   elif n == 1
     return 1
   (fib n - 1) + fib(n - 2)
+  
+iter = (n) ->
+  r = 0
+  if (m = n - 1) > 0
+    r += m * n
+    n -= 1
+  return r

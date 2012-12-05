@@ -5,19 +5,21 @@
 
 { /* Globals for parsing */
 
-  var debug = false;
+  var debug = true;
 
   //Modified console.log; returns true always and can be turned off
   var log = function() { return true; };
   if (debug) {
     log = function(m) {
       m = Array(depth * tabspace).join(" ") + m;
-      m += " at " + _upos();
+      if (pos > 0) {
+        m += " at " + _upos();
+      }
       console.log(m);
       return true;
     }
     var tIndent = "NEWLINE CHECK_NEWLINE ASSERT_ON_NEWLINE INDENT_BLOCK_START ";
-    tIndent += "BLOCK_END MAYBE_BLOCK_END";
+    tIndent += "BLOCK_END";
     options.trace = tIndent + " list_literal";
     options.trace = true;
   }
@@ -29,27 +31,50 @@
   var charCounts = { ' ': 0, '\t': 0 };
   var lineStartPos = 0; //First line is a newline
   var lastIndent = 0;
+  var lastLineStr = '';
+  var openers = /[\[\(=]/g;
+  var closers = /[\]\)]/g;
   while (lineStartPos < input.length && lineStartPos >= 0) {
+    var nextPos = input.indexOf('\n', lineStartPos);
+    var lineStr = input.substring(lineStartPos, nextPos);
+  
     var lineIndentChars = '';
-    while (true) {
-      var lineChar = input[lineStartPos];
+    var i = 0;
+    while (i < lineStr.length) {
+      var lineChar = lineStr[i];
       if (lineChar === ' ' || lineChar === '\t') {
         lineIndentChars += lineChar;
-        lineStartPos += 1;
       }
       else {
         break;
       }
+      i += 1;
     }
     
-    charCounts[lineIndentChars.charAt(0)] += 1;
+    charCounts[lineIndentChars[0]] += 1;
     var indentChars = lineIndentChars.length;
-    var diff = Math.abs(indentChars - lastIndent);
-    if (diff === 2 || diff === 4) {
-      steps[diff] += 1;
+    var diff = indentChars - lastIndent;
+    if (diff > 0) {
+      //Only track indents, and see if it's a continuation or a block
+      //indent.
+      var openChars = 0, closeChars = 0, m;
+      while ((m = openers.exec(lastLineStr)) !== null) {
+        openChars += 1;
+      }
+      while ((m = closers.exec(lastLineStr)) !== null) {
+        closeChars += 1;
+      }
+      if (openChars > closeChars) {
+        //Continuation, double indent
+        diff /= 2;
+      }
+      if (diff == 2 || diff == 4) {
+        steps[diff] += 1;
+      }
     }
     lastIndent = indentChars;
-    lineStartPos = input.indexOf('\n', lineStartPos) + 1;
+    lastLineStr = lineStr;
+    lineStartPos = nextPos + 1;
   }
   
   if (charCounts['\t'] > charCounts[' ']) {
@@ -100,7 +125,11 @@ header_list
     }
     
 header_statement
-  = "require" _ MAYBE_INDENT_BLOCK_START reqs:require_chain? BLOCK_END 
+  = CONTINUATION_START stmt:header_statement_inner? CONTINUATION_END
+      & { return stmt; } { return stmt; }
+      
+header_statement_inner
+  = "require" _ reqs:require_chain? 
         & { return reqs; } {
       return { "op": "require", "defs": reqs };
     }
@@ -135,11 +164,7 @@ ARG_SEP
 arguments_delimited
   //A list of arguments delimited by something like [] or ().
   //May go into an indented body.
-  //We use MAYBE_BLOCK_END so that we don't swallow any newlines at the
-  //end of the match, leaving those to be paired with the delimiter.
-  //Otherwise, a.b(\n  c\n['hi'] looks like we're trying to access 'hi'
-  //on the result of calling a.b.
-  = MAYBE_INDENT_BLOCK_START args:arguments_delimited_inner? MAYBE_BLOCK_END 
+  = args:arguments_delimited_inner? 
         & { return args; } {
       return args;
     }

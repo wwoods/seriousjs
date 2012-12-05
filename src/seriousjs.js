@@ -41,6 +41,7 @@ var parserSource = pegJs.buildParser(
 );
 fs.writeFileSync(__dirname + '/grammar/_parser.js', parserSource, 'utf8');
 this.parser = eval(parserSource);
+//this.parser = require('./grammar/_parser.js').parser;
 this.compile = function(text, filename) {
   //Returns the legible javascript version of text.
   var tree;
@@ -52,7 +53,7 @@ this.compile = function(text, filename) {
   }
   
   try {
-    tree = self.parser.parse(text);
+    tree = self.parser.parse(text, { });
   }
   catch (e) {
     var header = 'Line ' + e.line + ', column ' + e.column;
