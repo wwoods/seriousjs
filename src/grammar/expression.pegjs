@@ -1,9 +1,8 @@
 
 
 expression
-  /*** THIS IS BAD.  We parse the base atom chain, and give up after 
-    arguments list??? ***/
-  = base:atom_chain _ args:arguments_list
+  = lambda
+  / base:atom_chain _ args:arguments_list
         & { return args; } {
       //This is the paren-less syntax for calling a function;
       //for instance: "fib n+1"
@@ -11,7 +10,6 @@ expression
       base.chain.push(call);
       return base;
     }
-  / lambda
   / compare_expr
   
 compare_op
