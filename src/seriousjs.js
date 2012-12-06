@@ -2,7 +2,7 @@ var self = this;
 var pegJs = require('../lib/peg-0.7.0').PEG;
 var fs = require('fs');
 var util = require('util');
-var sjsUtil = require('./util');
+var sjsCompiler = require('./compiler/compiler.js');
 
 //Plug in to require
 if (require.extensions) {
@@ -41,7 +41,6 @@ var parserSource = pegJs.buildParser(
 );
 fs.writeFileSync(__dirname + '/grammar/_parser.js', parserSource, 'utf8');
 this.parser = eval(parserSource);
-//this.parser = require('./grammar/_parser.js').parser;
 this.compile = function(text, filename) {
   //Returns the legible javascript version of text.
   var tree;
@@ -64,7 +63,7 @@ this.compile = function(text, filename) {
     throw e;
   }
   
-  sjsUtil.cleanupTree(tree);
-  console.log(util.inspect(tree, false, 30));
+  script = sjsCompiler.compile(tree);
+  
   return "console.log('COMPILED');";
 };

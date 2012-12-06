@@ -25,7 +25,10 @@ statement_body
 
 statement
   = CONTINUATION_START stmt:statement_inner? CONTINUATION_END
-      & { return stmt; } { return stmt; }
+      & { return stmt; }
+      & { var rp = reportedPos; reportedPos = r1; stmt.line = line();
+          reportedPos = rp; return true; } 
+      { return stmt; }
       
 statement_inner
   = stmt:if_stmt { return R(stmt); }
