@@ -6,7 +6,7 @@ this.Translator = (function() {
           var c = w.startClosure();
           w.write("function(");
           w.startArgs();
-          e.translate(n.parms);
+          e.translate(n.parms, { separator: ',' });
           w.endArgs();
           w.write(") {");
           w.write(c);
@@ -14,14 +14,19 @@ this.Translator = (function() {
           w.write("}");
           w.endClosure();
         },
-     "id": function(e, n, w) {
-          w.variable(n.id);
+     "id": function(e, n, w, options) {
+          w.variable(n.id, options.isAssign);
         },
      "+": function(e, n, w) {
           e.translate(n.left);
           w.write("+");
           e.translate(n.right);
         },
+     "=": function(e, n, w) {
+          e.translate(n.left, { isAssign: true });
+          w.write("=");
+          e.translate(n.right);
+        }
   };
 
   function Translator(writer) {
@@ -53,7 +58,7 @@ this.Translator = (function() {
       }
     }
     else if (typeof node === "object" && node.tree) {
-      self.translate(node.tree);
+      self.translate(node.tree, { isModule: true });
     }
     else if (typeof node === "object") {
       if (node.line) {
@@ -67,7 +72,7 @@ this.Translator = (function() {
       if (op === undefined) {
         throw "Unrecognized op: " + node['op'];
       }
-      op(self, node, self.writer);
+      op(self, node, self.writer, options);
     }
     else if (typeof node === "number") {
       self.writer.write(node);

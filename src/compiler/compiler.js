@@ -29,7 +29,7 @@ this.compile = function(tree) {
   
   var script = writer.getOutput();
   
-  console.log("GOT SCRIPT");
+  console.log("SCRIPT:");
   console.log(script);
   
   return script;

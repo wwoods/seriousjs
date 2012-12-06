@@ -21,7 +21,9 @@ this.Closure = Closure = (function() {
       }
       r += v;
     }
-    r += ';';
+    if (r !== '') {
+      r += ';';
+    }
     return r;
   };
   
@@ -36,7 +38,7 @@ this.Writer = (function() {
     this._line = 1;
     this._isInArgs = false;
     
-    this.startClosure();
+    this.startClosure({ isModule: true });
   }
   
   Writer.prototype.getOutput = function() {
@@ -84,13 +86,16 @@ this.Writer = (function() {
     }
   };
   
-  Writer.prototype.variable = function(id) {
+  Writer.prototype.variable = function(id, isAssign) {
     var c = this._closures[this._closures.length - 1];
     if (!this._isInArgs) {
       c.vars[id] = true;
     }
     else {
       c.funcArgs[id] = true;
+    }
+    if (isAssign) {
+      this._output.push('this.' + id + '=');
     }
     this._output.push(id);
   };
