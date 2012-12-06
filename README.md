@@ -21,7 +21,7 @@ for building real-world applications.
 
 At the time of this writing, here are some benefits of SeriousJS:
 
-* Coffee-Script won't compile this, but SeriousJS will:
+Coffee-Script won't compile this, but SeriousJS will:
 
     if aLongVariableNameOrExpressionSoIWantToWrap
         + someOtherVariableName == 2
