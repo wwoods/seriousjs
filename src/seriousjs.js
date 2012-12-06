@@ -8,7 +8,8 @@ var sjsCompiler = require('./compiler/compiler.js');
 if (require.extensions) {
   require.extensions['.sjs'] = function(module, filename) {
     var content = fs.readFileSync(filename, 'utf8');
-    return self.compile(content, filename);
+    var script = self.compile(content, filename);
+    module._compile(script, filename);
   };
 }
 
@@ -65,5 +66,5 @@ this.compile = function(text, filename) {
   
   script = sjsCompiler.compile(tree);
   
-  return "console.log('COMPILED');";
+  return script;
 };

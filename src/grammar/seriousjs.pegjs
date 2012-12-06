@@ -33,7 +33,7 @@
   var lastIndent = 0;
   var lastLineStr = '';
   var openers = /[\[\(=]/g;
-  var closers = /[\]\)]/g;
+  var closers = /([\]\)]|->|=>)/g;
   while (lineStartPos < input.length && lineStartPos >= 0) {
     var nextPos = input.indexOf('\n', lineStartPos);
     var lineStr = input.substring(lineStartPos, nextPos);

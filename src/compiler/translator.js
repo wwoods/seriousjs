@@ -1,6 +1,11 @@
 
 this.Translator = (function() {
   //All ops get three args - the translator, the node, and the writer
+  var binary = function(e, n, w) {
+    e.translate(n.left);
+    w.write(" " + n.op + " ");
+    e.translate(n.right);
+  };
   var opTable = {
     "->": function(e, n, w) {
           var c = w.startClosure();
@@ -14,19 +19,74 @@ this.Translator = (function() {
           w.write("}");
           w.endClosure();
         },
+     "atom": function(e, n, w) {
+          e.translate(n.atom);
+          e.translate(n.chain, { separator: '' });
+        },
+     "call": function(e, n, w) {
+          w.write('(');
+          e.translate(n.args, { separator: ',' });
+          w.write(')');
+        },
      "id": function(e, n, w, options) {
           w.variable(n.id, options.isAssign);
         },
-     "+": function(e, n, w) {
+     "if": function(e, n, w) {
+          w.write("if (");
+          e.translate(n.condition);
+          w.write(") {");
+          w.indent();
+          e.translate(n.then);
+          w.deindent();
+          w.write("}");
+          if (n.else) {
+            w.write(" else {");
+            w.indent();
+            e.translate(n.else);
+            w.deindent();
+            w.write("}");
+          }
+        },
+     "member": function(e, n, w) {
+          w.write(".");
+          e.translate(n.id);
+        },
+     "return": function(e, n, w) {
+          w.write("return ");
+          e.translate(n.result);
+        },
+     "string": function(e, n, w) {
+          w.write('"');
+          w.write(n.chars.replace(/"/g, '\\"'));
+          w.write('"');
+        },
+     "()": function(e, n, w) {
+          w.write("(");
+          e.translate(n.expr);
+          w.write(")");
+        },
+     "+": binary,
+     "-": binary,
+     "*": binary,
+     "/": binary,
+     "<=": binary,
+     ">=": binary,
+     ">": binary,
+     "<": binary,
+     "==": function(e, n, w) {
           e.translate(n.left);
-          w.write("+");
+          w.write(" === ");
           e.translate(n.right);
         },
      "=": function(e, n, w) {
           e.translate(n.left, { isAssign: true });
-          w.write("=");
+          w.write(" = ");
           e.translate(n.right);
-        }
+        },
+     "+=": binary,
+     "-=": binary,
+     "*=": binary,
+     "/=": binary,
   };
 
   function Translator(writer) {
@@ -40,7 +100,7 @@ this.Translator = (function() {
   
     var self = this;
     var separator = ';';
-    if (options.separator) {
+    if (options.separator != null) {
       separator = options.separator;
     }
     
@@ -48,10 +108,11 @@ this.Translator = (function() {
       for (var i = 0, m = node.length; i < m; i++) {
         if (i === m - 1 && options.isReturnClosure) {
           if (node[i].op !== 'return') {
+            self.writer.goToLine(node[i].line);
             self.writer.write("return ");
           }
         }
-        self.translate(node[i]);
+        self.translate(node[i], options);
         if (i < m - 1) {
           self.writer.write(separator);
         }

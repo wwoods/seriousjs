@@ -2,13 +2,19 @@
 global scope will be exposed as the module definition.
 ###
 
-a
-b
-c
+require console
 
-a = b = c
+exports sqr, fib, iter
 
-d e f # Should be d(e(f))
+a = b = c = 8
+
+d = e = (a) ->
+  # closure fallthroughs fail: a + b
+  console.log a * a
+  a * a
+
+_f = 2
+_q = d e _f # Should be d(e(f))
 
 sqr = (a) ->
   a * a
@@ -27,3 +33,5 @@ iter = (n) ->
     r += m * n
     n -= 1
   return r
+
+console.log fib 9
