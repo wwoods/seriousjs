@@ -12,4 +12,4 @@ describe "Compile", ->
               + a
             a
           a"""
-          
+

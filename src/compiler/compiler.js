@@ -20,7 +20,6 @@ this.cleanupTree = function(tree) {
 
 this.compile = function(tree) {
   self.cleanupTree(tree);
-  console.log(util.inspect(tree, false, 30));
   
   var writer = new Writer();
   var translator = new Translator(writer);
@@ -28,9 +27,5 @@ this.compile = function(tree) {
   translator.translate(tree);
   
   var script = writer.getOutput();
-  
-  console.log("SCRIPT:");
-  console.log(script);
-  
   return script;
 };

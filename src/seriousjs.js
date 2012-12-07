@@ -9,7 +9,6 @@ if (require.extensions) {
   require.extensions['.sjs'] = function(module, filename) {
     var content = fs.readFileSync(filename, 'utf8');
     var script = self.compile(content, filename);
-    console.log(filename);
     module._compile(script, filename);
   };
 }
@@ -27,7 +26,6 @@ while (hasReplaced) {
     hasReplaced = true;
     var allText = m[0];
     var fname = m[1];
-    console.log("Replacing " + allText);
     var replacement = fs.readFileSync(__dirname + '/grammar/' + fname, 'utf8');
     source = source.replace(allText, replacement);
   }
