@@ -18,11 +18,11 @@ this.cleanupTree = function(tree) {
 };
 
 
-this.compile = function(tree) {
+this.compile = function(tree, options) {
   self.cleanupTree(tree);
   
   var writer = new Writer();
-  var translator = new Translator(writer);
+  var translator = new Translator(writer, options);
   
   translator.translate(tree);
   

@@ -6,12 +6,12 @@ lambda_op "-> or =>"
   
 lambda "function"
   = parms:lambda_args? op:lambda_op 
-        body:statement_body {
+        body:lambda_body {
       if (!parms) {
         parms = [];
       }
       log("Finished lambda at " + _pos());
-      return { "op": op, "parms": parms, "body": body };
+      return { op: op, parms: parms, body: body.body, doc: body.doc };
     }
     
 lambda_args
@@ -32,4 +32,16 @@ lambda_args_list
     
 lambda_arg
   = Identifier
+ 
 
+lambda_body
+  = CHECK_NEWLINE !ASSERT_ON_NEWLINE _ head:expression { 
+      return R({ body: [ head ] }); 
+    }
+  / INDENT_BLOCK_START doc:lambda_doc? inner:statement_list_inner? BLOCK_END
+        & { return inner; } { 
+      return R({ doc: doc, body: inner });
+    }
+    
+lambda_doc
+  = doc:string NEWLINE { return doc; }

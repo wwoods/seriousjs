@@ -106,6 +106,20 @@ this.Writer = (function() {
     }
   };
   
+  Writer.prototype.goToNode = function(node) {
+    //Go to a specific node's position information
+    if (node.state) {
+      this._indent = node.state.indent;
+    }
+    
+    if (node.line) {
+      this.goToLine(node.line);
+    }
+    else if (node.state) {
+      this.goToLine(node.state.line);
+    }
+  };
+  
   Writer.prototype.variable = function(id, isAssign) {
     var c = this._closures[this._closures.length - 1];
     if (isAssign) {

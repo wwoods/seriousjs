@@ -21,7 +21,7 @@ _ "white space"
     //Note - spaces are NOT part of this regex, since those should only be
     //caught by the expression before this one (which swallows them rather
     //than just accepting them as this code path does)
-    if (/[,.\(\)\[\]+\*&|^%@!=:-]/.test(chars)) {
+    if (/[,.\(\)\[\]+\*\/&|^%@!=:-]/.test(chars)) {
       return true;
     }
     return false;

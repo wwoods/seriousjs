@@ -39,6 +39,6 @@ function addTestDir(dir, shouldPass) {
 }
 
 describe("Smoke test -", function() {
-  addTestDir(__dirname + '/examples', true);
-  addTestDir(__dirname + '/examples/bad', false);
+  addTestDir(__dirname + '/good', true);
+  addTestDir(__dirname + '/bad', false);
 });

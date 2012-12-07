@@ -68,7 +68,20 @@ function _upos() {
 }
 
 function R(ast) {
-  //Attaches the current state to the given tree object.
-  ast['state'] = state;
+  //Attaches the state pointed to by reportedPos (the start of the match)
+  //to the given tree object.
+  var w = reportedPos;
+  var s = state;
+  while (w >= 0) {
+    if (states[w] !== undefined) {
+      s = states[w];
+      break;
+    }
+    --w;
+  }
+  ast['state'] = s;
+  //And since the line from state isn't always up to date, use the reported
+  //pos
+  ast['line'] = line();
   return ast;
 }

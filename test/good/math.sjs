@@ -9,7 +9,7 @@ exports sqr, fib, iter
 a = b = c = 8
 
 d = e = (a) ->
-  # closure fallthroughs fail: a + b
+  "closure fallthroughs fail: a + b"
   console.log a * a
   a * a
 
@@ -21,6 +21,8 @@ sqr = (a) ->
 
 # Fibonacci using lots of different syntaxes...
 fib = (n) ->
+  """Computes the fibonacci sequence.
+  """
   if n <= 0
     return 0
   elif n == 1

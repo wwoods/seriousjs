@@ -25,10 +25,8 @@ statement_body
 
 statement
   = CONTINUATION_START stmt:statement_inner? CONTINUATION_END
-      & { return stmt; }
-      & { var rp = reportedPos; reportedPos = r1; stmt.line = line();
-          reportedPos = rp; return true; } 
-      { return stmt; }
+      & { return stmt; } 
+      { stmt.line = line(); return R(stmt); }
       
 statement_inner
   = stmt:if_stmt { return R(stmt); }
@@ -49,10 +47,10 @@ if_stmt
 
 else_part
   = "else" expr:statement_body {
-      return expr;
+      return R(expr);
     }
   / "el" stmt:if_stmt {
-      return stmt;
+      return R(stmt);
     }
   
   

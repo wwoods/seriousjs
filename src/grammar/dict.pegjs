@@ -39,5 +39,5 @@ dict_argument
       
 dict_argument_inner
   = id:Identifier _ ":" _ expr:expression {
-      return { "op": "keyValue", "key": id, "value": expr };
+      return R({ "op": "keyValue", "key": id, "value": expr });
     }

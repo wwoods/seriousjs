@@ -1,14 +1,17 @@
 var self = this;
 var pegJs = require('../lib/peg-0.7.0').PEG;
 var fs = require('fs');
+var module = require('module');
+var path = require('path');
 var util = require('util');
+var vm = require('vm');
 var sjsCompiler = require('./compiler/compiler.js');
 
 //Plug in to require
 if (require.extensions) {
   require.extensions['.sjs'] = function(module, filename) {
     var content = fs.readFileSync(filename, 'utf8');
-    var script = self.compile(content, filename);
+    var script = self.compile(content, { filename: filename });
     module._compile(script, filename);
   };
 }
@@ -41,9 +44,12 @@ var parserSource = pegJs.buildParser(
 );
 fs.writeFileSync(__dirname + '/grammar/_parser.js', parserSource, 'utf8');
 this.parser = eval(parserSource);
-this.compile = function(text, filename) {
+this.compile = function(text, options) {
   //Returns the legible javascript version of text.
   var tree;
+  if (!options) {
+    options = {};
+  }
   
   //All text must end in a newline; however, this is a grammar limitation, and
   //we won't inflict it on users.
@@ -56,14 +62,39 @@ this.compile = function(text, filename) {
   }
   catch (e) {
     var header = 'Line ' + e.line + ', column ' + e.column;
-    if (filename) {
-      header += ' of ' + filename;
+    if (options.filename) {
+      header += ' of ' + options.filename;
     }
     e.message = header + ': ' + e.message;
     throw e;
   }
   
-  script = sjsCompiler.compile(tree);
+  script = sjsCompiler.compile(tree, options);
+  //console.log(script);
   
   return script;
+};
+
+
+this.eval = function(text, options) {
+  //Execute and run the module for NodeJS.
+  if (!options) {
+    options = {};
+  }
+  var sandbox = vm.Script.createContext(), mod, req;
+  sandbox.__filename = options.filename || 'eval';
+  sandbox.__dirname = path.dirname(sandbox.__filename);
+  sandbox.module = mod = new module(options.modulename || 'eval');
+  sandbox.require = req = function(path) { return module._load(path, mod, true); };
+  for (var k in Object.getOwnPropertyNames(require)) {
+    req[k] = require[k];
+  }
+  req.paths = module._nodeModulePaths(process.cwd())
+  mod.filename = sandbox.__filename;
+  var code = this.compile(text, options);
+  var r = vm.runInContext(code, sandbox);
+  if (options.isScript) {
+    return r;
+  }
+  return sandbox;
 };

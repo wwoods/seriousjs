@@ -2,7 +2,7 @@
 
 expression
   = lambda
-  / base:atom_chain _ args:arguments_list
+  / base:atom_chain [ \t]+ args:arguments_list
         & { return args; } {
       //This is the paren-less syntax for calling a function;
       //for instance: "fib n+1"
@@ -51,7 +51,7 @@ base_atom
   / Identifier
   / string
   / list_literal
-  / DecimalLiteral
+  / num:DecimalLiteral { return R({ op: "number", num: num}); }
   / "(" _ expr:assign_stmt _ ")" {
       return { "op": "()", "expr": expr };
     }
