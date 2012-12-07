@@ -9,6 +9,7 @@ if (require.extensions) {
   require.extensions['.sjs'] = function(module, filename) {
     var content = fs.readFileSync(filename, 'utf8');
     var script = self.compile(content, filename);
+    console.log(filename);
     module._compile(script, filename);
   };
 }

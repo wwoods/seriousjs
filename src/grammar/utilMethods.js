@@ -38,6 +38,17 @@ function getBinary(head, tail, tailOp, tailValue) {
   return r;
 }
 
+function stringMultiline(s) {
+  return s
+      .replace(/\\/g, '\\\\')
+      ;
+}
+
+function stringSingleline(s) {
+  return s
+      ;
+}
+
 function _advance(count) {
   pos += count;
 }

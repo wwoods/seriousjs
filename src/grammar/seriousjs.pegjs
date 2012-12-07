@@ -5,7 +5,7 @@
 
 { /* Globals for parsing */
 
-  var debug = true;
+  var debug = false;
 
   //Modified console.log; returns true always and can be turned off
   var log = function() { return true; };
@@ -32,8 +32,9 @@
   var lineStartPos = 0; //First line is a newline
   var lastIndent = 0;
   var lastLineStr = '';
-  var openers = /[\[\(=]/g;
+  var openers = /[\[\(=+\-\/*]/g;
   var closers = /([\]\)]|->|=>)/g;
+  var interests = /[^a-zA-Z0-9]/;
   while (lineStartPos < input.length && lineStartPos >= 0) {
     var nextPos = input.indexOf('\n', lineStartPos);
     var lineStr = input.substring(lineStartPos, nextPos);
@@ -57,11 +58,40 @@
     if (diff > 0) {
       //Only track indents, and see if it's a continuation or a block
       //indent.
+    
+      var beforeChars = lineStr.indexOf('#') - 1;
+      if (beforeChars < 0) {
+        beforeChars = lineStr.length - 1;
+      }
+      while (beforeChars >= 0) {
+        if (!interests.test(lineStr[beforeChars])) {
+          beforeChars += 1;
+          break;
+        }
+        beforeChars -= 1;
+      }
+      
+      var afterCharsEnd = lastLineStr.indexOf('#');
+      if (afterCharsEnd < 0) {
+        afterCharsEnd = lastLineStr.length;
+      }
+      var afterChars = afterCharsEnd - 1;
+      while (afterChars >= 0) {
+        if (!interests.test(lastLineStr[afterChars])) {
+          afterChars += 1;
+          break;
+        }
+        afterChars -= 1;
+      }
+      
+      var interestChars = lastLineStr.substring(afterChars, afterCharsEnd)
+          + lineStr.substring(0, beforeChars);
+      
       var openChars = 0, closeChars = 0, m;
-      while ((m = openers.exec(lastLineStr)) !== null) {
+      while ((m = openers.exec(interestChars)) !== null) {
         openChars += 1;
       }
-      while ((m = closers.exec(lastLineStr)) !== null) {
+      while ((m = closers.exec(interestChars)) !== null) {
         closeChars += 1;
       }
       if (openChars > closeChars) {
@@ -117,21 +147,19 @@ header_list
   //Already and necessarily in the global block.
   = head:header_statement
         tail:(NEWLINE_SAME header_statement)* {
-      var r = [ head ];
-      for (var i = 0, m = tail.length; i < m; i++) {
-        r.push(tail[i][2]);
-      }
-      return r;
+      return getArray(head, tail, 1);
     }
     
 header_statement
   = CONTINUATION_START stmt:header_statement_inner? CONTINUATION_END
-      & { return stmt; } { return stmt; }
+      & { return stmt; } { return R(stmt); }
       
 header_statement_inner
-  = "require" _ reqs:require_chain? 
-        & { return reqs; } {
+  = "require" _ reqs:require_chain {
       return { "op": "require", "defs": reqs };
+    }
+  / "exports" _ head:Identifier tail:(ARG_SEP Identifier)* {
+      return { "op": "exports", "exports": getArray(head, tail, 1) };
     }
   
 require_chain
@@ -140,14 +168,23 @@ require_chain
     }
   
 require_import
-  = from:Identifier fromTail:("." Identifier)* as:(_ "as" _ Identifier)? {
-    var f = getArray(from, fromTail, 1);
+  = from:require_import_from as:(_ "as" _ Identifier)? {
     var a = null;
     if (as) {
-      a = as[3];
+      a = as[3].id;
     }
-    return { "op": "require_import", "from": f, "as": a };
+    else {
+      a = from.defaultAs;
+    }
+    return { "op": "require_import", "from": from.from, "as": a };
   }
+  
+require_import_from
+  = chs:string_not_space* {
+      var s = chs.join("");
+      var slash = s.lastIndexOf('/');
+      return { from: s, defaultAs: s.substring(slash + 1) };
+    }
 
 ##include statement.pegjs
 ##include assign.pegjs
@@ -186,6 +223,8 @@ arguments_list
     }
     
 argument
-  = dict_argument
+  = head:dict_argument tail:(ARG_SEP dict_argument)* {
+    return { op: "dict", elements: getArray(head, tail, 1) };
+  }
   / expression
 

@@ -43,7 +43,7 @@ INDENT_LEVEL "indent"
 
 NEWLINE "newline"
   /* One or several newlines, ending in some indentation */
-  = lines:([ \t]* COMMENT? "\r"? "\n" (INDENT_LEVEL)*)+ {
+  = lines:([ \t]* COMMENT? "\r"? "\n" INDENT_LEVEL*)+ {
     //Add comments to last state, since newlines are after the comments
     for (var i = 0, m = lines.length; i < m; i++) {
       if (lines[i][1]) {
@@ -51,6 +51,13 @@ NEWLINE "newline"
       }
     }
     var indent = lines[lines.length - 1][4].length;
+    if (state.indent === null) {
+      state.indent = indent;
+      for (var i = 0, m = blockIndents.length; i < m; i++) {
+        blockIndents[i].indent += indent;
+      }
+      console.log("Using indents of " + indentWidth + " base " + indent);
+    }
     log("Found indent " + indent + " in block " + getBlockIndent());
     stateUpdate(indent);
   }
@@ -73,8 +80,17 @@ CHECK_NEWLINE
   /* Since newlines might happen at the end of one or more blocks, but only one 
    * block will actually get a newline character, make it conditional.
    */
-  = & { stateRestore(); return true; } NEWLINE? {
-      //These happen a lot before indent checks, so restore our state
+  = & { stateRestore(); return true; } n:NEWLINE? {
+      //These happen a lot before indent checks, so we restore our state
+      //before executing the newline.
+      //Also, if n failed and the state doesn't have an indent at this time,
+      //the script starts at no indent.
+      if (!n && state.indent === null) {
+        state.indent = 0;
+        for (var s in states) {
+          states[s].indent = state.indent;
+        }
+      }
     }
 
 

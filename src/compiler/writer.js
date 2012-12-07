@@ -4,6 +4,8 @@ this.Closure = Closure = (function() {
   function Closure() {
     this.vars = {};
     this.funcArgs = {};
+    this.exports = null;
+    this.isModule = false;
   }
   
   Closure.prototype.toString = function() {
@@ -38,7 +40,8 @@ this.Writer = (function() {
     this._line = 1;
     this._isInArgs = false;
     
-    var c = this.startClosure({ isModule: true });
+    var c = this.startClosure();
+    c.isModule = true;
     this._output.push(c);
   }
   
@@ -56,6 +59,14 @@ this.Writer = (function() {
   
   Writer.prototype.deindent = function() {
     this._indent -= 1;
+  };
+  
+  Writer.prototype.export = function(v) {
+    var c = this._closures[this._closures.length - 1];
+    if (c.exports === null) {
+      c.exports = {};
+    }
+    c.exports[v] = true; 
   };
   
   Writer.prototype.startContinuation = function() {
@@ -104,8 +115,12 @@ this.Writer = (function() {
       else {
         c.funcArgs[id] = true;
       }
-      if (id[0] !== '_') {
-        //Hide private variables
+      if (
+          c.isModule
+          && (
+            c.exports === null && id[0] !== '_'
+            || id in c.exports)
+          ) {
         this._output.push('this.' + id + '=');
       }
     }

@@ -1,6 +1,6 @@
 
 require assert
-require seriousjs as sjs
+require ../src/seriousjs as sjs
 
 # Real test - sanity
 describe "Compile", ->
@@ -9,7 +9,7 @@ describe "Compile", ->
       sjs.compile """
           a
           if a
-              a
+              + a
             a
           a"""
           

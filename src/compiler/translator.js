@@ -19,6 +19,11 @@ this.Translator = (function() {
           w.write("}");
           w.endClosure();
         },
+     "arrayMember": function(e, n, w) {
+          w.write("[");
+          e.translate(n.expr);
+          w.write("]");
+        },
      "atom": function(e, n, w) {
           e.translate(n.atom);
           e.translate(n.chain, { separator: '' });
@@ -27,6 +32,16 @@ this.Translator = (function() {
           w.write('(');
           e.translate(n.args, { separator: ',' });
           w.write(')');
+        },
+     "dict": function(e, n, w) {
+          w.write("{");
+          e.translate(n.elements, { separator: ',' });
+          w.write("}");
+        },
+     "exports": function(e, n, w) {
+          for (var i = 0, m = n.exports.length; i < m; i++) {
+            w.export(n.exports[i].id);
+          }
         },
      "id": function(e, n, w, options) {
           w.variable(n.id, options.isAssign);
@@ -47,6 +62,16 @@ this.Translator = (function() {
             w.write("}");
           }
         },
+     "keyValue": function(e, n, w) {
+          e.translate(n.key);
+          w.write(": ");
+          e.translate(n.value);
+        },
+     "list": function(e, n, w) {
+          w.write("[");
+          e.translate(n.elements, { separator: ',' });
+          w.write("]");
+        },
      "member": function(e, n, w) {
           w.write(".");
           e.translate(n.id);
@@ -55,9 +80,22 @@ this.Translator = (function() {
           w.write("return ");
           e.translate(n.result);
         },
+     "require": function(e, n, w) {
+          e.translate(n.defs);
+        },
+     "require_import": function(e, n, w) {
+          w.variable(n.as, true);
+          w.write(' = require("');
+          w.write(n.from);
+          w.write('")');
+        },
      "string": function(e, n, w) {
           w.write('"');
-          w.write(n.chars.replace(/"/g, '\\"'));
+          var c = n.chars;
+          //Backslash replacements done in string methods in utilMethods.js
+          c = c.replace(/"/g, '\\"')
+              .replace(/\n/g, '\\n\\\n');
+          w.write(c);
           w.write('"');
         },
      "()": function(e, n, w) {

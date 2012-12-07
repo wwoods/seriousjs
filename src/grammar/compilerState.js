@@ -13,7 +13,7 @@ var blockIndents = [ { indent: 0 } ];
 //Keep track of features used so we can put a header in the module if needed
 var featuresUsed = {};
 
-var state = { indent: 0, line: 1, comments: [] };
+var state = { indent: null, line: 1, comments: [] };
 states[-1] = deepCopy(state);
 
 function getBlock() {
