@@ -1,0 +1,19 @@
+{
+  "name": "seriousjs",
+  "preferGlobal": true,
+  "version": "0.1.0",
+  "author": "Walt Woods <woodswalben@gmail.com>",
+  "description": "An improved javascript syntax with tools for developing large-scale applications and websites",
+  "bin": {
+    "seriousjs": "./bin/seriousjs"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "requirejs": "2.1.2"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=0.7",
+  }
+}
