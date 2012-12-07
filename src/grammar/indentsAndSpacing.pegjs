@@ -56,7 +56,7 @@ NEWLINE "newline"
       for (var i = 0, m = blockIndents.length; i < m; i++) {
         blockIndents[i].indent += indent;
       }
-      console.log("Using indents of " + indentWidth + " base " + indent);
+      log("Using indents of " + indentWidth + " base " + indent);
     }
     log("Found indent " + indent + " in block " + getBlockIndent());
     stateUpdate(indent);
