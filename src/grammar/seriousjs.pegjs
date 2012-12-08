@@ -134,7 +134,7 @@ script
       for (var i = 0, m = script.length; i < m; i++) {
         r.push(script[i]);
       }
-      return { tree: r, features: featuresUsed }; 
+      return { tree: r }; 
     }
 
 ##include indentsAndSpacing.pegjs

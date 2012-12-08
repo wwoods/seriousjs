@@ -1,6 +1,6 @@
 Identifier "identifier"
   = !ReservedWord name:IdentifierName { 
-      return { "op": "id", "id": name };
+      return R({ "op": "id", "id": name });
     }
 
 IdentifierName "identifier"

@@ -70,7 +70,10 @@ this.compile = function(text, options) {
   }
   
   script = sjsCompiler.compile(tree, options);
-  //console.log(script);
+  if (false) {
+    console.log(util.inspect(tree, null, 30));
+    console.log(script);
+  }
   
   return script;
 };

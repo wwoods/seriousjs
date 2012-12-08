@@ -16,7 +16,10 @@ lambda "function"
     
 lambda_args
   //Note - we might have leading and trailing whitespace.
-  = "(" _ ARG_SEP? args:lambda_args_list?
+  = d:dict_assignable _ {
+      return [ { op: "dictAssignArgs", assign: d } ];
+    }
+  / "(" _ ARG_SEP? args:lambda_args_list?
         ARG_SEP? _ ")" _ {
       if (!args) {
         return [];

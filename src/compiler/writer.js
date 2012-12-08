@@ -1,12 +1,61 @@
 
+var allFeatures = {
+  dictCheckExact: ""
+      + "__dictCheckExact=function(spec,dict){"
+      + " var a=0,b=0;"
+      + " for(var k in dict) {"
+      + "  if(!(k in spec)) {"
+      + "   throw new Error('Unexpected key: ' + k);"
+      + "  }"
+      + "  a+=1;"
+      + " }"
+      + " for(var k in spec) {"
+      + "  b+=1;"
+      + " }"
+      + " if (a !== b) {"
+      + "  for(var k in spec) {"
+      + "   if(!(k in dict)) {"
+      + "    throw new Error('Missing key: ' + k);" 
+      + "   }"
+      + "  }"
+      + " }"
+      + " return dict;"
+      + "}",
+  dictCheckRequired: "__dictCheckRequired=function(spec,dict){"
+      + " for(var k in spec) {"
+      + "  if(!(k in dict)) {"
+      + "   throw new Error('Missing key: ' + k);"
+      + "  }"
+      + " }"
+      + "return dict;"
+      + "}",
+  };
+
 var Closure;
 this.Closure = Closure = (function() {
   function Closure() {
     this.vars = {};
     this.funcArgs = {};
+    this.tmpVars = {};
     this.exports = null;
     this.isModule = false;
+    this.features = {};
+    this.afterStart = [];
   }
+  
+  Closure.prototype.newTemp = function() {
+    var c = 0;
+    for (var k in this.tmpVars) {
+      c += 1;
+      if (this.tmpVars[k] === 0) {
+        this.tmpVars[k] = 1;
+        return k;
+      }
+    }
+    var id = '__t' + c;
+    this.tmpVars[id] = 1;
+    return id;
+  };
   
   Closure.prototype.toString = function() {
     var r = '';
@@ -22,6 +71,15 @@ this.Closure = Closure = (function() {
         r += ',';
       }
       r += v;
+    }
+    for (var v in this.features) {
+      if (r === '') {
+        r += 'var ';
+      }
+      else {
+        r += ',';
+      }
+      r += allFeatures[v];
     }
     if (r !== '') {
       r += ';';
@@ -39,6 +97,7 @@ this.Writer = (function() {
     this._closures = [];
     this._line = 1;
     this._isInArgs = false;
+    this._redirects = [];
     
     var c = this.startClosure();
     c.isModule = true;
@@ -51,6 +110,10 @@ this.Writer = (function() {
       output.push(this._output[i].toString());
     }
     return output.join("");
+  };
+  
+  Writer.prototype.addClosureNode = function(e, n) {
+    getClosure().onEntryNodes.push([ e, n ]);
   };
   
   Writer.prototype.indent = function() {
@@ -90,6 +153,10 @@ this.Writer = (function() {
     this._indent -= 1;
   };
   
+  Writer.prototype.afterClosure = function(fn) {
+    this._getClosure().afterStart.push(fn);
+  };
+  
   Writer.prototype.startArgs = function() {
     this._isInArgs = true;
     this._indent += 1;
@@ -120,8 +187,25 @@ this.Writer = (function() {
     }
   };
   
+  Writer.prototype.tmpVar = function(isAssign) {
+    var c = this._getClosure();
+    var id = c.newTemp();
+    this.variable(id, isAssign);
+    return id;
+  };
+  
+  Writer.prototype.tmpVarRelease = function(id) {
+    var c = this._getClosure();
+    c.tmpVars[id] = 0;
+  };
+  
+  Writer.prototype.usesFeature = function(f) {
+    var c = this._closures[0];
+    c.features[f] = true;
+  };
+  
   Writer.prototype.variable = function(id, isAssign) {
-    var c = this._closures[this._closures.length - 1];
+    var c = this._getClosure();
     if (isAssign) {
       if (!this._isInArgs) {
         c.vars[id] = true;
@@ -133,12 +217,16 @@ this.Writer = (function() {
           c.isModule
           && (
             c.exports === null && id[0] !== '_'
-            || id in c.exports)
+            || c.exports !== null && id in c.exports)
           ) {
-        this._output.push('this.' + id + '=');
+        this.write('this.' + id + '=');
       }
     }
-    this._output.push(id);
+    this.write(id);
+  };
+  
+  Writer.prototype._getClosure = function() {
+    return this._closures[this._closures.length - 1];
   };
   
   Writer.prototype._getIndent = function() {
@@ -150,12 +238,21 @@ this.Writer = (function() {
   };
   
   Writer.prototype.newline = function() {
-    this._output.push('\n' + this._getIndent());
+    this.write('\n' + this._getIndent());
     this._line += 1;
   };
   
   Writer.prototype.write = function(w) {
-    this._output.push(w);
+    if (w instanceof Closure) {
+      this._output.push(w);
+      for (var i = 0, m = w.afterStart.length; i < m; i++) {
+        w.afterStart[i]();
+      } 
+      this._output.push(';');
+    }
+    else {
+      this._output.push(w);
+    }
   }
   
   return Writer;

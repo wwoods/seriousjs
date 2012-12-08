@@ -51,6 +51,49 @@ this.Translator = (function() {
           e.translate(n.elements, { separator: ',' });
           w.write("}");
         },
+     "dictAssign": function(e, n, w) {
+          //n has keys, mod, and right.
+          w.write("(");
+          var r = w.tmpVar(true);
+          w.write("=");
+          if (n.mod) {
+            var f = "dictCheckExact";
+            if (n.mod === "<") {
+              f = "dictCheckRequired";
+            }
+            w.usesFeature(f);
+            w.write("__" + f + "({");
+            for (var i = 0, m = n.keys.length; i < m; i++) {
+              if (i !== 0) {
+                w.write(",");
+              }
+              w.write(n.keys[i].id + ':1');
+            }
+            w.write("},");
+            e.translate(n.right);
+            w.write(")");
+          }
+          else {
+            e.translate(n.right);
+          }
+          for (var i = 0, m = n.keys.length; i < m; i++) {
+            w.write(",");
+            w.variable(n.keys[i].id, true);
+            w.write("=");
+            w.write(r + "." + n.keys[i].id);
+          }
+          w.write("," + r);
+          w.write(")");
+          w.tmpVarRelease(r);
+        },
+     "dictAssignArgs": function(e, n, w) {
+          // A dict assignment from arguments...
+          var r = w.tmpVar();
+          n.assign.right = { op: "id", id: r };
+          w.afterClosure(function() {
+            e.translate(n.assign);
+          });
+        },
      "exports": function(e, n, w) {
           for (var i = 0, m = n.exports.length; i < m; i++) {
             w.export(n.exports[i].id);
@@ -160,17 +203,19 @@ this.Translator = (function() {
       separator = options.separator;
     }
     
+    var w = self.writer;
+    
     if (Array.isArray(node)) {
       for (var i = 0, m = node.length; i < m; i++) {
         if (i === m - 1 && options.isReturnClosure) {
           if (node[i].op !== 'return') {
-            self.writer.goToNode(node[i]);
-            self.writer.write("return ");
+            w.goToNode(node[i]);
+            w.write("return ");
           }
         }
         self.translate(node[i], options);
         if (i < m - 1) {
-          self.writer.write(separator);
+          w.write(separator);
         }
       }
     }
@@ -179,15 +224,15 @@ this.Translator = (function() {
       self.translate(node.tree, treeOptions);
     }
     else if (typeof node === "object") {
-      self.writer.goToNode(node);
+      w.goToNode(node);
       var op = opTable[node['op']];
       if (op === undefined) {
         throw "Unrecognized op: " + node['op'];
       }
-      op(self, node, self.writer, options);
+      op(self, node, w, options);
     }
     else if (typeof node === "number") {
-      self.writer.write(node);
+      w.write(node);
     }
   };
   
