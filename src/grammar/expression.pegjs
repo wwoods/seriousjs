@@ -83,13 +83,14 @@ list_literal
 ##include dict.pegjs
   
 atom_mod
-  = _ mod:atom_mod_expr { return mod; }
+  //Method calls cannot have space before them.
+  = "(" args:arguments_delimited ")"? {
+      return R({ op: "call", args: args });
+    }
+  / _ mod:atom_mod_expr { return mod; }
   
 atom_mod_expr
-  = "(" args:arguments_delimited ")"? {
-      return { "op": "call", "args": args };
-    }
-  / "[" expr:expression "]" {
+  = "[" expr:expression "]" {
       return { "op": "arrayMember", "expr": expr };
     }
   / "." id:Identifier {

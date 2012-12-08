@@ -1,4 +1,5 @@
 /pegjs
 /src/grammar/_compiled.pegjs
 /src/grammar/_parser.js
+/node_modules
 

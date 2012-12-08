@@ -101,3 +101,11 @@ this.eval = function(text, options) {
   }
   return sandbox;
 };
+
+
+this.evalFile = function(filename) {
+  //Execute and run the given sjs file
+  data = fs.readFileSync(filename, 'utf8');
+  return this.eval(data, { filename: filename });
+};
+

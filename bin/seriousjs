@@ -1,0 +1,20 @@
+#! /usr/bin/env node
+
+var program = require('commander');
+
+var sjs = require('../src/seriousjs');
+
+program
+  .version('0.1.0')
+  .usage('[options] file')
+  .parse(process.argv);
+
+
+if (program.args.length === 1) {
+  console.log("Executing " + program.args[0]);
+  sjs.evalFile(program.args[0]);
+}
+else {
+  program.help();
+}
+

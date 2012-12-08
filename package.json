@@ -7,13 +7,15 @@
   "bin": {
     "seriousjs": "./bin/seriousjs"
   },
+  "main": "src/seriousjs",
   "dependencies": {
+    "commander": ">=0.0.0"
   },
   "devDependencies": {
     "requirejs": "2.1.2"
   },
   "license": "MIT",
   "engines": {
-    "node": ">=0.7",
+    "node": ">=0.7"
   }
 }
