@@ -180,7 +180,7 @@ require_import
   }
   
 require_import_from
-  = chs:string_not_space* {
+  = chs:string_for_require+ {
       var s = chs.join("");
       var slash = s.lastIndexOf('/');
       return { from: s, defaultAs: s.substring(slash + 1) };

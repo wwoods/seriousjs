@@ -10,5 +10,4 @@ describe "Lambdas", ->
   it "Should map dict args", ->
     m = sjs.eval "a = {b,c} -> b*c"
     assert.equal 36, m.a({ b: 9, c: 4 })
-    
-    
+

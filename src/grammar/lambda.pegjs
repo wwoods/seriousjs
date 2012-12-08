@@ -4,7 +4,7 @@ lambda_op "-> or =>"
       return op;
     }
   
-lambda "function"
+lambda
   = parms:lambda_args? op:lambda_op 
         body:lambda_body {
       if (!parms) {

@@ -38,15 +38,27 @@ function getBinary(head, tail, tailOp, tailValue) {
   return r;
 }
 
-function stringMultiline(s) {
-  return s
-      .replace(/\\/g, '\\\\')
-      ;
-}
-
-function stringSingleline(s) {
-  return s
-      ;
+function stringProcess(s) {
+  var r = strPart = { op: "string", chars: '' };
+  for (var i = 0, m = s.length; i < m; i++) {
+    var c = s[i];
+    if (typeof c === 'object') {
+      strPart = { op: "string", chars: '' };
+      r = { 
+          op: "+", 
+          left: r, 
+          right: {
+              op: "+",
+              left: c,
+              right: strPart
+          } 
+      };
+    }
+    else {
+      strPart.chars += c;
+    }
+  }
+  return r;
 }
 
 function _advance(count) {

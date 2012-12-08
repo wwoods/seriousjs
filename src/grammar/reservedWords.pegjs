@@ -3,3 +3,4 @@ ReservedWord
   / "return"
   / "break"
   / "continue"
+  / "not"

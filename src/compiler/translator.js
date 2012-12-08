@@ -35,6 +35,7 @@ this.Translator = (function() {
           w.write("]");
         },
      "atom": function(e, n, w) {
+          e.translate(n.unary);
           e.translate(n.atom);
           e.translate(n.chain, { separator: '' });
         },
@@ -99,6 +100,35 @@ this.Translator = (function() {
             w.export(n.exports[i].id);
           }
         },
+     "forList": function(e, n, w) {
+          var r = w.tmpVar(true);
+          w.write("=");
+          e.translate(n.expr);
+          w.write(";for(");
+          var iter = w.tmpVar(true);
+          w.write("=0,");
+          var iterLen = w.tmpVar(true);
+          w.write("=");
+          w.variable(r);
+          w.write(".length;");
+          w.variable(iter);
+          w.write("<");
+          w.variable(iterLen);
+          w.write(";");
+          w.variable(iter);
+          w.write("++){");
+          e.translate(n.ids[0], { isAssign: true });
+          w.write("=");
+          w.variable(r);
+          w.write("[");
+          w.variable(iter);
+          w.write("];");
+          e.translate(n.body);
+          w.write("}");
+          w.tmpVarRelease(iter);
+          w.tmpVarRelease(iterLen);
+          w.tmpVarRelease(r);
+        },
      "id": function(e, n, w, options) {
           w.variable(n.id, options.isAssign);
         },
@@ -153,10 +183,34 @@ this.Translator = (function() {
           w.write('"');
           var c = n.chars;
           //Backslash replacements done in string methods in utilMethods.js
-          c = c.replace(/"/g, '\\"')
+          c = c
+              .replace(/"/g, '\\"')
               .replace(/\n/g, '\\n\\\n');
           w.write(c);
           w.write('"');
+        },
+     "ternary": function(e, n, w) {
+          e.translate(n.if);
+          w.write(" ? ");
+          e.translate(n.then);
+          w.write(" : ");
+          e.translate(n.else);
+        },
+     "try": function(e, n, w) {
+          w.write("try {");
+          e.translate(n.stmt);
+          w.write("}");
+          w.goToNode(n.catchId);
+          w.write("catch (");
+          e.translate(n.catchId);
+          w.write(") {");
+          e.translate(n.catchCode);
+          w.write("}");
+        },
+     "unary_not": function(e, n, w) {
+          w.write("!(");
+          e.translate(n.right);
+          w.write(")");
         },
      "()": function(e, n, w) {
           w.write("(");
@@ -186,6 +240,13 @@ this.Translator = (function() {
      "*=": binary,
      "/=": binary,
   };
+  
+  var badOpsForReturn = {
+    forList: true,
+    if: true,
+    return: true,
+    try: true, 
+  };
 
   function Translator(writer, options) {
     this.writer = writer;
@@ -208,7 +269,7 @@ this.Translator = (function() {
     if (Array.isArray(node)) {
       for (var i = 0, m = node.length; i < m; i++) {
         if (i === m - 1 && options.isReturnClosure) {
-          if (node[i].op !== 'return') {
+          if (!(node[i].op in badOpsForReturn)) {
             w.goToNode(node[i]);
             w.write("return ");
           }

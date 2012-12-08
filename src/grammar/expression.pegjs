@@ -10,7 +10,16 @@ expression
       base.chain.push(call);
       return base;
     }
-  / compare_expr
+  / ternary_expr
+  
+ternary_expr
+  = head:compare_expr tail:(_ "?" _ expression _ ":" _ expression)? {
+      var r = head;
+      if (tail) {
+        r = { op: "ternary", if: r, then: tail[3], else: tail[7] };
+      }
+      return r;
+    }
   
 compare_op
   = "<="
@@ -42,9 +51,16 @@ mul_expr
   }
   
 atom_chain
-  = base:base_atom chain:atom_mod* {
-    return { "op": "atom", "atom": base, "chain": chain };
+  = un:unary_op* base:base_atom chain:atom_mod* {
+    var r = R({ op: "atom", unary: un, atom: base, chain: chain });
+    for (var i = un.length - 1; i >= 0; --i) {
+      r = { op: un[i], right: r };
+    }
+    return r;
   }
+  
+unary_op
+  = "not" _ { return "unary_not"; }
 
 base_atom
   = dict_literal

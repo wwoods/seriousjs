@@ -1,30 +1,39 @@
   
 string
   = '"""' chars:string_not_double_quote_triple* '"""' 
-      { return { op: "string", chars: stringMultiline(chars.join("")) } }
+      { return R(stringProcess(chars)); }
   / "'''" chars:string_not_single_quote_triple* "'''"
-      { return { op: "string", chars: stringMultiline(chars.join("")) } }
+      { return R(stringProcess(chars)); }
   / '"' chars:string_not_double_quote* '"'
-      { return { op: "string", chars: stringSingleline(chars.join("")) } }
+      { return R(stringProcess(chars)); }
   / "'" chars:string_not_single_quote* "'" 
-      { return { op: "string", chars: stringSingleline(chars.join("")) } }
+      { return R(stringProcess(chars)); }
 
 string_not_double_quote_triple
-  = !'"""' ch:. { return ch; }
+  = string_interpol
+  / !'"""' !"#{" ch:. { return ch; }
   
 string_not_single_quote_triple
-  = !"'''" ch:. { return ch; }
+  = string_interpol
+  / !"'''" !"#{" ch:. { return ch; }
   
 string_not_double_quote
-  = "\\\\"
+  = string_interpol
+  / "\\\\"
   / '\\"'
-  / !["\n] ch:. { return ch; }
+  / !["\n] !"#{" ch:. { return ch; }
 
 string_not_single_quote
-  = "\\\\"
+  = string_interpol
+  / "\\\\"
   / "\\'"
-  / !['\n] ch:. { return ch; }
+  / !['\n] !"#{" ch:. { return ch; }
+  
+string_interpol
+  = "#{" _ expr:expression _ "}" {
+      return R(expr);
+    }
 
-string_not_space
-  = ![ \t\r\n] ch:. { return ch; }
+string_for_require
+  = ![ \t\r\n,] ch:. { return ch; }
   

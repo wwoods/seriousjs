@@ -3,7 +3,7 @@ Identifier "identifier"
       return R({ "op": "id", "id": name });
     }
 
-IdentifierName "identifier"
+IdentifierName
   = start:IdentifierStart parts:IdentifierPart* {
       return start + parts.join("");
     }

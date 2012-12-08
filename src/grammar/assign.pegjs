@@ -1,5 +1,5 @@
 
-assign_op "assign operator"
+assign_op
   = "="
   / "+="
   / "-="

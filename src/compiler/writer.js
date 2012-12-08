@@ -106,8 +106,14 @@ this.Writer = (function() {
   
   Writer.prototype.getOutput = function() {
     var output = [];
-    for (var i = 0, m = this._output.length; i < m; i++) {
-      output.push(this._output[i].toString());
+    try {
+      for (var i = 0, m = this._output.length; i < m; i++) {
+        output.push(this._output[i].toString());
+      }
+    }
+    catch (e) {
+      console.log("Before error: " + output.join(""));
+      throw e;
     }
     return output.join("");
   };

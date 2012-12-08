@@ -30,15 +30,16 @@ statement
       
 statement_inner
   = stmt:if_stmt { return R(stmt); }
+  / stmt:for_stmt { return R(stmt); }
   / "return" _ result:expression {
       return R({ "op": "return", "result": result });
     }
+  / try_stmt
   / stmt:assign_stmt { return R(stmt); }
   / expr:expression { return R(expr); }
   
 if_stmt
- = "if" _ cond:expression?
-        & { return cond; } 
+ = "if" _ cond:expression
         expr:statement_body 
         elsePart:else_part? {
       return { "op": "if", "condition": cond, "then": expr, 
@@ -51,6 +52,22 @@ else_part
     }
   / "el" stmt:if_stmt {
       return R(stmt);
+    }
+    
+for_stmt
+  = "for" _ id:Identifier _ "in" _ expr:expression body:statement_body {
+      return R({ op: "forList", ids: [ id ], expr: expr, body: body });
+    }
+    
+try_stmt
+  = "try" stmt:statement_body id:try_stmt_catch then:statement_body {
+      return R({ op: "try", stmt: stmt, catchId: id, catchCode: then });
+    }
+    
+try_stmt_catch
+  //Separate rule to get the line #
+  = "catch" _ id:Identifier {
+      return R(id);
     }
   
   
