@@ -7,8 +7,68 @@ Note -- I wrote this readme as a roadmap.  The seriousjs command line utilities
 are not ready yet.  This message will be removed when they are.
 
 
-Basics
-------
+## Motivation
+
+Feel free to skip to the bottom if you like - but a lot of people will ask
+why I bothered implementing a language that follows Coffee-Script 99% of the
+time.
+
+Ok, why re-write Coffee-Script?  My initial motivation was that 
+the coffee-script parser has really weird limitations.  For instance:
+
+    if someLongVariable
+            + someOtherLongVariable == 8
+        doSomething()
+        
+Won't compile with Coffee-Script, despite making complete visual sense.  I've
+also come across the scenario where, after several layers of lambda and 
+object literal nesting, coffee-script broke.  Granted I should have distilled
+the situation and fixed Coffee-Script's parser, but it was just a frustrating
+experience.
+
+Since I was just learning PegJS for another project, I thought it would be fun 
+to try to make a Coffee-Script parser that didn't have so many bizarre 
+limitations in the syntax.
+
+As I was looking at Coffee-Script's design choices and my past coffee-script
+projects, there were some other things that bugged me constantly:
+
+* -> vs => - Why?  I mean, I understand how coffee-script uses them, but if
+  a language introduces a beautiful syntax like @ to mean "the object that
+  this method is operating on", why would you confuse the issue with 
+  function bindings?  "@" should mean "the closest class object", and "this"
+  should mean the context with which the current method was called.
+  
+* Why are there so many darn identifiers?  It's because it's a scripting 
+  language.  I get that.  But for large, maintainable code bases, I don't
+  feel that it's appropriate to have so many ways of saying "false" and "true".
+  Feel free to correct me on that one.
+  
+* The generated code's line numbers don't match up with the source.  This makes
+  debugging pretty difficult sometimes.  I understand that the code is less
+  cluttered that way, but it seems to me that making the debug output of
+  the language's interpreters match the input is more important than
+  transient code being readable.
+  
+While those aren't huge, they got me thinking.  What are some other ways that
+Coffee-Script could be improved?  Well, how about:
+
+* Operator overloading
+
+* Support for asynchronous fibers / continuations?  Programming callbacks in
+  an imperative manner rather than a bunch of nested functions
+  
+* Tight integration with RequireJS, to provide a uniform, consistent language
+  between NodeJS and the browser, that runs in all environments and 
+  "just works"
+  
+Anyway, that's the jist of it.  I'm not expecting people to jump ship on this
+one - it started as an educational project but the focus is on production
+quality language constructs.  I mostly just think it's a useful conversation 
+starter.
+
+
+## Basics
 
 SeriousJS is inspired by Coffee-Script, but aimed at making the parsing more 
 dependable and providing extensions for a uniform code base across NodeJS and 
@@ -43,36 +103,3 @@ To run the compiled version, run:
     seriousjs --built app.sjs
 
 
-Why not just use Coffee-Script?
--------------------------------
-
-SeriousJS is inspired by coffee-script, but implemented in a more 
-maintainable and predictable manner.  It also gives you additional tools
-for building real-world applications.
-
-At the time of this writing, here are some benefits of SeriousJS:
-
-* SeriousJS uses a plain old parser and doesn't need any token manipulations,
-  meaning fewer surprises.
-  
-For instance, Coffee-Script won't compile this, but SeriousJS will:
-
-    if aLongVariableNameOrExpressionSoIWantToWrap
-        + someOtherVariableName == 2
-      someFunction()
-      
-* SeriousJS knows about modules; when you add a line "require http" at the top
-  of your source file, it knows that what you want to do is load the http 
-  module from NodeJS and store it in a variable named http.
-
-* SeriousJS preserves your line numbers and comments in the output javascript, 
-  meaning easier debugging.
-  
-* SeriousJS supports doc strings, which show up in Node's interactive 
-  interpreter when inspecting the function variable.
-  
-* SeriousJS comes packaged with RequireJS and a few plugins to provide 
-  a comprehensive solution to start building your application, right away.
-  
-* SeriousJS drops confusing operators like "unless", keeping 
-  the emphasis on clean, readable code. 
