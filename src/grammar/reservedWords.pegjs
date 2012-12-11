@@ -1,6 +1,10 @@
 ReservedWord
-  = "if"
-  / "return"
-  / "break"
+  = "break"
+  / "class"
   / "continue"
+  / "if"
+  / "instanceof"
+  / "new"
   / "not"
+  / "return"
+  / "super"

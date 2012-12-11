@@ -1,5 +1,5 @@
-lambda_op "-> or =>"
-  = op:("->" / "=>") {
+lambda_op
+  = op:"->" {
       log("Got lambda_op " + op); 
       return op;
     }
@@ -34,11 +34,23 @@ lambda_args_list
     }
     
 lambda_arg
-  = Identifier
+  = member:"@"? id:Identifier {
+      if (member) {
+        id.op = "memberId";
+      }
+      return id;
+    }
  
 
 lambda_body
-  = CHECK_NEWLINE !ASSERT_ON_NEWLINE _ head:expression { 
+  = CHECK_NEWLINE !ASSERT_ON_NEWLINE _ "pass" {
+      return R({ body: [] });
+    }
+  / INDENT_BLOCK_START ps:"pass"? BLOCK_END
+        & { return ps; } {
+      return R({ body: [] });
+    } 
+  / CHECK_NEWLINE !ASSERT_ON_NEWLINE _ head:(assign_stmt / expression) { 
       return R({ body: [ head ] }); 
     }
   / INDENT_BLOCK_START doc:lambda_doc? inner:statement_list_inner? BLOCK_END

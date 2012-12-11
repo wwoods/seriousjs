@@ -18,7 +18,7 @@ ternary_expr
       if (tail) {
         r = { op: "ternary", if: r, then: tail[3], else: tail[7] };
       }
-      return r;
+      return R(r);
     }
   
 compare_op
@@ -29,8 +29,17 @@ compare_op
   / ">"
   
 compare_expr
-  = head:add_expr tail:(_ compare_op _ add_expr)* {
-      return getBinary(head, tail, 1, 3);
+  = head:instance_expr tail:(_ compare_op _ instance_expr)* {
+      return R(getBinary(head, tail, 1, 3));
+    }
+    
+instance_expr
+  = head:add_expr tail:(_ "instanceof" _ add_expr)? {
+      var r = head;
+      if (tail) {
+        r = { op: "instanceof", left: r, right: tail[3] };
+      }
+      return R(r);
     }
   
 add_op
@@ -61,10 +70,11 @@ atom_chain
   
 unary_op
   = "not" _ { return "unary_not"; }
+  / "new" _ { return "unary_new"; }
 
 base_atom
   = dict_literal
-  / Identifier
+  / IdentifierMaybeMember
   / string
   / list_literal
   / num:DecimalLiteral { return R({ op: "number", num: num}); }
@@ -73,6 +83,29 @@ base_atom
     }
   / "(" _ expr:expression _ ")" {
       return { "op": "()", "expr": expr };
+    }
+    
+assignable_atom
+  = base:base_assignable_atom chain:atom_mod*
+        & { 
+          var end = base;
+          if (chain.length) {
+            end = chain[chain.length - 1];
+          }
+          return end.op === 'id'
+              || end.op === 'memberId' 
+              || end.op === 'member'
+              || end.op === 'arrayMember'
+              ;
+        } {
+      var r = R({ op: "atom", unary: [], atom: base, chain: chain });
+      return r;
+    } 
+    
+base_assignable_atom
+  = IdentifierMaybeMember
+  / "(" _ expr:(assign_stmt / expression) _ ")" {
+      return R({ op: "()", expr: expr });
     }
     
 list_literal

@@ -32,7 +32,7 @@
   var lineStartPos = 0; //First line is a newline
   var lastIndent = 0;
   var lastLineStr = '';
-  var openers = /[\[\(=+\-\/*]/g;
+  var openers = /[\[\(=+\-\/*]|'''|"""/g;
   var closers = /([\]\)]|->|=>)/g;
   var interests = /[^a-zA-Z0-9]/;
   while (lineStartPos < input.length && lineStartPos >= 0) {

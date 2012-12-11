@@ -13,15 +13,15 @@ assign_stmt
         head[i].right = r;
         r = head[i];
       }
-      return r;
+      return R(r);
     }
     
 assign_clause
   = op:dict_assignable _ "=" _ {
       return op;
     }
-  / left:Identifier _ op:assign_op _ {
-      return R({ "op": op, "left": left });
+  / left:assignable_atom _ op:assign_op _ {
+      return R({ op: op, left: left });
     }
     
 dict_assignable

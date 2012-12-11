@@ -35,7 +35,8 @@ statement_inner
       return R({ "op": "return", "result": result });
     }
   / try_stmt
-  / stmt:assign_stmt { return R(stmt); }
+  / stmt:assign_stmt { return stmt; }
+  / stmt:class_stmt { return stmt; }
   / expr:expression { return R(expr); }
   
 if_stmt
@@ -69,5 +70,15 @@ try_stmt_catch
   = "catch" _ id:Identifier {
       return R(id);
     }
-  
-  
+    
+class_stmt
+  = "class" _ id:Identifier ext:(_ "extends" _ Identifier)? 
+        body:statement_body? {
+      var parent = null;
+      if (ext) {
+        parent = ext[3];
+      }
+      return R({ op: "class", name: id, parent: parent, body: body });
+    }
+    
+      

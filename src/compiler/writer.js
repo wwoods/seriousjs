@@ -29,19 +29,55 @@ var allFeatures = {
       + " }"
       + "return dict;"
       + "}",
+  extends: ""
+      + "__extends = function(child, parent) {"
+      + " for(var key in parent) {"
+      + "  if(__hasProp.call(parent,key)){"
+      + "   child[key] = parent[key];"
+      + "  }"
+      + " }"
+      + " function ctor() {"
+      + "  this.constructor = child;"
+      + " }"
+      + " ctor.prototype = parent.prototype;"
+      + " child.prototype = new ctor();"
+      + " child.__super__ = parent.prototype;"
+      + " return child;"
+      + "}", 
+  hasProp: "__hasProp = {}.hasOwnProperty"
   };
+  
+var featureDependencies = {
+  extends: [ "hasProp" ],
+  };
+  
+function featureDump(feature, topClosure) {
+  //Dump the features necessary to support feature into topClosure
+  topClosure.features[feature] = true;
+  var deps = featureDependencies[feature];
+  if (deps !== undefined) {
+    for (var i = 0, m = deps.length; i < m; i++) {
+      featureDump(deps[i], topClosure);
+    }
+  }
+}
 
 var Closure;
 this.Closure = Closure = (function() {
-  function Closure() {
+  function Closure(props) {
     this.vars = {};
     this.funcArgs = {};
     this.tmpVars = {};
     this.exports = null;
-    this.isModule = false;
     this.features = {};
     this.afterStart = [];
+    this.props = props || {};
   }
+  
+  Closure.prototype.getNamedInstanceVariable = function() {
+    this.props.usesNamedThis = true;
+    return "__this";
+  };
   
   Closure.prototype.newTemp = function() {
     var c = 0;
@@ -60,6 +96,9 @@ this.Closure = Closure = (function() {
   Closure.prototype.toString = function() {
     var r = '';
     var emitted = {};
+    if (this.props.usesNamedThis) {
+      this.vars['__this'] = true;
+    }
     for (var v in this.vars) {
       if (v in this.funcArgs) {
         continue;
@@ -84,6 +123,9 @@ this.Closure = Closure = (function() {
     if (r !== '') {
       r += ';';
     }
+    if (this.props.usesNamedThis) {
+      r += '__this=this;';
+    }
     return r;
   };
   
@@ -99,8 +141,7 @@ this.Writer = (function() {
     this._isInArgs = false;
     this._redirects = [];
     
-    var c = this.startClosure();
-    c.isModule = true;
+    var c = this.startClosure({ isModule: true });
     this._output.push(c);
   }
   
@@ -146,9 +187,37 @@ this.Writer = (function() {
     this._indent -= 2;
   };
   
-  Writer.prototype.startClosure = function() {
+  Writer.prototype.getClosure = function(spec) {
+    if (!spec) {
+      return this._closures[this._closures.length - 1];
+    }
+    
+    for (var i = this._closures.length - 1; i >= 0; --i) {
+      var c = this._closures[i];
+      if (this._closureMatch(c, spec)) {
+        return c;
+      }
+    }
+    return null;
+  };
+  
+  Writer.prototype._closureMatch = function(c, spec) {
+    if (spec.isClass) {
+      if (!c.props.className) {
+        return false;
+      }
+    }
+    if (spec.isClassMethod) {
+      if (!c.props.isClassMethod) {
+        return false;
+      }
+    }
+    return true;
+  };
+  
+  Writer.prototype.startClosure = function(props) {
     //Returns the created Closure object; hasn't pushed it to output yet
-    var c = new Closure();
+    var c = new Closure(props);
     this._closures.push(c);
     this._indent += 1;
     return c;
@@ -160,7 +229,7 @@ this.Writer = (function() {
   };
   
   Writer.prototype.afterClosure = function(fn) {
-    this._getClosure().afterStart.push(fn);
+    this.getClosure().afterStart.push(fn);
   };
   
   Writer.prototype.startArgs = function() {
@@ -171,6 +240,10 @@ this.Writer = (function() {
   Writer.prototype.endArgs = function() {
     this._indent -= 1;
     this._isInArgs = false;
+  };
+  
+  Writer.prototype.isInArgs = function() {
+    return this._isInArgs;
   };
   
   Writer.prototype.goToLine = function(l) {
@@ -193,25 +266,36 @@ this.Writer = (function() {
     }
   };
   
+  Writer.prototype.getInstanceVariable = function() {
+    var topC = this.getClosure();
+    var methodC = this.getClosure({ isClassMethod: true });
+    if (methodC === topC) {
+      return "this";
+    }
+    else {
+      return methodC.getNamedInstanceVariable();
+    }
+  };
+  
   Writer.prototype.tmpVar = function(isAssign) {
-    var c = this._getClosure();
+    var c = this.getClosure();
     var id = c.newTemp();
     this.variable(id, isAssign);
     return id;
   };
   
   Writer.prototype.tmpVarRelease = function(id) {
-    var c = this._getClosure();
+    var c = this.getClosure();
     c.tmpVars[id] = 0;
   };
   
   Writer.prototype.usesFeature = function(f) {
     var c = this._closures[0];
-    c.features[f] = true;
+    featureDump(f, c);
   };
   
   Writer.prototype.variable = function(id, isAssign) {
-    var c = this._getClosure();
+    var c = this.getClosure();
     if (isAssign) {
       if (!this._isInArgs) {
         c.vars[id] = true;
@@ -220,7 +304,7 @@ this.Writer = (function() {
         c.funcArgs[id] = true;
       }
       if (
-          c.isModule
+          c.props.isModule
           && (
             c.exports === null && id[0] !== '_'
             || c.exports !== null && id in c.exports)
@@ -229,10 +313,6 @@ this.Writer = (function() {
       }
     }
     this.write(id);
-  };
-  
-  Writer.prototype._getClosure = function() {
-    return this._closures[this._closures.length - 1];
   };
   
   Writer.prototype._getIndent = function() {
