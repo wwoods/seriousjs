@@ -38,7 +38,7 @@
   while (lineStartPos < input.length && lineStartPos >= 0) {
     var nextPos = input.indexOf('\n', lineStartPos);
     var lineStr = input.substring(lineStartPos, nextPos);
-  
+
     var lineIndentChars = '';
     var i = 0;
     while (i < lineStr.length) {
@@ -51,14 +51,14 @@
       }
       i += 1;
     }
-    
+
     charCounts[lineIndentChars[0]] += 1;
     var indentChars = lineIndentChars.length;
     var diff = indentChars - lastIndent;
     if (diff > 0) {
       //Only track indents, and see if it's a continuation or a block
       //indent.
-    
+
       var beforeChars = lineStr.indexOf('#') - 1;
       if (beforeChars < 0) {
         beforeChars = lineStr.length - 1;
@@ -70,7 +70,7 @@
         }
         beforeChars -= 1;
       }
-      
+
       var afterCharsEnd = lastLineStr.indexOf('#');
       if (afterCharsEnd < 0) {
         afterCharsEnd = lastLineStr.length;
@@ -83,10 +83,10 @@
         }
         afterChars -= 1;
       }
-      
+
       var interestChars = lastLineStr.substring(afterChars, afterCharsEnd)
           + lineStr.substring(0, beforeChars);
-      
+
       var openChars = 0, closeChars = 0, m;
       while ((m = openers.exec(interestChars)) !== null) {
         openChars += 1;
@@ -106,7 +106,7 @@
     lastLineStr = lineStr;
     lineStartPos = nextPos + 1;
   }
-  
+
   if (charCounts['\t'] > charCounts[' ']) {
     indentChar = '\t';
     indentWidth = 1;
@@ -116,9 +116,9 @@
     indentWidth = 4;
     log("Using 4 spaces as indents");
   }
-  
+
   ##include utilMethods.js
-  
+
   ##include compilerState.js
 }
 
@@ -134,7 +134,7 @@ script
       for (var i = 0, m = script.length; i < m; i++) {
         r.push(script[i]);
       }
-      return { tree: r }; 
+      return { tree: r };
     }
 
 ##include indentsAndSpacing.pegjs
@@ -149,11 +149,11 @@ header_list
         tail:(NEWLINE_SAME header_statement)* {
       return getArray(head, tail, 1);
     }
-    
+
 header_statement
   = CONTINUATION_START stmt:header_statement_inner? CONTINUATION_END
       & { return stmt; } { return R(stmt); }
-      
+
 header_statement_inner
   = "require" _ reqs:require_chain {
       return { "op": "require", "defs": reqs };
@@ -161,12 +161,12 @@ header_statement_inner
   / "exports" _ head:Identifier tail:(ARG_SEP Identifier)* {
       return { "op": "exports", "exports": getArray(head, tail, 1) };
     }
-  
+
 require_chain
   = head:require_import tail:(ARG_SEP require_import)* {
       return getArray(head, tail, 1);
     }
-  
+
 require_import
   = from:require_import_from as:(_ "as" _ Identifier)? {
     var a = null;
@@ -178,7 +178,7 @@ require_import
     }
     return { "op": "require_import", "from": from.from, "as": a };
   }
-  
+
 require_import_from
   = chs:string_for_require+ {
       var s = chs.join("");
@@ -197,11 +197,11 @@ ARG_SEP
   / NEWLINE_SAME & { return log("Parsed arg_sep2"); }
   / _ "," NEWLINE_SAME & { return log("Parsed arg_sep3"); }
   / _ "," _ & { return log("Parsed arg_sep4"); }
-  
+
 arguments_delimited
   //A list of arguments delimited by something like [] or ().
   //May go into an indented body.
-  = args:arguments_delimited_inner? 
+  = args:arguments_delimited_inner?
         & { return args; } {
       return args;
     }
@@ -215,13 +215,13 @@ arguments_delimited_inner
       }
       return args;
     }
-  
+
 arguments_list
   //A list of arguments that has no delimiter
   = head:argument tail:(ARG_SEP argument)* {
       return getArray(head, tail, 1);
     }
-    
+
 argument
   = head:dict_argument tail:(ARG_SEP dict_argument)* {
     return { op: "dict", elements: getArray(head, tail, 1) };

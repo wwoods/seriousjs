@@ -1,4 +1,3 @@
 #! /bin/bash
 
 mocha --compilers sjs:./src/seriousjs $*
-

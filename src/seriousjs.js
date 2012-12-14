@@ -39,7 +39,7 @@ fs.writeFileSync(__dirname + '/grammar/_compiled.pegjs', source, 'utf8')
 
 //Build the parser and compiler
 var parserSource = pegJs.buildParser(
-  source, 
+  source,
   { output: 'source', trace: true }
 );
 fs.writeFileSync(__dirname + '/grammar/_parser.js', parserSource, 'utf8');
@@ -50,13 +50,13 @@ this.compile = function(text, options) {
   if (!options) {
     options = {};
   }
-  
+
   //All text must end in a newline; however, this is a grammar limitation, and
   //we won't inflict it on users.
   if (text.charAt(text.length - 1) !== '\n') {
     text += '\n';
   }
-  
+
   try {
     tree = self.parser.parse(text, { });
   }
@@ -68,13 +68,13 @@ this.compile = function(text, options) {
     e.message = header + ': ' + e.message;
     throw e;
   }
-  
+
   script = sjsCompiler.compile(tree, options);
   if (false) {
     console.log(util.inspect(tree, null, 30));
     console.log(script);
   }
-  
+
   return script;
 };
 
