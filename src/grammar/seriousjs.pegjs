@@ -123,7 +123,7 @@
 }
 
 script
-  = BLOCK_START headers:header_list? script:statement_list BLOCK_END
+  = BLOCK_START headers:header_list? script:statement_list? BLOCK_END
     {
       var r = [];
       if (headers) {

@@ -53,6 +53,11 @@ this.Translator = (function() {
             w.write("return __inner__; })()");
           }
         },
+     "and": function(e, n, w) {
+          e.translate(n.left);
+          w.write(" && ");
+          e.translate(n.right);
+        },
      "arrayMember": function(e, n, w) {
           w.write("[");
           e.translate(n.expr);
@@ -299,6 +304,11 @@ this.Translator = (function() {
         },
      "number": function(e, n, w) {
           w.write(n.num);
+        },
+     "or": function(e, n, w) {
+          e.translate(n.left);
+          w.write(" || ");
+          e.translate(n.right);
         },
      "return": function(e, n, w) {
           w.write("return ");

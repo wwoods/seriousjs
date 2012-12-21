@@ -1,5 +1,15 @@
-### Shows the line continuation features of SeriousJS
+### Shows the line continuation features of SeriousJS.
+
+SeriousJS enforces syntax where a double indent means a line
+continuation, and single indents mean a statement block.  Line continuations
+may optionally have extra spaces or tabs in subsequent lines, to 
 ###
+
+if 
+    b == c
+      or c == d
+    and d == e
+  body
 
 if a
     + b * 3

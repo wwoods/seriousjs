@@ -1,5 +1,5 @@
 
-
+### Roadmap for operator overloading
 class Matrix2D
   constructor: () ->
     @values = [ 1, 0, 0, 1 ]
@@ -14,3 +14,4 @@ class Matrix2D
     mv = @values[:]
     ov = other.values
     @values[0] = mv[0] * ov[0] + mv[1] * ov[2]
+###

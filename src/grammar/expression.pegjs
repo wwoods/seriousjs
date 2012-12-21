@@ -13,13 +13,22 @@ expression
   / ternary_expr
   
 ternary_expr
-  = head:compare_expr tail:(_ "?" _ expression _ ":" _ expression)? {
+  = head:logic_expr tail:(_ "?" _ expression _ ":" _ expression)? {
       var r = head;
       if (tail) {
         r = { op: "ternary", if: r, then: tail[3], else: tail[7] };
       }
       return R(r);
     }
+
+logic_op
+  = "and"
+  / "or"
+
+logic_expr
+  = head:compare_expr tail:(_ logic_op _ compare_expr)* {
+    return R(getBinary(head, tail, 1, 3));
+  }
   
 compare_op
   = "<="
