@@ -13,21 +13,21 @@ Feel free to skip to the bottom if you like - but a lot of people will ask
 why I bothered implementing a language that follows Coffee-Script 99% of the
 time.
 
-Ok, why re-write Coffee-Script?  My initial motivation was that 
+Ok, why re-write Coffee-Script?  My initial motivation was that
 the coffee-script parser has really weird limitations.  For instance:
 
     if someLongVariable
             + someOtherLongVariable == 8
         doSomething()
-        
+
 Won't compile with Coffee-Script, despite making complete visual sense.  I've
-also come across the scenario where, after several layers of lambda and 
+also come across the scenario where, after several layers of lambda and
 object literal nesting, coffee-script broke.  Granted I should have distilled
 the situation and fixed Coffee-Script's parser, but it was just a frustrating
 experience.
 
-Since I was just learning PegJS for another project, I thought it would be fun 
-to try to make a Coffee-Script parser that didn't have so many bizarre 
+Since I was just learning PegJS for another project, I thought it would be fun
+to try to make a Coffee-Script parser that didn't have so many bizarre
 limitations in the syntax.
 
 As I was looking at Coffee-Script's design choices and my past coffee-script
@@ -35,21 +35,21 @@ projects, there were some other things that bugged me constantly:
 
 * -> vs => - Why?  I mean, I understand how coffee-script uses them, but if
   a language introduces a beautiful syntax like @ to mean "the object that
-  this method is operating on", why would you confuse the issue with 
+  this method is operating on", why would you confuse the issue with
   function bindings?  "@" should mean "the closest class object", and "this"
   should mean the context with which the current method was called.
-  
-* Why are there so many darn identifiers?  It's because it's a scripting 
-  language.  I get that.  But for large, maintainable code bases, I don't
-  feel that it's appropriate to have so many ways of saying "false" and "true".
-  Feel free to correct me on that one.
-  
+
+* Why are there so many darn aliases for tru/false?  It's because it's a
+  scripting language.  I get that.  But for large, maintainable code bases, I
+  don't feel that it's appropriate to have so many ways of saying "false" and
+  "true".  Feel free to correct me on that one.
+
 * The generated code's line numbers don't match up with the source.  This makes
   debugging pretty difficult sometimes.  I understand that the code is less
   cluttered that way, but it seems to me that making the debug output of
   the language's interpreters match the input is more important than
   transient code being readable.
-  
+
 While those aren't huge, they got me thinking.  What are some other ways that
 Coffee-Script could be improved?  Well, how about:
 
@@ -57,21 +57,21 @@ Coffee-Script could be improved?  Well, how about:
 
 * Support for asynchronous fibers / continuations?  Programming callbacks in
   an imperative manner rather than a bunch of nested functions
-  
+
 * Tight integration with RequireJS, to provide a uniform, consistent language
-  between NodeJS and the browser, that runs in all environments and 
+  between NodeJS and the browser, that runs in all environments and
   "just works"
-  
+
 Anyway, that's the jist of it.  I'm not expecting people to jump ship on this
 one - it started as an educational project but the focus is on production
-quality language constructs.  I mostly just think it's a useful conversation 
+quality language constructs.  I mostly just think it's a useful conversation
 starter.
 
 
 ## Basics
 
-SeriousJS is inspired by Coffee-Script, but aimed at making the parsing more 
-dependable and providing extensions for a uniform code base across NodeJS and 
+SeriousJS is inspired by Coffee-Script, but aimed at making the parsing more
+dependable and providing extensions for a uniform code base across NodeJS and
 browser implementations.  Emphasis is on making projects easy to manage and
 learn.
 
@@ -86,7 +86,7 @@ To run any SeriousJS source file in NodeJS, just use:
 To start a new SeriousJS HTTP client/server project with RequireJS set up, run:
 
     seriousjs create-app [appname]
-    
+
 This makes a folder named [appname] and sets up a skeleton hierarchy, with an
 example web server and configuration.  It also comes with a stock .gitignore
 file, which suffices for simple projects.
@@ -94,7 +94,7 @@ file, which suffices for simple projects.
 To compile your new application, run:
 
     seriousjs build app.sjs
-    
+
 from your application directory.  A "build" directory will be created, which
 has compiled sources for your client.
 

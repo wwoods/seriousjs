@@ -8,9 +8,10 @@ this.Translator = (function() {
   };
   var opTable = {
     "->": function(e, n, w, options) {
-          var isClassMethod = (options.isConstructorFor 
-              || options.isClassMethod);
-          var c = w.startClosure({ 
+          var nearClosure = w.getClosure();
+          var isClassMethod = (options.isConstructorFor
+              || nearClosure.props.className);
+          var c = w.startClosure({
               isClassMethod: isClassMethod,
               methodName: options.methodName
               });
@@ -397,7 +398,7 @@ this.Translator = (function() {
           var c = w.getClosure();
           if (
               c.props.className
-              && n.left.op === 'id' 
+              && n.left.op === 'id'
               && n.left.id === 'constructor'
               && n.right.op === '->'
               ) {
@@ -405,7 +406,7 @@ this.Translator = (function() {
             e.translate(n.right, { isConstructorFor: c.props.className,
                 methodName: n.left.id });
           }
-          else { 
+          else {
             e.translate(n.left, { isAssign: true });
             w.write(" = ");
             var rightOptions = {};
@@ -424,32 +425,32 @@ this.Translator = (function() {
      "*=": binary,
      "/=": binary,
   };
-  
+
   var badOpsForReturn = {
     forList: true,
     if: true,
     return: true,
-    try: true, 
+    try: true,
   };
 
   function Translator(writer, options) {
     this.writer = writer;
     this.options = options;
   }
-  
+
   Translator.prototype.translate = function(node, options) {
     if (!options) {
       options = {};
     }
-  
+
     var self = this;
     var separator = ';';
     if (options.separator != null) {
       separator = options.separator;
     }
-    
+
     var w = self.writer;
-    
+
     if (Array.isArray(node)) {
       for (var i = 0, m = node.length; i < m; i++) {
         if (i === m - 1 && options.isReturnClosure) {
@@ -480,6 +481,6 @@ this.Translator = (function() {
       w.write(node);
     }
   };
-  
+
   return Translator;
 })();
