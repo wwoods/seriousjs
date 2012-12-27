@@ -1,8 +1,8 @@
 Identifier "identifier"
-  = !ReservedWord name:IdentifierName { 
+  = !ReservedWord name:IdentifierName {
       return R({ "op": "id", "id": name });
     }
-    
+
 IdentifierMaybeMember
   = "@class" { return R({ op: "memberClass" }); }
   / "@" id:Identifier { return R({ op: "memberId", id: id.id }); }

@@ -37,6 +37,26 @@ describe "Classes", ->
         q = a(6)"""
     assert.equal 6, m.q.v
 
+  it "Should support default values in constructors", ->
+    m = sjs.eval """
+        class a
+          constructor: (@v = 8) ->
+            pass
+        q = a()"""
+        showScript: true
+    assert.equal 8, m.q.v
+
+  it "Should support default values dict mapped constructors", ->
+    m = sjs.eval """
+        class a
+          constructor: {@v = 8} ->
+            pass
+        q = a()
+        j = a(v: 9)"""
+        showScript: true
+    assert.equal 8, m.q.v
+    assert.equal 9, m.j.v
+
   it "Should assign functions correctly", ->
     m = sjs.eval """
         class a

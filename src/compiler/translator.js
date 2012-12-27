@@ -6,6 +6,21 @@ this.Translator = (function() {
     w.write(" " + n.op + " ");
     e.translate(n.right);
   };
+  var addArgDefault = function(e, n, w) {
+    //Assuming n has an op of "id" or "memberId", and w isInArgs(), check if
+    //there is a "defaultVal" argument, and add the default
+    if (n.defaultVal) {
+      w.afterClosure(function() {
+        w.write("if(");
+        w.variable(n.id);
+        w.write("===undefined){");
+        w.variable(n.id);
+        w.write("=");
+        e.translate(n.defaultVal);
+        w.write("}");
+      });
+    }
+  };
   var opTable = {
     "->": function(e, n, w, options) {
           var nearClosure = w.getClosure();
@@ -162,11 +177,38 @@ this.Translator = (function() {
           else {
             e.translate(n.right);
           }
+          if (n.allowUndefined) {
+            //Used for args, map the object to an empty object if it's null
+            //or undefined
+            w.write("," + r + "=(" + r + "!=undefined?" + r + ":{})");
+          }
           for (var i = 0, m = n.keys.length; i < m; i++) {
             w.write(",");
-            w.variable(n.keys[i].id, true);
+            var nid;
+            if (n.keys[i].op === "memberId") {
+              nid = w.tmpVar();
+            }
+            else {
+              w.variable(n.keys[i].id, true);
+              nid = n.keys[i].id;
+            }
             w.write("=");
             w.write(r + "." + n.keys[i].id);
+            if (n.keys[i].defaultVal) {
+              w.write(",");
+              w.variable(nid);
+              w.write("=(");
+              w.variable(nid);
+              w.write("!==undefined?");
+              w.variable(nid);
+              w.write(":");
+              e.translate(n.keys[i].defaultVal);
+              w.write(")");
+            }
+            if (n.keys[i].op === "memberId") {
+              var obj = w.getInstanceVariable();
+              w.write("," + obj + "." + n.keys[i].id + "=" + nid);
+            }
           }
           w.write("," + r);
           w.write(")");
@@ -176,6 +218,9 @@ this.Translator = (function() {
           // A dict assignment from arguments...
           var r = w.tmpVar();
           n.assign.right = { op: "id", id: r };
+          //Since they're args, allow null or undefined to map to an empty
+          //object.
+          n.assign.allowUndefined = true;
           w.afterClosure(function() {
             e.translate(n.assign);
           });
@@ -215,7 +260,12 @@ this.Translator = (function() {
           w.tmpVarRelease(r);
         },
      "id": function(e, n, w, options) {
-          if (options.isAssign) {
+          w.goToNode(n);
+          if (w.isInArgs()) {
+            w.variable(n.id);
+            addArgDefault(e, n, w);
+          }
+          else if (options.isAssign) {
             var c = w.getClosure();
             if (c === w.getClosure({ isClass: true })) {
               w.write(c.props.className + '.prototype.');
@@ -283,6 +333,7 @@ this.Translator = (function() {
           w.goToNode(n);
           if (w.isInArgs()) {
             w.variable(n.id);
+            addArgDefault(e, n, w);
             w.afterClosure(function() {
               w.write("this." + n.id + " = " + n.id + ";");
             });
