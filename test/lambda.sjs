@@ -22,8 +22,8 @@ describe "Lambdas", ->
     assert.equal 14, m.a(a: 7, b: 2)
 
   it "Should map dict args even without argument", ->
-    m = sjs.eval("a = {b} -> (b ? 3 + b : 0-1)")
+    m = sjs.eval("a = {b} -> (b ? 3 + b : -1)")
     assert.equal 6, m.a(b: 3)
     # assert.equal (-1), m.a()
     jj = 32
-    assert.equal 0-1, m.a()
+    assert.equal -1, m.a()

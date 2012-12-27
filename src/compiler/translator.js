@@ -417,6 +417,10 @@ this.Translator = (function() {
           e.translate(n.catchCode);
           w.write("}");
         },
+     "unary_negate": function(e, n, w) {
+          w.write("-");
+          e.translate(n.right);
+        },
      "unary_new": function(e, n, w) {
           w.write("new ");
           e.translate(n.right);
