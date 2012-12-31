@@ -1,5 +1,14 @@
 
 var allFeatures = {
+  dictCheckAvailable: ""
+      + "__dictCheckAvailable=function(spec,dict){"
+      + " for(var k in dict){"
+      + "  if(!(k in spec)) {"
+      + "   throw new Error('Unexpected key: ' + k);"
+      + "  }"
+      + " }"
+      + " return dict;"
+      + "}",
   dictCheckExact: ""
       + "__dictCheckExact=function(spec,dict){"
       + " var a=0,b=0;"

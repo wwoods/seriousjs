@@ -32,7 +32,8 @@ dict_assignable
 
 dict_assignable_mod
   = "="
-  / "<"
+  / "<" //Available options (matches subset)
+  / ">" //Mandatory members (matches superset)
 
 dict_assignable_part
   = id:IdentifierMaybeMember defaultVal:(_ "=" _ expression)? {

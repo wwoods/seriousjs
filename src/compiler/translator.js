@@ -158,9 +158,18 @@ this.Translator = (function() {
           var r = w.tmpVar(true);
           w.write("=");
           if (n.mod) {
-            var f = "dictCheckExact";
-            if (n.mod === "<") {
+            var f;
+            if (n.mod === ">") {
               f = "dictCheckRequired";
+            }
+            else if (n.mod === "<") {
+              f = "dictCheckAvailable";
+            }
+            else if (n.mod === "=") {
+              f = "dictCheckExact";
+            }
+            else {
+              throw new Error("Unrecognized dictAssignMod: " + n.mod);
             }
             w.usesFeature(f);
             w.write("__" + f + "({");
