@@ -8,6 +8,9 @@ describe "Assignment", ->
     assert.equal 6, (sjs.eval "a = b = 6").b
   it "Should work with dicts", ->
     assert.equal 3, (sjs.eval "{a}={a:3,b:4}").a
+  it "Should work with dicts and defaults", ->
+    assert.equal 6, (sjs.eval "{a = 6} = {}").a
+    assert.equal undefined, (sjs.eval "{a} = {}").a
   it "Should work with dict mod =", ->
     assert.equal 22, (sjs.eval "{=a} = {a:22}").a
     assert.throws -> sjs.eval "{=a} = {b:1}"
