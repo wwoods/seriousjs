@@ -104,6 +104,10 @@ function indentBlockStart(levels, options) {
       baseBlockIndex -= 1;
     }
   }
+  else if (blockIndents[baseBlockIndex].isContinuation) {
+    //Continued continuations should only be one indent in
+    levels = 1;
+  }
   var baseBlock = blockIndents[baseBlockIndex];
   
   var block = { 

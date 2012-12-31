@@ -11,11 +11,13 @@ if
     and d == e
   body
 
+# Preferred syntax
 if a
     + b * 3
     == 8
   body
   
+# Not preferred, but valid
 if a +
     b * 3 ==
     8
