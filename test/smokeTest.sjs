@@ -11,11 +11,11 @@ addTest = (fname, shouldPass) ->
   it "Should #{ shouldPass ? "" : "not " }compile #{ fname }", ->
     contents = fs.readFileSync(fname, 'utf8')
     if shouldPass
-      sjs.compile(contents)
+      sjs.compile(contents, showScript: true)
     else
       passing = false
       try
-        sjs.compile(contents)
+        sjs.compile(contents, showScript: true)
       catch e
         passing = true
       if not passing

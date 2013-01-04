@@ -6,10 +6,24 @@ may optionally have extra spaces or tabs in subsequent lines, to
 ###
 
 if 
-    b == c
+    (b == c
+      # Nested!  This groups it with the line above it, meaning that there
+      # are implicit parenthesis around these lines
       or c == d
     and d == e
   body
+
+if
+    b == c or c == d
+      or d == e
+    and b == e
+  body
+
+(paren + test
+34 +
+    paren
+    + test * (
+      55
 
 # Preferred syntax
 if a

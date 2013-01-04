@@ -95,6 +95,7 @@ function indentBlockStart(levels, options) {
   stateRestore();
   
   //Base our state off of the last non-continuation block.
+  var bpos = _pos();
   var baseBlockIndex = blockIndents.length - 1;
   if (!options.isContinuation) {
     while (true) {
@@ -105,14 +106,20 @@ function indentBlockStart(levels, options) {
     }
   }
   else if (blockIndents[baseBlockIndex].isContinuation) {
-    //Continued continuations should only be one indent in
-    levels = 1;
+    if (blockIndents[baseBlockIndex].pos === bpos) {
+      //No levels in, since we're building on a continuation at the same level
+      levels = 0;
+    }
+    else {
+      //Continued continuations should only be one indent in
+      levels = 1;
+    }
   }
   var baseBlock = blockIndents[baseBlockIndex];
   
   var block = { 
     indent: baseBlock.indent + levels,
-    pos: _pos() 
+    pos: bpos
   };
   if (getBlock().pos === block.pos) {
     log("POSSIBLE DUPLICATE");

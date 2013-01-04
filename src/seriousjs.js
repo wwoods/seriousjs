@@ -7,6 +7,15 @@ var util = require('util');
 var vm = require('vm');
 var sjsCompiler = require('./compiler/compiler.js');
 
+//Options for all builds... used typically for testing and showScript = true.
+var permaOptions = this.permaOptions = {};
+
+if (typeof process !== 'undefined' 
+    && process.mainModule.filename.toLowerCase().indexOf("mocha/bin") >= 0) {
+  //We're in mocha
+  this.permaOptions.showScriptForNonFiles = true;
+}
+
 //Plug in to require
 if (require.extensions) {
   require.extensions['.sjs'] = function(module, filename) {
@@ -70,7 +79,8 @@ this.compile = function(text, options) {
   }
 
   script = sjsCompiler.compile(tree, options);
-  if (options.showScript) {
+  if (options.showScript 
+      || (!options.filename && permaOptions.showScriptForNonFiles)) {
     console.log(util.inspect(tree, null, 30));
     console.log(script);
   }

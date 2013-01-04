@@ -5,7 +5,7 @@
 
 { /* Globals for parsing */
 
-  var debug = false;
+  var debug = true;
 
   //Modified console.log; returns true always and can be turned off
   var log = function() { return true; };

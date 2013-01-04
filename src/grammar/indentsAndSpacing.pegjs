@@ -125,7 +125,8 @@ ASSERT_ON_NEWLINE "newline"
     
     
 ASSERT_ON_ENDLINE "end of line"
-  = CHECK_NEWLINE ASSERT_ON_NEWLINE 
+  //Matches end of line, without moving the cursor
+  = &(CHECK_NEWLINE ASSERT_ON_NEWLINE) 
     
 
 BLOCK_START
@@ -164,6 +165,11 @@ INDENT
 CONTINUATION_START
   = CHECK_NEWLINE ASSERT_ON_NEWLINE 
       & { return indentBlockStart(2, { isContinuation: true }); }
+
+
+CONTINUATION_OPEN
+  //For a continuation that might not start on a newline.
+  = CHECK_NEWLINE & { return indentBlockStart(2, { isContinuation: true }); }
 
   
 CONTINUATION_END
