@@ -4,7 +4,7 @@ _ "white space"
      before the current position and the current position.
 
      Conveniently, this also swallows whitespace.
-     
+
      Additionally, it handles INDENTED_BODY.
      */
   = & { return getBlock().isContinuation; } NEWLINE NEWLINE_SAME
@@ -26,7 +26,7 @@ _ "white space"
     }
     return false;
   }
-  
+
 
 INDENT_LEVEL "indent"
   = &{
@@ -37,7 +37,7 @@ INDENT_LEVEL "indent"
         }
       }
       _advance(indentWidth);
-      return true; 
+      return true;
     }
 
 
@@ -61,8 +61,8 @@ NEWLINE "newline"
     log("Found indent " + indent + " in block " + getBlockIndent());
     stateUpdate(indent);
   }
-  
-  
+
+
 COMMENT "comment"
   = "###" & {
         var p = _pos();
@@ -71,13 +71,13 @@ COMMENT "comment"
           return false;
         }
         _advance(end - p);
-        return true; 
+        return true;
         } "###"
    / "#" [^\n]+
 
 
 CHECK_NEWLINE
-  /* Since newlines might happen at the end of one or more blocks, but only one 
+  /* Since newlines might happen at the end of one or more blocks, but only one
    * block will actually get a newline character, make it conditional.
    */
   = & { stateRestore(); return true; } n:NEWLINE? {
@@ -96,12 +96,12 @@ CHECK_NEWLINE
 
 NEWLINE_SAME "indentation"
   = CHECK_NEWLINE ASSERT_ON_NEWLINE & {
-      log("(Checking for same line on " + _upos() 
-          + " for " + state.indent + " against " + getBlockIndent() 
-          + ")"); 
-      return state.indent === getBlockIndent(); 
+      log("(Checking for same line on " + _upos()
+          + " for " + state.indent + " against " + getBlockIndent()
+          + ")");
+      return state.indent === getBlockIndent();
     }
-    
+
 
 ASSERT_ON_NEWLINE "newline"
   = & {
@@ -122,11 +122,11 @@ ASSERT_ON_NEWLINE "newline"
       //End of stream, OK.
       return true;
     }
-    
-    
+
+
 ASSERT_ON_ENDLINE "end of line"
-  = CHECK_NEWLINE ASSERT_ON_NEWLINE 
-    
+  = CHECK_NEWLINE ASSERT_ON_NEWLINE
+
 
 BLOCK_START
   //Whenever this is used, anything between it and a corresponding BLOCK_END
@@ -134,8 +134,8 @@ BLOCK_START
   = CHECK_NEWLINE & {
       return indentBlockStart(0);
     }
-    
-    
+
+
 INDENT_BLOCK_START
   = & {
         return indentBlockStart(1);
@@ -155,17 +155,17 @@ BLOCK_END
 
 
 INDENT
-  = CHECK_NEWLINE & { 
+  = CHECK_NEWLINE & {
       log("Looking for indent to " + (getBlockIndent() + 1) + " at " + _upos());
-      return state.indent === getBlockIndent() + 1; 
+      return state.indent === getBlockIndent() + 1;
     }
 
-    
+
 CONTINUATION_START
-  = CHECK_NEWLINE ASSERT_ON_NEWLINE 
+  = CHECK_NEWLINE ASSERT_ON_NEWLINE
       & { return indentBlockStart(2, { isContinuation: true }); }
 
-  
+
 CONTINUATION_END
   = & { return indentBlockStop(false); } ASSERT_ON_ENDLINE
 
