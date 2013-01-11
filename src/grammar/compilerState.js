@@ -42,7 +42,7 @@ function stateUpdate(newIndent) {
 }
 
 function stateRestore() {
-  //Restore state closest to but not after pos, and delete anything after 
+  //Restore state closest to but not after pos, and delete anything after
   //it, since that is from a path that was rejected.
   var p = _pos();
   var toDelete = [];
@@ -60,7 +60,7 @@ function stateRestore() {
   for (var i = 0, m = toDelete.length; i < m; i++) {
     delete states[toDelete[i]];
   }
-  
+
   //Also clean up blocks that "haven't been started" yet.  We must
   //do this because the failure path for BLOCK_END pushes the block
   //back.
@@ -76,7 +76,7 @@ function stateRestore() {
       break;
     }
   }
-  
+
   state = deepCopy(state);
   if (closePos >= 0) {
     log("Restored state from " + closePos);
@@ -86,15 +86,16 @@ function stateRestore() {
 function indentBlockStart(levels, options) {
   //Returns true; when called, indentBodyStop() MUST be called even if the
   //match fails (do this with a ()? expression).
-  
+
   if (!options) {
     options = {};
   }
-  
+
   //Ensure we aren't out of sync due to failed rules
   stateRestore();
-  
+
   //Base our state off of the last non-continuation block.
+  var bpos = _pos();
   var baseBlockIndex = blockIndents.length - 1;
   if (!options.isContinuation) {
     while (true) {
@@ -107,12 +108,22 @@ function indentBlockStart(levels, options) {
   else if (blockIndents[baseBlockIndex].isContinuation) {
     //Continued continuations should only be one indent in
     levels = 1;
+    //And if the current indent is before the last continuation, then we
+    //shouldn't even indent again, as the two continuations are strongly
+    //coupled.
+    //Without this logic, the following code:
+    //(3
+    //    + 8
+    //Requires an extra indent in the + 8 line, or it becomes (3) + 8.
+    if (state.indent < blockIndents[baseBlockIndex].indent) {
+      levels = 0;
+    }
   }
   var baseBlock = blockIndents[baseBlockIndex];
-  
-  var block = { 
+
+  var block = {
     indent: baseBlock.indent + levels,
-    pos: _pos() 
+    pos: bpos
   };
   if (getBlock().pos === block.pos) {
     log("POSSIBLE DUPLICATE");

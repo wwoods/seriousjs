@@ -35,6 +35,7 @@
   var openers = /[\[\(=+\-\/*]|'''|"""/g;
   var closers = /([\]\)]|->|=>)/g;
   var interests = /[^a-zA-Z0-9]/;
+  var lastLineWasContinuation = false;
   while (lineStartPos < input.length && lineStartPos >= 0) {
     var nextPos = input.indexOf('\n', lineStartPos);
     var lineStr = input.substring(lineStartPos, nextPos);
@@ -52,6 +53,11 @@
       i += 1;
     }
 
+    //Regardless of if it's an indent or not, reset whether or not we are
+    //currently on a continuation line.
+    var lastLastWasContinuation = lastLineWasContinuation;
+    lastLineWasContinuation = false;
+
     charCounts[lineIndentChars[0]] += 1;
     var indentChars = lineIndentChars.length;
     var diff = indentChars - lastIndent;
@@ -59,18 +65,22 @@
       //Only track indents, and see if it's a continuation or a block
       //indent.
 
-      var beforeChars = lineStr.indexOf('#') - 1;
-      if (beforeChars < 0) {
-        beforeChars = lineStr.length - 1;
+      //Find indicators of a continuation at the beginning of the line we're
+      //looking at.
+      var beforeCharsEnd = lineStr.indexOf('#');
+      if (beforeCharsEnd < 0) {
+        beforeCharsEnd = lineStr.length;
       }
-      while (beforeChars >= 0) {
+      var beforeChars = 0;
+      while (beforeChars < beforeCharsEnd) {
         if (!interests.test(lineStr[beforeChars])) {
-          beforeChars += 1;
           break;
         }
-        beforeChars -= 1;
+        beforeChars += 1;
       }
 
+      //Find indicators of a continuation at the end of the line before the
+      //one we're looking at
       var afterCharsEnd = lastLineStr.indexOf('#');
       if (afterCharsEnd < 0) {
         afterCharsEnd = lastLineStr.length;
@@ -96,7 +106,10 @@
       }
       if (openChars > closeChars) {
         //Continuation, double indent
-        diff /= 2;
+        lastLineWasContinuation = true;
+        if (!lastLastWasContinuation) {
+          diff /= 2;
+        }
       }
       if (diff == 2 || diff == 4) {
         steps[diff] += 1;

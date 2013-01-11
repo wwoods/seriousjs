@@ -88,12 +88,26 @@ base_atom
   / string
   / list_literal
   / num:DecimalLiteral { return R({ op: "number", num: num}); }
-  / "(" _ expr:assign_stmt _ ")" {
-      return { "op": "()", "expr": expr };
+  // We put parens in a continuation so that multi-line parens look like the
+  // following:
+  // (a
+  //   or b
+  / "(" CONTINUATION_OPEN
+      innards:(_ paren_expr (_ ")")?)?
+      //If we're parenthesis terminated, we don't need the continuation to
+      //end with a newline.
+      //Luckily, the code will still execute, popping our block off
+      ended:CONTINUATION_END?
+      & { return innards; }
+      //We MUST use either an end of line or a closing paren to terminate the
+      //structure.
+      & { return ended || innards[2]; } {
+      return R({ op: "()", expr: innards[1] });
     }
-  / "(" _ expr:expression _ ")" {
-      return { "op": "()", "expr": expr };
-    }
+
+paren_expr
+  = assign_stmt
+  / expression
 
 assignable_atom
   = base:base_assignable_atom chain:atom_mod*
