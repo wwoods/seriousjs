@@ -2,10 +2,10 @@
 
 SeriousJS enforces syntax where a double indent means a line
 continuation, and single indents mean a statement block.  Line continuations
-may optionally have extra spaces or tabs in subsequent lines, to 
+may optionally have extra spaces or tabs in subsequent lines, to
 ###
 
-if 
+if
     (b == c
       # Nested!  This groups it with the line above it, meaning that there
       # are implicit parenthesis around these lines
@@ -15,7 +15,7 @@ if
 
 if
     b == c or c == d
-      or d == e
+    or d == e
     and b == e
   body
 
@@ -30,14 +30,14 @@ if a
     + b * 3
     == 8
   body
-  
+
 # Not preferred, but valid
 if a +
     b * 3 ==
     8
   body
-  
-if a == [ 
+
+if a == [
     1,2,3
   body
 

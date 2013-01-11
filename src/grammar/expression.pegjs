@@ -83,15 +83,7 @@ unary_op
   / "-" { return "unary_negate"; }
 
 base_atom
-  = /* Experimental paren-less version
-    & { return getBlock().pos < _pos(); } CONTINUATION_OPEN
-      innards:paren_expr?
-      CONTINUATION_END
-      & { return innards; } {
-      return R({ op: "()", expr: innards });
-    }
-  / */
-    dict_literal
+  = dict_literal
   / IdentifierMaybeMember
   / string
   / list_literal
@@ -100,12 +92,13 @@ base_atom
   // following:
   // (a
   //   or b
-  / CONTINUATION_OPEN
-      innards:(("(" _) paren_expr (_ ")")?)?
-      //If we're parenthesis terminated, we don't need the continuation end.
+  / "(" CONTINUATION_OPEN
+      innards:(_ paren_expr (_ ")")?)?
+      //If we're parenthesis terminated, we don't need the continuation to
+      //end with a newline.
       //Luckily, the code will still execute, popping our block off
       ended:CONTINUATION_END?
-      & { return innards; } 
+      & { return innards; }
       //We MUST use either an end of line or a closing paren to terminate the
       //structure.
       & { return ended || innards[2]; } {
