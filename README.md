@@ -39,7 +39,7 @@ projects, there were some other things that bugged me constantly:
   function bindings?  "@" should mean "the closest class object", and "this"
   should mean the context with which the current method was called.
 
-* Why are there so many darn aliases for tru/false?  It's because it's a
+* Why are there so many darn aliases for true/false?  It's because it's a
   scripting language.  I get that.  But for large, maintainable code bases, I
   don't feel that it's appropriate to have so many ways of saying "false" and
   "true".  Feel free to correct me on that one.
@@ -53,14 +53,18 @@ projects, there were some other things that bugged me constantly:
 While those aren't huge, they got me thinking.  What are some other ways that
 Coffee-Script could be improved?  Well, how about:
 
-* Operator overloading
-
 * Support for asynchronous fibers / continuations?  Programming callbacks in
   an imperative manner rather than a bunch of nested functions
 
 * Tight integration with RequireJS, to provide a uniform, consistent language
   between NodeJS and the browser, that runs in all environments and
   "just works"
+
+* Doc strings!  One of the best things about Python that really helped it
+  be a great language was doc strings.  An interactive language needs
+  interactive help.  So why not start encouraging them?
+
+* Operator overloading (deferred)
 
 Anyway, that's the jist of it.  I'm not expecting people to jump ship on this
 one - it started as an educational project but the focus is on production
@@ -79,7 +83,7 @@ learn.
 Usage
 -----
 
-To run any SeriousJS source file in NodeJS, just use:
+For a shorthand to run any SeriousJS script in NodeJS, just use:
 
     seriousjs app.sjs
 
@@ -93,13 +97,16 @@ file, which suffices for simple projects.
 
 To compile your new application, run:
 
-    seriousjs build app.sjs
+    seriousjs app.sjs --build
 
 from your application directory.  A "build" directory will be created, which
 has compiled sources for your client.
 
 To run the compiled version, run:
 
-    seriousjs --built app.sjs
+    seriousjs app.sjs --built
+
+Note that if you run --built without --build first, a build will be triggered
+anyway.
 
 
