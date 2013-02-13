@@ -42,6 +42,22 @@ paren = test = 4
     + test * (
       55"""
 
+  it "Should work with complicated lambda continuations", ->
+    m = sjs.eval """
+        a = ->
+          b = ->
+            method = (a, b, c) ->
+              a + b + c(44)
+            method(
+                2
+                20
+                (v) ->
+                  v += 8
+                  return v
+    """
+    assert.equals 74, m.a()()
+
+
   it "Should properly error for block indented segments", ->
     assert.throws -> (sjs.eval """
         q = 3

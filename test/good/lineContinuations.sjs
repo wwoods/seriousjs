@@ -36,6 +36,9 @@ if a +
     b * 3 ==
     8
   body
+elif b
+    + c == 8
+  body
 
 if a == [
     1,2,3
