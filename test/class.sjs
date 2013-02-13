@@ -12,21 +12,18 @@ describe "Classes", ->
         """
     assert.equal true, m.r
 
-  it "Should work without the new operator", ->
+  it "Should throw error without the new operator", ->
     m = sjs.eval """
         class a
-
-        b2 = a()
-        r2 = b2 instanceof a
         """
-    assert.equal true, m.r2
+    assert.throws -> m.a()
 
   it "Should work with constructors", ->
     m = sjs.eval """
         class a
           constructor: (v) ->
             @v = v
-        q = a(5)"""
+        q = new a(5)"""
     assert.equal 5, m.q.v
 
   it "Should work with constructors with @ properties", ->
@@ -34,7 +31,7 @@ describe "Classes", ->
         class a
           constructor: (@v) ->
             pass
-        q = a(6)"""
+        q = new a(6)"""
     assert.equal 6, m.q.v
 
   it "Should support default values in constructors", ->
@@ -42,7 +39,7 @@ describe "Classes", ->
         class a
           constructor: (@v = 8) ->
             pass
-        q = a()"""
+        q = new a()"""
         showScript: true
     assert.equal 8, m.q.v
 
@@ -51,8 +48,8 @@ describe "Classes", ->
         class a
           constructor: {@v = 8} ->
             pass
-        q = a()
-        j = a(v: 9)"""
+        q = new a()
+        j = new a(v: 9)"""
         showScript: true
     assert.equal 8, m.q.v
     assert.equal 9, m.j.v
@@ -61,7 +58,7 @@ describe "Classes", ->
     m = sjs.eval """
         class a
           f: () -> 32
-        q = a()"""
+        q = new a()"""
     assert.equal 32, m.q.f()
 
   it "Should bind @ to closest class member", ->
@@ -73,7 +70,7 @@ describe "Classes", ->
           f: () ->
             g = () -> @q
             return g()
-        inst = a()
+        inst = new a()
         """
         showScript: true
     assert.equal 18, m.inst.f()
@@ -84,7 +81,7 @@ describe "Classes", ->
           @v = 6
 
           inc = () -> @class.v += 1
-        q = a()
+        q = new a()
         q.inc()
         q.inc()
         """

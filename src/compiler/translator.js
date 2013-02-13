@@ -54,12 +54,22 @@ this.Translator = (function() {
             w.write("if(this.constructor!==");
             w.write(options.isConstructorFor);
             w.write("){");
-            var r = w.tmpVar();
-            w.write("=Object.create(");
-            w.write(options.isConstructorFor);
-            w.write(".prototype);");
-            w.write(r + ".constructor.apply(" + r + ", arguments);");
-            w.write("return " + r + ";}");
+            w.write('throw new Error("not called with new operator")');
+
+            if (false) {
+              //This chunk of code allows creating objects without the "new"
+              //keyword.  Interesting, but largely unproductive.  And since so
+              //many of the libraries out there don't support it, supporting it
+              //at a language level feels stupid.
+              var r = w.tmpVar();
+              w.write("=Object.create(");
+              w.write(options.isConstructorFor);
+              w.write(".prototype);");
+              w.write(r + ".constructor.apply(" + r + ", arguments);");
+              w.write("return " + r + ";");
+            }
+
+            w.write("}");
           }
           e.translate(n.body, { isReturnClosure: true });
           w.write("}");
