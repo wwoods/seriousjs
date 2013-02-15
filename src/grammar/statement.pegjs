@@ -5,6 +5,7 @@ statement_list
       return inner;
     }
 
+
 statement_list_inner
   = ASSERT_ON_NEWLINE
         head:statement tail:(NEWLINE_SAME statement)*
@@ -16,6 +17,7 @@ statement_list_inner
       return r;
     }
 
+
 statement_body
   = CHECK_NEWLINE !ASSERT_ON_NEWLINE _ head:expression { return [ head ]; }
   / INDENT_BLOCK_START inner:statement_list_inner? BLOCK_END
@@ -23,27 +25,37 @@ statement_body
       return inner;
     }
 
+
 statement
-  = CONTINUATION_START stmt:statement_inner? CONTINUATION_END
+  = statement_with_body
+  / CONTINUATION_START stmt:statement_no_body? CONTINUATION_END
       & { return stmt; }
       { stmt.line = line(); return R(stmt); }
 
-statement_inner
+
+statement_with_body
   = stmt:if_stmt { return R(stmt); }
   / stmt:for_stmt { return R(stmt); }
-  / "return" _ result:expression {
+  / try_stmt
+
+
+statement_no_body
+  = "return" _ result:expression {
       return R({ "op": "return", "result": result });
     }
-  / try_stmt
   / stmt:assign_stmt { return stmt; }
   / stmt:class_stmt { return stmt; }
   / expr:expression { return R(expr); }
 
+
 if_stmt
- = "if" _ cond:expression
+ //We use CONTINUATION around expression since, even if the continuation
+ //feature is used, the body of the if is only one indent in.
+ = "if" CONTINUATION_OPEN innerCond:(_ cond:expression)? CONTINUATION_END
+        & { return innerCond; }
         expr:statement_body
         elsePart:else_part? {
-      return { "op": "if", "condition": cond, "then": expr,
+      return { "op": "if", "condition": innerCond[1], "then": expr,
           "else": elsePart || null };
     }
 

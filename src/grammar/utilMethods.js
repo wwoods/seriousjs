@@ -70,10 +70,13 @@ function _pos() {
   return pos;
 }
 
-function _upos() {
+function _upos(p) {
   //Return user friendly offset into buffer
   var oReport = reportedPos;
-  reportedPos = _pos();
+  if (p == null) {
+    p = _pos();
+  }
+  reportedPos = p;
   var r = line() + ':' + column();
   reportedPos = oReport;
   return r;

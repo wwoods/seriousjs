@@ -94,14 +94,13 @@ function indentBlockStart(levels, options) {
   //Ensure we aren't out of sync due to failed rules
   stateRestore();
 
-  //Base our state off of the last non-continuation block.
   var bpos = _pos();
   var baseBlockIndex = blockIndents.length - 1;
   if (!options.isContinuation) {
-    while (true) {
-      if (!blockIndents[baseBlockIndex].isContinuation) {
-        break;
-      }
+    //Starting a non-continuation; we need to indent from either the last-used
+    //continuation, or the last non-continuation indent.
+    while (state.indent < blockIndents[baseBlockIndex].indent
+        && blockIndents[baseBlockIndex].isContinuation) {
       baseBlockIndex -= 1;
     }
   }
@@ -109,7 +108,7 @@ function indentBlockStart(levels, options) {
     //Continued continuations should only be one indent in
     levels = 1;
     //And if the current indent is before the last continuation, then we
-    //shouldn't even indent again, as the two continuations are strongly
+    //shouldn't indent again, as the two continuations are strongly
     //coupled.
     //Without this logic, the following code:
     //(3
@@ -172,7 +171,12 @@ function indentBlockStop(mustMatch) {
     //Not a match!  We want to push our block back on the stack, since
     //a negative result might trigger PegJS to go back and try another
     //parsing path, which could result in us being back here.
-    blockIndents.push(oldBlock);
+    //So.... this was causing issues, see test in parensAndLines.sjs,
+    //"Should work with complicated lambda continuations".
+
+    //Commenting it out doesn't fail any tests, so it's very possible this
+    //situation was fixed by something else.
+    //blockIndents.push(oldBlock);
   }
   return result;
 }

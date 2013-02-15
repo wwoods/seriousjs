@@ -334,7 +334,6 @@ this.Writer = (function() {
   
   Writer.prototype.newline = function() {
     this.write('\n' + this._getIndent());
-    this._line += 1;
   };
   
   Writer.prototype.write = function(w) {
@@ -347,6 +346,11 @@ this.Writer = (function() {
     }
     else {
       this._output.push(w);
+      if (typeof w === 'string') {
+        //There may have been newlines in the output, so be sure to push
+        //our line number out.
+        this._line += (w.split(/\n/g).length - 1);
+      }
     }
   }
   

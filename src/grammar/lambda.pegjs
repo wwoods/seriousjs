@@ -4,6 +4,7 @@ lambda_op
       return op;
     }
 
+
 lambda
   = parms:lambda_args? op:lambda_op
         body:lambda_body {
@@ -13,6 +14,7 @@ lambda
       log("Finished lambda at " + _pos());
       return { op: op, parms: parms, body: body.body, doc: body.doc };
     }
+
 
 lambda_args
   //Note - we might have leading and trailing whitespace.
@@ -27,11 +29,13 @@ lambda_args
       return args;
     }
 
+
 lambda_args_list
   //A list of arguments that has no delimiter
   = head:lambda_arg tail:(ARG_SEP lambda_arg)* {
       return getArray(head, tail, 1);
     }
+
 
 lambda_arg
   = member:"@"? id:Identifier defaultVal:(_ "=" _ expression)? {
@@ -60,6 +64,7 @@ lambda_body
         & { return inner; } {
       return R({ doc: doc, body: inner });
     }
+
 
 lambda_doc
   = doc:string NEWLINE { return doc; }
