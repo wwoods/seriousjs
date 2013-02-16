@@ -50,14 +50,7 @@ lambda_arg
 
 
 lambda_body
-  = CHECK_NEWLINE !ASSERT_ON_NEWLINE _ "pass" {
-      return R({ body: [] });
-    }
-  / INDENT_BLOCK_START ps:"pass"? BLOCK_END
-        & { return ps; } {
-      return R({ body: [] });
-    }
-  / CHECK_NEWLINE !ASSERT_ON_NEWLINE _ head:(assign_stmt / expression) {
+  = CHECK_NEWLINE !ASSERT_ON_NEWLINE _ head:(assign_stmt / expression) {
       return R({ body: [ head ] });
     }
   / INDENT_BLOCK_START doc:lambda_doc? inner:statement_list_inner? BLOCK_END

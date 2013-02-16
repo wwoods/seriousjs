@@ -32,8 +32,8 @@
   var lineStartPos = 0; //First line is a newline
   var lastIndent = 0;
   var lastLineStr = '';
-  var openers = /[\[\(=+\-\/*]|'''|"""/g;
-  var closers = /([\]\)]|->|=>)/g;
+  var openers = /[\[\(=+\/*]|-[^>]|'''|"""/g;
+  var closers = /([\]\)]|->)/g;
   var interests = /[^a-zA-Z0-9]/;
   var lastLineWasContinuation = false;
   while (lineStartPos < input.length && lineStartPos >= 0) {
@@ -97,13 +97,18 @@
       var interestChars = lastLineStr.substring(afterChars, afterCharsEnd)
           + lineStr.substring(0, beforeChars);
 
+      var openCharList = "";
+      var closeCharList = "";
       var openChars = 0, closeChars = 0, m;
       while ((m = openers.exec(interestChars)) !== null) {
         openChars += 1;
+        openCharList += m[0];
       }
       while ((m = closers.exec(interestChars)) !== null) {
         closeChars += 1;
+        closeCharList += m[0];
       }
+
       if (openChars > closeChars) {
         //Continuation, double indent
         lastLineWasContinuation = true;

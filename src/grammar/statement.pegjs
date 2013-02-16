@@ -40,8 +40,8 @@ statement_with_body
 
 
 statement_no_body
-  = "return" _ result:expression {
-      return R({ "op": "return", "result": result });
+  = "return" result:(_ result:expression)? {
+      return R({ "op": "return", "result": result && result[1] });
     }
   / stmt:assign_stmt { return stmt; }
   / stmt:class_stmt { return stmt; }

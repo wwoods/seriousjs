@@ -30,7 +30,7 @@ describe "Classes", ->
     m = sjs.eval """
         class a
           constructor: (@v) ->
-            pass
+            return
         q = new a(6)"""
     assert.equal 6, m.q.v
 
@@ -38,7 +38,7 @@ describe "Classes", ->
     m = sjs.eval """
         class a
           constructor: (@v = 8) ->
-            pass
+            return
         q = new a()"""
         showScript: true
     assert.equal 8, m.q.v
@@ -47,7 +47,7 @@ describe "Classes", ->
     m = sjs.eval """
         class a
           constructor: {@v = 8} ->
-            pass
+            return
         q = new a()
         j = new a(v: 9)"""
         showScript: true

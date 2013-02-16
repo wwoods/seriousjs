@@ -383,7 +383,10 @@ this.Translator = (function() {
         },
      "return": function(e, n, w) {
           w.write("return ");
-          e.translate(n.result);
+          if (n.result) {
+            //Otherwise, blank return statement.
+            e.translate(n.result);
+          }
         },
      "require": function(e, n, w) {
           e.translate(n.defs);
