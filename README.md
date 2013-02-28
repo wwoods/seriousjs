@@ -110,3 +110,32 @@ Note that if you run --built without --build first, a build will be triggered
 anyway.
 
 
+Syntax
+------
+
+Functions are lambdas:
+
+    (a, b) -> a + b
+
+Dict unmapping:
+
+    { a, b } = { a: 8, b: 9 }
+    { a = 8, b } = { b: 9 }
+
+    # < means that the matched dict must contain a subset of the specified
+    # keys.  That is, the first will be OK (b is undefined), but the second
+    # will throw an error (c not allowed)!
+    {< a, b } = { a: 1 }
+    {< a, b } = { a: 1, c: 3 }
+
+    # > means at least the specified keys must be in the matched dict
+    {> a } = { a: 1, b: 2 }
+
+    # = means keys must match exactly
+    {= a, b } = { a: 3, b: 4 }
+
+Dict unmapping as lambda arguments:
+
+    { a, b } -> a + b
+    (a, b, {< add = true}) -> add ? a + b : a
+
