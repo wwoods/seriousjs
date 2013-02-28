@@ -25,33 +25,70 @@ if (require.extensions) {
   };
 }
 
-//Construct grammar
-var source = fs.readFileSync(__dirname + '/grammar/seriousjs.pegjs', 'utf8');
-var osource = source;
-var re = /##include ([^\s]+)/g;
-var hasReplaced = true;
-while (hasReplaced) {
-  var m;
-  osource = source;
-  hasReplaced = false;
-  while ((m = re.exec(osource)) !== null) {
-    hasReplaced = true;
-    var allText = m[0];
-    var fname = m[1];
-    var replacement = fs.readFileSync(__dirname + '/grammar/' + fname, 'utf8');
-    source = source.replace(allText, replacement);
+var _parserFile = __dirname + '/grammar/_parser.js';
+var _buildParser = function() {
+  //Construct grammar
+  var source = fs.readFileSync(__dirname + '/grammar/seriousjs.pegjs', 'utf8');
+  var osource = source;
+  var re = /##include ([^\s]+)/g;
+  var hasReplaced = true;
+  while (hasReplaced) {
+    var m;
+    osource = source;
+    hasReplaced = false;
+    while ((m = re.exec(osource)) !== null) {
+      hasReplaced = true;
+      var allText = m[0];
+      var fname = m[1];
+      var replacement = fs.readFileSync(__dirname + '/grammar/' + fname, 
+          'utf8');
+      source = source.replace(allText, replacement);
+    }
+  }
+
+  //Write out for debugging
+  fs.writeFileSync(__dirname + '/grammar/_compiled.pegjs', source, 'utf8')
+
+  //Build the parser and compiler
+  var parserSource = pegJs.buildParser(
+    source,
+    { output: 'source', trace: true }
+  );
+  fs.writeFileSync(_parserFile, parserSource, 'utf8');
+  return parserSource;
+};
+
+var _isNewerThan = function(mtime, target) {
+  var stat = fs.statSync(target);
+  if (stat.isDirectory()) {
+    var listing = fs.readdirSync(target);
+    for (var i = 0, m = listing.length; i < m; i++) {
+      if (_isNewerThan(mtime, path.join(target, listing[i]))) {
+        return true;
+      }
+    }
+  }
+  else if (stat.isFile() && path.basename(target)[0] !== '_') {
+    var targetMtime = fs.statSync(target).mtime;
+    if (targetMtime >= mtime) {
+      console.log(target + " changed; rebuilding");
+      return true;
+    }
+  }
+  return false;
+};
+
+var parserSource = null;
+if (fs.existsSync(_parserFile)) {
+  var mtime = fs.statSync(_parserFile).mtime;
+  if (!_isNewerThan(mtime, __dirname + '/grammar')) {
+    parserSource = fs.readFileSync(_parserFile, 'utf8');
   }
 }
+if (parserSource === null) {
+  parserSource = _buildParser();
+}
 
-//Write out for debugging
-fs.writeFileSync(__dirname + '/grammar/_compiled.pegjs', source, 'utf8')
-
-//Build the parser and compiler
-var parserSource = pegJs.buildParser(
-  source,
-  { output: 'source', trace: true }
-);
-fs.writeFileSync(__dirname + '/grammar/_parser.js', parserSource, 'utf8');
 this.parser = eval(parserSource);
 this.compile = function(text, options) {
   //Returns the legible javascript version of text.
