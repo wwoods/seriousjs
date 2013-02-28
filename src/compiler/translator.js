@@ -235,8 +235,14 @@ this.Translator = (function() {
         },
      "dictAssignArgs": function(e, n, w) {
           // A dict assignment from arguments...
-          var r = w.tmpVar();
-          n.assign.right = { op: "id", id: r };
+          if (n.id) {
+            e.translate(n.id);
+            n.assign.right = n.id;
+          }
+          else {
+            var r = w.tmpVar();
+            n.assign.right = { op: "id", id: r };
+          }
           //Since they're args, allow null or undefined to map to an empty
           //object.
           n.assign.allowUndefined = true;
@@ -380,6 +386,9 @@ this.Translator = (function() {
           e.translate(n.left);
           w.write(" || ");
           e.translate(n.right);
+        },
+     "regex": function(e, n, w) {
+          w.write(n.literal);
         },
      "return": function(e, n, w) {
           w.write("return ");

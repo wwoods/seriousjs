@@ -6,6 +6,8 @@ describe "Assignment", ->
   it "Should work with variables", ->
     assert.equal 5, (sjs.eval "a = 5").a
     assert.equal 6, (sjs.eval "a = b = 6").b
+  it "Should work with variable names starting with keywords", ->
+    assert.equal 7, (sjs.eval "newA = 7").newA
   it "Should work with multi-line dicts", ->
     m = sjs.eval """
         a =

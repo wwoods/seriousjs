@@ -1,4 +1,7 @@
 ReservedWord
+  = ReservedWordInner !IdentifierPart
+  
+ReservedWordInner
   = "and"
   / "break"
   / "class"

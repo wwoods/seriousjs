@@ -18,8 +18,8 @@ lambda
 
 lambda_args
   //Note - we might have leading and trailing whitespace.
-  = d:dict_assignable _ {
-      return [ { op: "dictAssignArgs", assign: d } ];
+  = d:lambda_dict_arg _ {
+      return [ d ];
     }
   / "(" _ ARG_SEP? args:lambda_args_list?
         ARG_SEP? _ ")" _ {
@@ -38,7 +38,8 @@ lambda_args_list
 
 
 lambda_arg
-  = member:"@"? id:Identifier defaultVal:(_ "=" _ expression)? {
+  = lambda_dict_arg
+  / member:"@"? id:Identifier defaultVal:(_ "=" _ expression)? {
       if (member) {
         id.op = "memberId";
       }
@@ -46,6 +47,19 @@ lambda_arg
         id.defaultVal = defaultVal[3];
       }
       return id;
+    }
+
+
+lambda_dict_arg
+  = d:dict_assignable e:(_ "=" _ "@"? Identifier)? {
+      var id = null;
+      if (e) {
+        id = e[4];
+        if (e[3]) {
+          id.op = "memberId";
+        }
+      }
+      return R({ op: "dictAssignArgs", assign: d, id: id });
     }
 
 

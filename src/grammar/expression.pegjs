@@ -87,6 +87,7 @@ base_atom
   / IdentifierMaybeMember
   / string
   / list_literal
+  / regex_literal
   / num:DecimalLiteral { return R({ op: "number", num: num}); }
   // We put parens in a continuation so that multi-line parens look like the
   // following:
@@ -138,6 +139,8 @@ list_literal
     }
 
 ##include dict.pegjs
+
+##include regex.pegjs
 
 atom_mod
   //Method calls cannot have space before them.
