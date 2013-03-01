@@ -135,14 +135,16 @@ this.eval = function(text, options) {
   sandbox.__filename = options.filename || 'eval';
   sandbox.__dirname = path.dirname(sandbox.__filename);
   sandbox.module = mod = new module(options.modulename || 'eval');
-  sandbox.require = req = function(path) { return module._load(path, mod, true); };
+  sandbox.require = req = function(path) { 
+    return module._load(path, mod, true); 
+  };
   for (var k in Object.getOwnPropertyNames(require)) {
     req[k] = require[k];
   }
   req.paths = module._nodeModulePaths(process.cwd())
   mod.filename = sandbox.__filename;
   var code = this.compile(text, options);
-  var r = vm.runInContext(code, sandbox);
+  var r = vm.runInContext(code, sandbox, sandbox.__filename);
   if (options.isScript) {
     return r;
   }
@@ -152,7 +154,7 @@ this.eval = function(text, options) {
 
 this.evalFile = function(filename) {
   //Execute and run the given sjs file
-  data = fs.readFileSync(filename, 'utf8');
+  var data = fs.readFileSync(filename, 'utf8');
   return this.eval(data, { filename: filename });
 };
 

@@ -6,13 +6,21 @@ var path = require('path');
 var sjs = require(path.join(__dirname, '../src/seriousjs'));
 
 program
-  .version('0.1.0')
-  .usage('[options] file')
+  .version('0.1.1')
+  .option('--create', 'create a new client/server pair with given name')
+  .usage('[options] file/project')
   .parse(process.argv);
 
 
 if (program.args.length === 1) {
-  sjs.evalFile(program.args[0]);
+  fileOrProject = program.args[0];
+  if (program.create) {
+    var project = require(path.join(__dirname, '../src/binUtil/project'));
+    project.create(fileOrProject);
+  }
+  else {
+    sjs.evalFile(fileOrProject);
+  }
 }
 else {
   program.help();

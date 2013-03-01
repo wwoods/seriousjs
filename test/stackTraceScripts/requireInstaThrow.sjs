@@ -1,0 +1,3 @@
+
+require ./instaThrow as it
+

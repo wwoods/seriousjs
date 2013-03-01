@@ -7,7 +7,7 @@ require util
 
 require ../src/seriousjs as seriousjs
 
-describe "bin/seriousjs", ->
+describe "bin/seriousjs and dependencies", ->
   before (done) ->
     # Test setup; remove the node_modules directory to test that packages.json
     # installs everything needed
