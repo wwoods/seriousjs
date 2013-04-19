@@ -1,8 +1,7 @@
 
 var self = this;
-var util = require('util');
-var Translator = require('./translator.js').Translator
-var Writer = require('./writer.js').Writer;
+var translator = require('./translator.js');
+var writer = require('./writer.js');
 
 this.cleanupTree = function(tree) {
   for (var n in tree) {
@@ -21,11 +20,11 @@ this.cleanupTree = function(tree) {
 this.compile = function(tree, options) {
   self.cleanupTree(tree);
   
-  var writer = new Writer();
-  var translator = new Translator(writer, options);
+  var writerObj = new writer.Writer();
+  var translatorObj = new translator.Translator(writerObj, options);
   
-  translator.translate(tree);
+  translatorObj.translate(tree);
   
-  var script = writer.getOutput();
+  var script = writerObj.getOutput();
   return script;
 };

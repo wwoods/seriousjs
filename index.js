@@ -1,3 +1,8 @@
+
+/**
+  *SeriousJS - A simple syntax for a complicated world
+  */
+
 var self = this;
 var pegJs = require('./lib/peg-0.7.0').PEG;
 var fs = require('fs');
@@ -64,6 +69,68 @@ var _buildParser = function() {
   );
   fs.writeFileSync(_parserFile, parserSource, 'utf8');
   return parserSource;
+};
+
+this._buildEmbedded = function() {
+  //Compile seriousjs-embed.js.
+  var embedFile = __dirname + '/lib/seriousjs-embed.js';
+  var contents = [ '(function(root) {' ];
+  var compileDir = __dirname + '/src/compiler';
+  var addFile = function(name, fpath, useResult) {
+    //For the parser, we use useResult since the file is a method that returns
+    //the parser variable.
+    var fc = fs.readFileSync(fpath, 'utf8');
+    var req;
+    var requireLines = /^var ([a-zA-Z0-9_]+)[^\n=]*=\s*require\(['"]([^'"]+)['"][^\n]+$/mg;
+    while ((req = requireLines.exec(fc)) != null) {
+      var nextPath = path.dirname(fpath) + "/" + req[2];
+      addFile(req[1], nextPath);
+    }
+    fc = fc.replace(requireLines, "//require line removed");
+    contents.push("var " + name + " = {};\n");
+    if (useResult) {
+      contents.push(name + " = ");
+    }
+    else {
+      contents.push("(function(exports) {\n");
+    }
+    contents.push(fc);
+    if (!useResult) {
+      contents.push("}).call(" + name + "," + name + ");\n");
+    }
+    else {
+      contents.push("\n");
+    }
+  };
+  //Clue in the parser source from the built parser
+  addFile("parser", _parserFile, true);
+  addFile("compiler", compileDir + '/compiler.js');
+
+  //Now, build our "compile" function.
+  contents.push("\nfunction compile(text, options) {\n\
+      var tree;\n\
+      if (options == null) { options = {}; }\n\
+      if (text.charAt(text.length - 1) !== '\\n') {\n\
+        text += '\\n';\n\
+      }\n\
+\n\
+      try {\n\
+        tree = parser.parse(text, { });\n\
+      }\n\
+      catch (e) {\n\
+        var header = 'Line ' + e.line + ', column ' + e.column;\n\
+        if (options.filename) {\n\
+          header += ' of ' + options.filename;\n\
+        }\n\
+        e.message = header + ': ' + e.message;\n\
+        throw e;\n\
+      }\n\
+\n\
+      return compiler.compile(tree, options);\n\
+  }\nthis.seriousjs = { compile: compile };\nreturn this;\n");
+
+  contents.push('}).call(this, this);');
+  fs.writeFileSync(embedFile, contents.join(''), 'utf8');
 };
 
 var _isNewerThan = function(mtime, target) {

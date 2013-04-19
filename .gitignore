@@ -1,3 +1,4 @@
+/lib/seriousjs-embed.js
 /pegjs
 /src/grammar/_compiled.pegjs
 /src/grammar/_parser.js

@@ -110,6 +110,14 @@ Note that if you run --built without --build first, a build will be triggered
 anyway.
 
 
+Usage in a browser
+------------------
+
+If you run seriousjs --compile-only (ran during install anyway), then the file
+lib/seriousjs-embed.js will be generated.  This is a self-contained file that
+may be used in a browser (or NodeJS, of course).
+
+
 Syntax
 ------
 

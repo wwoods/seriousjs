@@ -8,12 +8,14 @@ var sjs = require(path.join(__dirname, '../'));
 program
   .version('0.1.1')
   .option('--create', 'create a new client/server pair with given name')
-  .option('--compile-only', 'compile the language and exit')
+  .option('--compile-only', 'compile the language and embeddable script, then exit')
   .usage('[options] file/project <args...>')
   .parse(process.argv);
 
 if (program.compileOnly) {
-  //When sjs was require'd, it was compiled.  So we're good.
+  //When sjs was require'd, it was compiled.  So we're good on the parser, but
+  //we need to make the seriousjs-embed.js file as well.
+  sjs._buildEmbedded();
 }
 else if (program.args.length >= 1) {
   fileOrProject = program.args[0];
