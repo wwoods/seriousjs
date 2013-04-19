@@ -9,10 +9,10 @@ require ../../ as seriousjs
 
 describe "bin/seriousjs and dependencies", ->
   before (done) ->
+    this.timeout(10000)
+
     # Test setup; remove the node_modules directory to test that packages.json
     # installs everything needed
-    this.timeout(5000)
-
     rmDir = (dir) ->
       try
         files = fs.readdirSync(dir)
@@ -43,11 +43,19 @@ describe "bin/seriousjs and dependencies", ->
 
 
   it "Should run fibonacci.sjs", (done) ->
-    this.timeout(10000)
     cp.exec(
         "bin/seriousjs examples/fibonacci.sjs"
         cwd: __dirname + '/../..'
         (error, stdout, stderr) ->
           assert.equal "", stderr
           assert.equal "fib(5): 5\nfib(10): 55\nfib(20): 6765\n", stdout
+          done()
+
+  it "Should run fibonacci.sjs with args", (done) ->
+    cp.exec(
+        "bin/seriousjs examples/fibonacci.sjs 8"
+        cwd: __dirname + '/../..'
+        (error, stdout, stderr) ->
+          assert.equal "", stderr
+          assert.equal "fib(8): 21\n", stdout
           done()
