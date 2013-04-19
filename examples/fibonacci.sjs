@@ -6,7 +6,7 @@ fib = (n) ->
     return 0
   elif n == 1
     return 1
-  fib(n - 1) + fib(n - 2)
+  return fib(n - 1) + fib(n - 2)
 
 if process.argv.length > 2
   v = parseInt(process.argv[2])
