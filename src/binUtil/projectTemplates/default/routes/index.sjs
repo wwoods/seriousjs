@@ -1,7 +1,5 @@
 
-/*
- * GET home page.
- */
+# GET home page.
 
 index = (req, res) ->
   res.render('index', title: 'Express')
