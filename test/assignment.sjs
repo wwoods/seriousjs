@@ -1,6 +1,6 @@
 
 require assert
-require ../src/seriousjs as sjs
+require ../ as sjs
 
 describe "Assignment", ->
   it "Should work with variables", ->

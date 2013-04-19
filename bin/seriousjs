@@ -3,7 +3,7 @@
 var program = require('commander');
 var path = require('path');
 
-var sjs = require(path.join(__dirname, '../src/seriousjs'));
+var sjs = require(path.join(__dirname, '../'));
 
 program
   .version('0.1.1')

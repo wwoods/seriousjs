@@ -1,11 +1,11 @@
 var self = this;
-var pegJs = require('../lib/peg-0.7.0').PEG;
+var pegJs = require('./lib/peg-0.7.0').PEG;
 var fs = require('fs');
 var module = require('module');
 var path = require('path');
 var util = require('util');
 var vm = require('vm');
-var sjsCompiler = require('./compiler/compiler.js');
+var sjsCompiler = require('./src/compiler/compiler.js');
 
 //Options for all builds... used typically for testing and showScript = true.
 var permaOptions = this.permaOptions = {};
@@ -13,7 +13,14 @@ var permaOptions = this.permaOptions = {};
 if (typeof process !== 'undefined' 
     && process.mainModule.filename.toLowerCase().indexOf("mocha/bin") >= 0) {
   //We're in mocha
-  this.permaOptions.showScriptForNonFiles = true;
+  this.permaOptions.showScriptAfterTest = true;
+  var currentScriptLines = null;
+  var lastTest = null;
+  this.testAddCompiledScript = function(script) {
+    //Ideally this would add to a buffer that only prints if the current test
+    //fails, but that doesn't look straightforward.  So maybe later.
+    console.log(script);
+  };
 }
 
 //Plug in to require
@@ -25,10 +32,11 @@ if (require.extensions) {
   };
 }
 
-var _parserFile = __dirname + '/grammar/_parser.js';
+var _parserFile = __dirname + '/src/grammar/_parser.js';
 var _buildParser = function() {
   //Construct grammar
-  var source = fs.readFileSync(__dirname + '/grammar/seriousjs.pegjs', 'utf8');
+  var source = fs.readFileSync(__dirname + '/src/grammar/seriousjs.pegjs', 
+      'utf8');
   var osource = source;
   var re = /##include ([^\s]+)/g;
   var hasReplaced = true;
@@ -40,14 +48,14 @@ var _buildParser = function() {
       hasReplaced = true;
       var allText = m[0];
       var fname = m[1];
-      var replacement = fs.readFileSync(__dirname + '/grammar/' + fname, 
+      var replacement = fs.readFileSync(__dirname + '/src/grammar/' + fname, 
           'utf8');
       source = source.replace(allText, replacement);
     }
   }
 
   //Write out for debugging
-  fs.writeFileSync(__dirname + '/grammar/_compiled.pegjs', source, 'utf8')
+  fs.writeFileSync(__dirname + '/src/grammar/_compiled.pegjs', source, 'utf8');
 
   //Build the parser and compiler
   var parserSource = pegJs.buildParser(
@@ -81,7 +89,7 @@ var _isNewerThan = function(mtime, target) {
 var parserSource = null;
 if (fs.existsSync(_parserFile)) {
   var mtime = fs.statSync(_parserFile).mtime;
-  if (!_isNewerThan(mtime, __dirname + '/grammar')) {
+  if (!_isNewerThan(mtime, __dirname + '/src/grammar')) {
     parserSource = fs.readFileSync(_parserFile, 'utf8');
   }
 }
@@ -117,9 +125,15 @@ this.compile = function(text, options) {
 
   script = sjsCompiler.compile(tree, options);
   if (options.showScript 
-      || (!options.filename && permaOptions.showScriptForNonFiles)) {
-    console.log(util.inspect(tree, null, 30));
-    console.log(script);
+      || (!options.filename && permaOptions.showScriptAfterTest)) {
+    var lines = util.inspect(tree, null, 30) + "\n\n" + script;
+    if (options.showScript) {
+      console.log(lines);
+    }
+    else {
+      //test
+      self.testAddCompiledScript(lines);
+    }
   }
 
   return script;
@@ -134,14 +148,23 @@ this.eval = function(text, options) {
   var sandbox = vm.Script.createContext(), mod, req;
   sandbox.__filename = options.filename || 'eval';
   sandbox.__dirname = path.dirname(sandbox.__filename);
-  sandbox.module = mod = new module(options.modulename || 'eval');
+  sandbox.module = mod = new module(path.basename(sandbox.__filename));
   sandbox.require = req = function(path) { 
     return module._load(path, mod, true); 
   };
   for (var k in Object.getOwnPropertyNames(require)) {
     req[k] = require[k];
   }
+  //Copy over other globals
+  sandbox.console = console;
+  sandbox.global = global;
+  sandbox.process = process;
+  sandbox.setTimeout = setTimeout;
+  sandbox.clearTimeout = clearTimeout;
+  sandbox.setInterval = setInterval;
+  sandbox.clearInterval = clearInterval;
   req.paths = module._nodeModulePaths(process.cwd())
+  mod.paths = req.paths;
   mod.filename = sandbox.__filename;
   var code = this.compile(text, options);
   var r = vm.runInContext(code, sandbox, sandbox.__filename);

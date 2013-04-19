@@ -1,6 +1,6 @@
 
 require assert
-require ../src/seriousjs as sjs
+require ../ as sjs
 
 describe "Lambdas", ->
   it "Should work", ->

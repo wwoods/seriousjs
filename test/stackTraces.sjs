@@ -2,7 +2,7 @@
 require assert
 require path
 require util
-require ../src/seriousjs as sjs
+require ../ as sjs
 
 describe "Stack Traces", ->
   checkStack = (part, func) ->

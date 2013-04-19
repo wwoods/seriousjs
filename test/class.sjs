@@ -1,6 +1,6 @@
 
 require assert
-require ../src/seriousjs as sjs
+require ../ as sjs
 
 describe "Classes", ->
   it "Should work with instanceof", ->
@@ -40,7 +40,6 @@ describe "Classes", ->
           constructor: (@v = 8) ->
             return
         q = new a()"""
-        showScript: true
     assert.equal 8, m.q.v
 
   it "Should support default values dict mapped constructors", ->
@@ -50,7 +49,6 @@ describe "Classes", ->
             return
         q = new a()
         j = new a(v: 9)"""
-        showScript: true
     assert.equal 8, m.q.v
     assert.equal 9, m.j.v
 
@@ -72,7 +70,6 @@ describe "Classes", ->
             return g()
         inst = new a()
         """
-        showScript: true
     assert.equal 18, m.inst.f()
 
   it "Should work with class variables", ->

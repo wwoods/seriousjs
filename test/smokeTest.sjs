@@ -3,7 +3,7 @@ accordingly.
 ###
 
 require assert, fs
-require ../src/seriousjs as sjs
+require ../ as sjs
 
 addTest = (fname, shouldPass) ->
   """Adds a test to the suite for compiling the given file.
@@ -11,11 +11,11 @@ addTest = (fname, shouldPass) ->
   it "Should #{ shouldPass ? "" : "not " }compile #{ fname }", ->
     contents = fs.readFileSync(fname, 'utf8')
     if shouldPass
-      sjs.compile(contents, showScript: true)
+      sjs.compile(contents)
     else
       passing = false
       try
-        sjs.compile(contents, showScript: true)
+        sjs.compile(contents)
       catch e
         passing = true
       if not passing

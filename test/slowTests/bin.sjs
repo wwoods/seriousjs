@@ -5,7 +5,7 @@ require fs
 require path
 require util
 
-require ../src/seriousjs as seriousjs
+require ../../ as seriousjs
 
 describe "bin/seriousjs and dependencies", ->
   before (done) ->
@@ -28,15 +28,17 @@ describe "bin/seriousjs and dependencies", ->
             rmDir(path)
       fs.rmdirSync(dir)
 
-    rmDir(path.join(__dirname, '../node_modules'))
+    rmDir(path.join(__dirname, '../../node_modules'))
 
     # Install our dependencies again
     cp.exec(
         "npm install --production ."
-        cwd: __dirname + '/..'
+        cwd: __dirname + '/../..'
         (error, stdout, stderr) ->
-          console.log(stderr)
-          assert.equal null, error
+          if error != null
+            console.log(stdout)
+            console.log(stderr)
+            assert.equal null, error
           done()
 
 
@@ -44,7 +46,7 @@ describe "bin/seriousjs and dependencies", ->
     this.timeout(10000)
     cp.exec(
         "bin/seriousjs examples/fibonacci.sjs"
-        cwd: __dirname + '/..'
+        cwd: __dirname + '/../..'
         (error, stdout, stderr) ->
           assert.equal "", stderr
           assert.equal "fib(5): 5\nfib(10): 55\nfib(20): 6765\n", stdout

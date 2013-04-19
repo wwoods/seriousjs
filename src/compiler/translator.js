@@ -479,6 +479,11 @@ this.Translator = (function() {
           w.write(" === ");
           e.translate(n.right);
         },
+     "!=": function(e, n, w) {
+          e.translate(n.left);
+          w.write(" !== ");
+          e.translate(n.right);
+        },
      "=": function(e, n, w) {
           //Also used for keyValue when assigning to class attribute
           var c = w.getClosure();

@@ -7,13 +7,17 @@
   "bin": {
     "seriousjs": "./bin/seriousjs"
   },
-  "main": "src/seriousjs",
+  "main": "./index.js",
   "dependencies": {
     "commander": ">=0.0.0"
   },
   "devDependencies": {
-    "mocha": ">=1.7",
+    "mocha": ">=1.8",
     "requirejs": "2.1.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/wwoods/seriousjs.git"
   },
   "license": "MIT",
   "engines": {

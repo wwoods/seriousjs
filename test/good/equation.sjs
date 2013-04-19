@@ -7,3 +7,7 @@ false or true
 -5
 
 -5 - 10
+
+a == b
+a != b
+

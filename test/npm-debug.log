@@ -1,0 +1,34 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/local/bin/node',
+1 verbose cli   '/usr/local/bin/npm',
+1 verbose cli   'install',
+1 verbose cli   '--production',
+1 verbose cli   '.' ]
+2 info using npm@1.1.62
+3 info using node@v0.8.11
+4 verbose read json /home/waltw/dev/seriousjs/package.json
+5 verbose read json /home/waltw/dev/seriousjs/node_modules/commander/package.json
+6 verbose from cache /home/waltw/dev/seriousjs/package.json
+7 verbose readDependencies using package.json deps
+8 verbose cache add [ '.', null ]
+9 silly cache add name=undefined spec="." args=[".",null]
+10 verbose parsed url { pathname: '.', path: '.', href: '.' }
+11 silly lockFile 3a52ce78- .
+12 verbose lock . /home/waltw/.npm/3a52ce78-.lock
+13 verbose read json package.json
+14 silly lockFile 3a52ce78- .
+15 error addLocal Could not install .
+16 error Error: ENOENT, open 'package.json'
+17 error If you need help, you may report this log at:
+17 error     <http://github.com/isaacs/npm/issues>
+17 error or email it to:
+17 error     <npm-@googlegroups.com>
+18 error System Linux 3.1.0-1-amd64
+19 error command "/usr/local/bin/node" "/usr/local/bin/npm" "install" "--production" "."
+20 error cwd /home/waltw/dev/seriousjs/test
+21 error node -v v0.8.11
+22 error npm -v 1.1.62
+23 error path package.json
+24 error code ENOENT
+25 error errno 34
+26 verbose exit [ 34, true ]
