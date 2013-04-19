@@ -39,3 +39,10 @@ describe "Lambdas", ->
     assert.equal 18, m.a(2, c: 3)
     assert.equal 8, m.a(2, b: 0, c: 3)
 
+  it "Should support doc strings", ->
+    m = sjs.eval("""
+        a = (a, b) ->
+          '''This is an example doc string.
+          '''
+          return a + b""")
+    assert.equal "This is an example doc string.", m.a.help

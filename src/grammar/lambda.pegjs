@@ -74,4 +74,8 @@ lambda_body
 
 
 lambda_doc
-  = doc:string NEWLINE { return doc; }
+  = doc:string NEWLINE {
+      //Trim them
+      doc.chars = doc.chars.replace(/^\s+|\s+$/g, "");
+      return doc;
+    }

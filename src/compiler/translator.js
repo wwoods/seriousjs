@@ -75,7 +75,7 @@ this.Translator = (function() {
           w.write("}");
           w.endClosure();
           if (n.doc) {
-            w.write("; __inner__.__doc__ = __doc__; ");
+            w.write("; __inner__.__doc__ = __inner__.help = __doc__; ");
             w.write("return __inner__; })()");
           }
         },

@@ -89,7 +89,7 @@ For a shorthand to run any SeriousJS script in NodeJS, just use:
 
 To start a new SeriousJS HTTP client/server project with RequireJS set up, run:
 
-    seriousjs create-app [appname]
+    seriousjs --create [appname]
 
 This makes a folder named [appname] and sets up a skeleton hierarchy, with an
 example web server and configuration.  It also comes with a stock .gitignore
@@ -116,6 +116,13 @@ Syntax
 Functions are lambdas:
 
     (a, b) -> a + b
+
+Long functions can have doc strings:
+
+    (a, b) ->
+        """Returns the summation of a and b.
+        """
+        return a + b
 
 Dict unmapping:
 
