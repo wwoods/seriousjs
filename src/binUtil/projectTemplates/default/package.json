@@ -3,9 +3,12 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "node app"
+    "start": "seriousjs app.sjs"
   },
   "dependencies": {
-    "express": "3.1.0"
+    "seriousjs": ">=0.1.0",
+    "express": ">=3.2.0",
+    "jade": "*",
+    "stylus": "*"
   }
 }
