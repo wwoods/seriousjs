@@ -8,17 +8,22 @@ var sjs = require(path.join(__dirname, '../'));
 program
   .version('0.1.1')
   .option('--create', 'create a new client/server pair with given name')
-  .usage('[options] file/project')
+  .option('--compile-only', 'compile the language and exit')
+  .usage('[options] file/project <args...>')
   .parse(process.argv);
 
-
-if (program.args.length === 1) {
+if (program.compileOnly) {
+  //When sjs was require'd, it was compiled.  So we're good.
+}
+else if (program.args.length >= 1) {
   fileOrProject = program.args[0];
   if (program.create) {
     var project = require(path.join(__dirname, '../src/binUtil/project'));
     project.create(fileOrProject);
   }
   else {
+    //Crop arguments down to just the script name and the other stuff
+    process.argv = [ process.argv[0] ].concat(program.args);
     sjs.evalFile(fileOrProject);
   }
 }
