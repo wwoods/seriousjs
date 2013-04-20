@@ -1,0 +1,21 @@
+# Development resources
+/lib/peg-*.js
+/pegjs/
+/src/grammar/*.pegjs
+/src/grammar/compilerState.js
+/src/grammar/utilMethods.js
+# Deliberately keep _parser.js, so they don't have to recompile
+/runTests
+/seriousjs*.*gz
+
+# Testing stuff
+test/
+*.log
+# Used for testing templates in place
+_requirejs/
+# This doesn't work apparently...
+templates/app/node_modules/
+
+# IDE stuff that certainly shouldn't go in the package
+*.sublime-*
+*.swp

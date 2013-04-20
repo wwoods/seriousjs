@@ -1,9 +1,13 @@
 
 require fs
 require path
+require console
 
 copyAndFormat = (fileOrDir, target, {>project} = options) ->
   if fs.statSync(fileOrDir).isDirectory()
+    if path.basename(fileOrDir) in [ "node_modules", "_requirejs" ]
+      # Don't clone node_modules
+      return
     fs.mkdirSync(target)
     for f in fs.readdirSync(fileOrDir)
       copyAndFormat(path.join(fileOrDir, f), path.join(target, f), options)
@@ -14,12 +18,13 @@ copyAndFormat = (fileOrDir, target, {>project} = options) ->
   fs.writeFileSync(target, newContents)
 
 
-this.create = (name) ->
-  if fs.existsSync(name)
-    console.log("Project #{name} exists")
+this.createApp = (name) ->
+  base = path.resolve(name)
+  name = path.basename(name)
+  if fs.existsSync(base)
+    console.error("Project at #{base} exists")
     process.exit(1)
 
-  base = path.join(process.cwd(), name)
-  copyAndFormat(path.join(__dirname, 'projectTemplates/default'), base, project: name)
+  copyAndFormat(path.join(__dirname, '../../templates/app'), base,
+      project: name)
   console.log("Project #{name} created")
-

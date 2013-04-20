@@ -321,6 +321,13 @@ this.Translator = (function() {
             w.write("}");
           }
         },
+     "in": function(e, n, w) {
+          w.write("(");
+          e.translate(n.right);
+          w.write(".indexOf(");
+          e.translate(n.left);
+          w.write(")>=0)");
+        },
      "instanceof": function(e, n, w) {
           w.write("(");
           e.translate(n.left);

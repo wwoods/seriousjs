@@ -116,7 +116,11 @@ this._buildEmbedded = function() {
   contents.push("return this;\n");
 
   contents.push('}).call(this, this);');
-  fs.writeFileSync(_embeddedFile, contents.join(''), 'utf8');
+  //Minify the result
+  var realContent = contents.join('');
+  var uglifyJs = require('uglify-js');
+  realContent = uglifyJs.minify(realContent, { fromString: true }).code;
+  fs.writeFileSync(_embeddedFile, realContent, 'utf8');
 };
 
 var _isNewerThan = function(mtime, target) {
@@ -131,7 +135,8 @@ var _isNewerThan = function(mtime, target) {
   }
   else if (stat.isFile() && path.basename(target)[0] !== '_') {
     var targetMtime = fs.statSync(target).mtime;
-    if (targetMtime >= mtime) {
+    if (targetMtime > mtime) {
+      //Use > to avoid rebuilding when the SeriousJS package is installed.
       console.log(target + " changed; rebuilding");
       return true;
     }
@@ -178,8 +183,11 @@ this.compile = function(text, options) {
   if (!options) {
     options = {};
   }
-  if (!options.filename && permaOptions.showScriptAfterText) {
-    options.showScript = function(t) { self.testAddCompiledScript(t); };
+  if (!options.filename && permaOptions.showScriptAfterTest) {
+    options.showScript = function(script, tree) {
+      var lines = util.inspect(tree, null, 30) + "\n\n" + script;
+      self.testAddCompiledScript(lines);
+    };
   }
   var script = sjsCompiler.compile(self.parser, text, options);
   return script;

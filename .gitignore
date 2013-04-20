@@ -4,6 +4,12 @@
 /src/grammar/_parser.js
 node_modules
 *.log
+/seriousjs*.*gz
 
 # Used for testing the projectTemplates
 _requirejs
+
+# IDE stuff
+*.sublime-*
+*.swp
+

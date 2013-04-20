@@ -6,29 +6,17 @@ require path
 require util
 
 require ../../ as seriousjs
+require ../../src/binUtil/util as sjsUtil
+
+rmDir = sjsUtil.rmDir
 
 describe "bin/seriousjs and dependencies", ->
+  modulesDir = path.join(__dirname, '../../node_modules')
+  modulesDirBackup = modulesDir + '.bak'
   before (done) ->
     this.timeout(10000)
 
-    # Test setup; remove the node_modules directory to test that packages.json
-    # installs everything needed
-    rmDir = (dir) ->
-      try
-        files = fs.readdirSync(dir)
-      catch e
-        return
-      if files.length > 0
-        for file in files
-          path = dir + '/' + file
-          stats = fs.lstatSync(path)
-          if not fs.lstatSync(path).isDirectory()
-            fs.unlinkSync(path)
-          else
-            rmDir(path)
-      fs.rmdirSync(dir)
-
-    rmDir(path.join(__dirname, '../../node_modules'))
+    fs.renameSync(modulesDir, modulesDirBackup)
 
     # Install our dependencies again
     cp.exec(
@@ -40,6 +28,11 @@ describe "bin/seriousjs and dependencies", ->
             console.log(stderr)
             assert.equal null, error
           done()
+
+
+  after ->
+    rmDir(modulesDir)
+    fs.renameSync(modulesDirBackup, modulesDir)
 
 
   it "Should run fibonacci.sjs", (done) ->
@@ -58,4 +51,15 @@ describe "bin/seriousjs and dependencies", ->
         (error, stdout, stderr) ->
           assert.equal "", stderr
           assert.equal "fib(8): 21\n", stdout
+          done()
+
+  it "Should work with --create-app", (done) ->
+    if fs.existsSync("test/slowTests/testApp")
+      rmDir("test/slowTests/testApp")
+    cp.exec(
+        "bin/seriousjs --create-app test/slowTests/testApp"
+        cwd: __dirname + '/../..'
+        (error, stdout, stderr) ->
+          assert.equal "", stderr
+          assert.equal "Project testApp created\n", stdout
           done()

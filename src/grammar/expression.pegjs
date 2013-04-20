@@ -37,6 +37,7 @@ compare_op
   / ">="
   / "<"
   / ">"
+  / "in" &_ { return "in"; }
 
 compare_expr
   = head:instance_expr tail:(_ compare_op _ instance_expr)* {

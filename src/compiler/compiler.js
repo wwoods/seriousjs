@@ -67,11 +67,10 @@ this.compile = function(parser, text, options) {
   }
 
   if (options.showScript) {
-    var lines = util.inspect(tree, null, 30) + "\n\n" + script;
     if (typeof options.showScript === "function") {
       //Probably for a test method; anyway, call the function with our debug
-      //text.
-      options.showScript(lines);
+      //text (and the tree if they want it)
+      options.showScript(script, tree);
     }
     else {
       console.log(lines);
