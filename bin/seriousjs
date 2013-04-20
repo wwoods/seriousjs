@@ -7,7 +7,7 @@ var path = require('path');
 var sjs = require(path.join(__dirname, '../'));
 
 program
-  .version('0.1.1')
+  .version(require('../package.json').version)
   .option('--create-app', 'create a new client/server pair with given name')
   .option('--compile-seriousjs', 'compile the language and embeddable script, then exit')
   .usage('[options] file/project <args...>')
