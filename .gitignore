@@ -4,3 +4,6 @@
 /src/grammar/_parser.js
 node_modules
 *.log
+
+# Used for testing the projectTemplates
+_requirejs

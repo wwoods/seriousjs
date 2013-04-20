@@ -16,6 +16,7 @@ var sjsCompiler = require('./src/compiler/compiler.js');
 var permaOptions = this.permaOptions = {};
 
 if (typeof process !== 'undefined' 
+    && process.mainModule
     && process.mainModule.filename.toLowerCase().indexOf("mocha/bin") >= 0) {
   //We're in mocha
   this.permaOptions.showScriptAfterTest = true;
@@ -71,9 +72,9 @@ var _buildParser = function() {
   return parserSource;
 };
 
+var _embeddedFile = __dirname + '/lib/seriousjs-embed.js';
 this._buildEmbedded = function() {
   //Compile seriousjs-embed.js.
-  var embedFile = __dirname + '/lib/seriousjs-embed.js';
   var contents = [ '(function(root) {' ];
   var compileDir = __dirname + '/src/compiler';
   var addFile = function(name, fpath, useResult) {
@@ -109,10 +110,13 @@ this._buildEmbedded = function() {
   //Now, build our "compile" function.
   contents.push("\nfunction compile(text, options) {\n\
       return compiler.compile(parser, text, options);\n\
-  }\nthis.seriousjs = { compile: compile };\nreturn this;\n");
+  }\nthis.seriousjs = { compile: compile };\n");
+
+  contents.push("typeof define==='function' && define(function() { return this.seriousjs; });\n");
+  contents.push("return this;\n");
 
   contents.push('}).call(this, this);');
-  fs.writeFileSync(embedFile, contents.join(''), 'utf8');
+  fs.writeFileSync(_embeddedFile, contents.join(''), 'utf8');
 };
 
 var _isNewerThan = function(mtime, target) {
@@ -135,6 +139,7 @@ var _isNewerThan = function(mtime, target) {
   return false;
 };
 
+/** Rebuild the parser */
 var parserSource = null;
 if (fs.existsSync(_parserFile)) {
   var mtime = fs.statSync(_parserFile).mtime;
@@ -144,6 +149,27 @@ if (fs.existsSync(_parserFile)) {
 }
 if (parserSource === null) {
   parserSource = _buildParser();
+}
+
+/** A method to get the embedded file, while rebuilding it if it is not up to
+  * date.
+  */
+function _getEmbeddedFile() {
+  var isOk = false;
+  if (fs.existsSync(_embeddedFile)) {
+    var mtime = fs.statSync(_embeddedFile).mtime;
+    if (!_isNewerThan(mtime, __dirname + '/src/grammar')
+        && !_isNewerThan(mtime, __dirname + '/src/compiler')
+        && !_isNewerThan(mtime, __dirname + '/index.js')) {
+      isOk = true;
+    }
+  }
+
+  if (!isOk) {
+    self._buildEmbedded();
+  }
+
+  return _embeddedFile;
 }
 
 this.parser = eval(parserSource);
@@ -199,5 +225,45 @@ this.evalFile = function(filename) {
   //Execute and run the given sjs file
   var data = fs.readFileSync(filename, 'utf8');
   return this.eval(data, { filename: filename });
+};
+
+
+this.setupRequireJs = function(webappPath) {
+  /** Set up a requireJs environment that supports SeriousJS at path.  Creates
+    * an _requirejs subdirectory with all of the requirements. */
+  var base = path.join(__dirname, 'lib/requirejs');
+  var baseTarg = path.join(webappPath, '_requirejs');
+  if (!fs.existsSync(baseTarg)) {
+    fs.mkdirSync(baseTarg);
+  }
+
+  function symlink(name, isAbsolute) {
+    var source = name;
+    if (!isAbsolute) {
+      source = path.join(base, name);
+    }
+    else {
+      name = path.basename(source);
+    }
+    var target = path.join(baseTarg, name);
+
+    var needsUpdate = true;
+    if (fs.existsSync(target)) {
+      if (fs.realpathSync(target) === source) {
+        needsUpdate = false;
+      }
+      else {
+        fs.unlinkSync(target);
+      }
+    }
+    if (needsUpdate) {
+      fs.symlinkSync(source, target);
+    }
+  }
+  //Copy require.js into path...
+  symlink(_getEmbeddedFile(), true);
+  symlink('require.js');
+  symlink('sjs.js');
+  symlink('loader.js');
 };
 

@@ -10,7 +10,7 @@ copyAndFormat = (fileOrDir, target, {>project} = options) ->
     return
 
   contents = fs.readFileSync(fileOrDir, 'utf8')
-  newContents = contents.replace(/#\{\s*project\s*\}/g, project)
+  newContents = contents.replace(/__project__/g, project)
   fs.writeFileSync(target, newContents)
 
 

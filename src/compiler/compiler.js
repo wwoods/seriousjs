@@ -42,6 +42,30 @@ this.compile = function(parser, text, options) {
   }
 
   self.cleanupTree(tree);
+
+  var requires = [];
+  if (options.amdModule) {
+    //Pull statements out of tree.tree
+    for (var i = 0, m = tree.tree.length; i < m; i++) {
+      var n = tree.tree[i];
+      if (n.op === "require") {
+        requires.push(n);
+        tree.tree.splice(i, 1);
+        i -= 1;
+        m -= 1;
+      }
+    }
+  }
+
+  var writerObj = new writer.Writer();
+  var translatorObj = new translator.Translator(writerObj, options);
+  translatorObj.translate(tree);
+  var script = writerObj.getOutput();
+
+  if (options.amdModule) {
+    script = self._makeScriptAmd(requires, script);
+  }
+
   if (options.showScript) {
     var lines = util.inspect(tree, null, 30) + "\n\n" + script;
     if (typeof options.showScript === "function") {
@@ -53,16 +77,39 @@ this.compile = function(parser, text, options) {
       console.log(lines);
     }
   }
-  
-  var writerObj = new writer.Writer();
-  var translatorObj = new translator.Translator(writerObj, options);
-  
-  translatorObj.translate(tree);
-  
-  var script = writerObj.getOutput();
   return script;
 };
 
 
-this.compileFull = function(parser, text, options) {
+this._makeScriptAmd = function(requires, script, options) {
+  /** Bootstrap a script with the given requires to AMD format.  Note that we
+    really shouldn't insert any newlines before script, since that would screw
+    up our mapping.
+    */
+  var output = [ "define([" ];
+  var varNames = [];
+  for (var i = 0, m = requires.length; i < m; i++) {
+    var reqChain = requires[i].defs;
+    for (var j = 0, k = reqChain.length; j < k; j++) {
+      if (varNames.length > 0) {
+        output.push(",");
+      }
+      var fromPart = reqChain[j].from;
+      if (fromPart.indexOf('!') < 0) {
+        //Assume sjs loader for convenience.
+        fromPart = "sjs!" + fromPart;
+      }
+      else if (fromPart.indexOf("js!") === 0) {
+        fromPart = fromPart.slice(3);
+      }
+      output.push("'" + fromPart + "'");
+      varNames.push(reqChain[j].as);
+    }
+  }
+  output.push("],function(");
+  output.push(varNames.join(","));
+  output.push(") {var exports = {};(function(exports){");
+  output.push(script);
+  output.push("\n}).call(exports, exports);return exports});");
+  return output.join("");
 };

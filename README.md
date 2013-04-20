@@ -3,10 +3,6 @@ SeriousJS
 
 A simple syntax for a complicated world.
 
-Note -- I wrote this readme as a roadmap.  The seriousjs command line utilities
-are not ready yet.  This message will be removed when they are.
-
-
 ## Motivation
 
 Feel free to skip to the bottom if you like - but a lot of people will ask
@@ -54,7 +50,8 @@ While those aren't huge, they got me thinking.  What are some other ways that
 Coffee-Script could be improved?  Well, how about:
 
 * Support for asynchronous fibers / continuations?  Programming callbacks in
-  an imperative manner rather than a bunch of nested functions
+  an imperative manner rather than a bunch of nested functions (not implemented
+  yet)
 
 * Tight integration with RequireJS, to provide a uniform, consistent language
   between NodeJS and the browser, that runs in all environments and
@@ -64,7 +61,7 @@ Coffee-Script could be improved?  Well, how about:
   be a great language was doc strings.  An interactive language needs
   interactive help.  So why not start encouraging them?
 
-* Operator overloading (deferred)
+* Operator overloading (not implemented yet)
 
 Anyway, that's the jist of it.  I'm not expecting people to jump ship on this
 one - it started as an educational project but the focus is on production
@@ -89,20 +86,20 @@ For a shorthand to run any SeriousJS script in NodeJS, just use:
 
 To start a new SeriousJS HTTP client/server project with RequireJS set up, run:
 
-    seriousjs --create [appname]
+    seriousjs --create-app [appname]
 
 This makes a folder named [appname] and sets up a skeleton hierarchy, with an
 example web server and configuration.  It also comes with a stock .gitignore
 file, which suffices for simple projects.
 
-To compile your new application, run:
+To compile your new application (not quite implemented yet), run:
 
     seriousjs app.sjs --build
 
 from your application directory.  A "build" directory will be created, which
 has compiled sources for your client.
 
-To run the compiled version, run:
+To run the compiled version (not quite implemented yet), run:
 
     seriousjs app.sjs --built
 
@@ -116,6 +113,8 @@ Usage in a browser
 If you run seriousjs --compile-only (ran during install anyway), then the file
 lib/seriousjs-embed.js will be generated.  This is a self-contained file that
 may be used in a browser (or NodeJS, of course).
+
+Or just run "seriousjs --create-app myapp" and have a working demonstration.
 
 
 Syntax
