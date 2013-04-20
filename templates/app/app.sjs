@@ -6,9 +6,7 @@ require ./routes
 require ./routes/user
 require http
 require path
-
 require seriousjs
-seriousjs.setupRequireJs(__dirname + '/webapp')
 
 app = express()
 
@@ -22,7 +20,8 @@ app.use(express.bodyParser())
 app.use(express.methodOverride())
 app.use(app.router)
 app.use(require('stylus').middleware(__dirname + '/public'))
-app.use('/src', express.static(path.join(__dirname, 'webapp')))
+
+seriousjs.setupRequireJs(app, express, __dirname + '/webapp')
 
 # development only
 if 'development' == app.get('env')

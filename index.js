@@ -176,6 +176,8 @@ function _getEmbeddedFile() {
 
   return _embeddedFile;
 }
+//Exposed for tests
+this._getEmbeddedFile = _getEmbeddedFile;
 
 this.parser = eval(parserSource);
 this.compile = function(text, options) {
@@ -241,35 +243,16 @@ this.evalFile = function(filename) {
 };
 
 
-this.setupRequireJs = function(webappPath) {
+this.setupRequireJs = function(app, express, webappPath) {
   /** Set up a requireJs environment that supports SeriousJS at path.  Creates
-    * an _requirejs subdirectory with all of the requirements. */
-  var base = path.join(__dirname, 'lib/requirejs');
-  var baseTarg = path.join(webappPath, '_requirejs');
-  if (!fs.existsSync(baseTarg)) {
-    fs.mkdirSync(baseTarg);
-  }
+    * an _requirejs subdirectory with all of the requirements.
+    *
+    * app - The express application to fill in the "/src" directory on.
+    * webappPath - the target's "webapp" folder
+    **/
 
-  function copy(name, isAbsolute) {
-    var source = name;
-    if (!isAbsolute) {
-      source = path.join(base, name);
-    }
-    else {
-      name = path.basename(source);
-    }
-    var target = path.join(baseTarg, name);
-
-    if (fs.existsSync(target)) {
-      fs.unlinkSync(target);
-    }
-    var contents = fs.readFileSync(source, 'utf8')
-    fs.writeFileSync(target, contents);
-  }
-  //Copy require.js into path...
-  copy(_getEmbeddedFile(), true);
-  copy('require.js');
-  copy('sjs.js');
-  copy('loader.js');
+  var rjsUtil = require('./src/binUtil/requirejsUtil');
+  var baseSource = path.join(__dirname, 'lib/requirejs');
+  rjsUtil.setupProject(app, express, _getEmbeddedFile(), baseSource,
+      webappPath);
 };
-

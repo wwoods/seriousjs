@@ -1,11 +1,13 @@
 
+require child_process
+require console
 require fs
 require path
-require console
 
 copyAndFormat = (fileOrDir, target, {>project} = options) ->
   if fs.statSync(fileOrDir).isDirectory()
-    if path.basename(fileOrDir) in [ "node_modules", "_requirejs" ]
+    if path.basename(fileOrDir) in [ "node_modules", "_requirejs",
+        "webapp.build", "webapp.build.new" ]
       # Don't clone node_modules
       return
     fs.mkdirSync(target)
@@ -27,4 +29,12 @@ this.createApp = (name) ->
 
   copyAndFormat(path.join(__dirname, '../../templates/app'), base,
       project: name)
-  console.log("Project #{name} created")
+
+  # Run npm install so that they have dependencies installed
+  child = child_process.spawn(
+      "npm",
+      [ "install", "." ],
+      { cwd: base }
+  child.on 'exit', (code) ->
+    console.log("Project #{name} created")
+    process.exit(code)

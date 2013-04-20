@@ -90,20 +90,20 @@ For a shorthand to run any SeriousJS script in NodeJS, just use:
 
 To start a new SeriousJS HTTP client/server project with RequireJS set up, run:
 
-    seriousjs --create-app [appname]
+    seriousjs create-app [appname]
 
 This makes a folder named [appname] and sets up a skeleton hierarchy, with an
 example web server and configuration.  It also comes with a stock .gitignore
 file, which suffices for simple projects.
 
-To compile your new application (not quite implemented yet), run:
+To compile your new application, run:
 
     seriousjs app.sjs --build
 
-from your application directory.  A "build" directory will be created, which
-has compiled sources for your client.
+from your application directory.  A "webapp.build" directory will be created,
+which has compiled sources for your client.
 
-To run the compiled version (not quite implemented yet), run:
+To run the compiled version, run:
 
     seriousjs app.sjs --built
 

@@ -8,40 +8,49 @@ var sjs = require(path.join(__dirname, '../'));
 
 program
   .version(require('../package.json').version)
-  .option('--create-app', 'create a new client/server pair with given name')
-  .option('--compile-seriousjs', 'compile the language and embeddable script, then exit')
-  .usage('[options] file/project <args...>')
-  .parse(process.argv);
+  .usage('[options] file/project <args ...>');
 
-if (program.compileSeriousjs) {
-  //When sjs was require'd, it was compiled.  So we're good on the parser, but
-  //we need to make the seriousjs-embed.js file as well.
-  sjs._buildEmbedded();
+program
+  .command('compile-seriousjs')
+  .description('compile the language and embeddable script')
+  .action(function() {
+    //When sjs was require'd, it was compiled.  So we're good on the parser, but
+    //we need to make the seriousjs-embed.js file as well.
+    sjs._buildEmbedded();
 
-  //We also have to delete any node_modules in the templates directory, since
-  //npm pack apparently will never ignore node_modules...
-  var sjsUtil = require('../src/binUtil/util');
-  var templatePath = __dirname + '/../templates';
-  var templates = fs.readdirSync(templatePath);
-  for (var i = 0, m = templates.length; i < m; i++) {
-    var templateMods = path.join(templatePath, templates[i], 'node_modules');
-    if (fs.existsSync(templateMods)) {
-      sjsUtil.rmDir(templateMods);
+    //We also have to delete any node_modules in the templates directory, since
+    //npm pack apparently will never ignore node_modules...
+    var sjsUtil = require('../src/binUtil/util');
+    var templatePath = __dirname + '/../templates';
+    var templates = fs.readdirSync(templatePath);
+    for (var i = 0, m = templates.length; i < m; i++) {
+      var templateMods = path.join(templatePath, templates[i], 'node_modules');
+      if (fs.existsSync(templateMods)) {
+        sjsUtil.rmDir(templateMods);
+      }
     }
-  }
-}
-else if (program.args.length >= 1) {
-  fileOrProject = program.args[0];
-  if (program.createApp) {
+  })
+  .option('--compile-seriousjs', 'compile the language and embeddable script, then exit');
+
+program
+  .command('create-app <appname>')
+  .description('create a client/server pair with given name')
+  .action(function(appname) {
     var project = require(path.join(__dirname, '../src/binUtil/project'));
-    project.createApp(fileOrProject);
-  }
-  else {
-    //Crop arguments down to just the script name and the other stuff
-    process.argv = [ process.argv[0] ].concat(program.args);
-    sjs.evalFile(fileOrProject);
-  }
-}
-else {
-  program.help();
-}
+    project.createApp(appname);
+  });
+
+program
+  .command('*')
+  .description('run the given script with any arguments')
+  .action(function(script) {
+    //For whatever reason commander doesn't pass flags like --build in the
+    //args array, even if they're unrecognized.  So we'll have to infer its
+    //position.
+    var realArgs = program.rawArgs.slice(program.rawArgs.indexOf(script));
+    //Fake out process.argv for the script
+    process.argv = [ process.argv[1] ].concat(realArgs);
+    sjs.evalFile(script);
+  });
+
+program.parse(process.argv);

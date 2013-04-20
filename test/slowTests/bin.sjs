@@ -16,6 +16,9 @@ describe "bin/seriousjs and dependencies", ->
   before (done) ->
     this.timeout(10000)
 
+    # Ensure seriousjs is compiled
+    seriousjs._getEmbeddedFile()
+
     fs.renameSync(modulesDir, modulesDirBackup)
 
     # Install our dependencies again
@@ -53,13 +56,27 @@ describe "bin/seriousjs and dependencies", ->
           assert.equal "fib(8): 21\n", stdout
           done()
 
-  it "Should work with --create-app", (done) ->
-    if fs.existsSync("test/slowTests/testApp")
-      rmDir("test/slowTests/testApp")
+  it "Should work with create-app", (done) ->
+    this.timeout(50000)
+
+    if fs.existsSync(__dirname + "/testApp")
+      rmDir(__dirname + "/testApp")
+
     cp.exec(
-        "bin/seriousjs --create-app test/slowTests/testApp"
-        cwd: __dirname + '/../..'
+        "../../bin/seriousjs create-app testApp"
+        cwd: __dirname
         (error, stdout, stderr) ->
           assert.equal "", stderr
           assert.equal "Project testApp created\n", stdout
-          done()
+
+          # Also ensure that --build works ok
+          cp.exec(
+              "../../../bin/seriousjs app.sjs --build"
+              cwd: __dirname + '/testApp'
+              (error, stdout, stderr) ->
+                console.log("== stdout ==\n#{ stdout }")
+                console.log("== stderr ==\n#{ stderr }")
+                console.log("== error ==\n#{ error }")
+                assert.equal "", stderr
+                assert.equal "", stdout
+                done()
