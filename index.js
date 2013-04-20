@@ -4,9 +4,8 @@
   */
 
 var self = this;
-var pegJs = require('./lib/peg-0.7.0').PEG;
 var fs = require('fs');
-var module = require('module');
+var mmodule = require('module');
 var path = require('path');
 var util = require('util');
 var vm = require('vm');
@@ -41,6 +40,7 @@ if (require.extensions) {
 var _parserFile = __dirname + '/src/grammar/_parser.js';
 var _buildParser = function() {
   //Construct grammar
+  var pegJs = require('./lib/peg-0.7.0').PEG;
   var source = fs.readFileSync(__dirname + '/src/grammar/seriousjs.pegjs', 
       'utf8');
   var osource = source;
@@ -202,9 +202,14 @@ this.eval = function(text, options) {
   var sandbox = vm.Script.createContext(), mod, req;
   sandbox.__filename = options.filename || 'eval';
   sandbox.__dirname = path.dirname(sandbox.__filename);
-  sandbox.module = mod = new module(path.basename(sandbox.__filename));
-  sandbox.require = req = function(path) { 
-    return module._load(path, mod, true); 
+  sandbox.module = mod = new mmodule(path.basename(sandbox.__filename));
+  sandbox.require = req = function(path) {
+    if (path === "seriousjs") {
+      //Cheap hack, but it works.  If we're importing seriousjs from a module
+      //compiled with seriousjs, we probably want to use the same version.
+      return self;
+    }
+    return mmodule._load(path, mod, true);
   };
   for (var k in Object.getOwnPropertyNames(require)) {
     req[k] = require[k];
@@ -217,7 +222,7 @@ this.eval = function(text, options) {
   sandbox.clearTimeout = clearTimeout;
   sandbox.setInterval = setInterval;
   sandbox.clearInterval = clearInterval;
-  req.paths = module._nodeModulePaths(process.cwd())
+  req.paths = mmodule._nodeModulePaths(process.cwd())
   mod.paths = req.paths;
   mod.filename = sandbox.__filename;
   var code = this.compile(text, options);
