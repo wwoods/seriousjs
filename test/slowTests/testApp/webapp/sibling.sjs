@@ -1,4 +1,0 @@
-
-method = () ->
-  console.log("World!")
-
