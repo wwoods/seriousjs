@@ -8,7 +8,7 @@
     "seriousjs": "./bin/seriousjs"
   },
   "scripts": {
-    "prepublish": "./bin/seriousjs --compile-seriousjs",
+    "prepublish": "./bin/seriousjs compile-seriousjs",
     "test": "mocha --compilers sjs:./index test test/slowTests"
   },
   "main": "./index.js",

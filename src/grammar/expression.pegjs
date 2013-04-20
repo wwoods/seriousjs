@@ -26,9 +26,13 @@ logic_op
   / "or"
 
 logic_expr
-  = head:compare_expr tail:(_ logic_op _ compare_expr)* {
+  = head:not_expr tail:(_ logic_op _ not_expr)* {
     return R(getBinary(head, tail, 1, 3));
   }
+
+not_expr
+  = "not" _ expr:compare_expr { return R({ op: "unary_not", right: expr }); }
+  / expr:compare_expr { return expr; }
 
 compare_op
   = "<="
@@ -37,7 +41,10 @@ compare_op
   / ">="
   / "<"
   / ">"
-  / "in" &_ { return "in"; }
+  / "not in" { return "in_not"; }
+  / "not of" { return "of_not"; }
+  / "in" { return "in"; }
+  / "of" { return "of"; }
 
 compare_expr
   = head:instance_expr tail:(_ compare_op _ instance_expr)* {
@@ -80,8 +87,7 @@ atom_chain
   }
 
 unary_op
-  = "not" _ { return "unary_not"; }
-  / "new" _ { return "unary_new"; }
+  = "new" _ { return "unary_new"; }
   / "-" { return "unary_negate"; }
 
 base_atom

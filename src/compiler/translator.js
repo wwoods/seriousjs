@@ -328,6 +328,13 @@ this.Translator = (function() {
           e.translate(n.left);
           w.write(")>=0)");
         },
+     "in_not": function(e, n, w) {
+          w.write("(");
+          e.translate(n.right);
+          w.write(".indexOf(");
+          e.translate(n.left);
+          w.write(")<0)");
+        },
      "instanceof": function(e, n, w) {
           w.write("(");
           e.translate(n.left);
@@ -388,6 +395,20 @@ this.Translator = (function() {
         },
      "number": function(e, n, w) {
           w.write(n.num);
+        },
+     "of": function(e, n, w) {
+          w.write("(");
+          e.translate(n.left);
+          w.write(" in ");
+          e.translate(n.right);
+          w.write(")");
+        },
+     "of_not": function(e, n, w) {
+          w.write("!(");
+          e.translate(n.left);
+          w.write(" in ");
+          e.translate(n.right);
+          w.write(")");
         },
      "or": function(e, n, w) {
           e.translate(n.left);
