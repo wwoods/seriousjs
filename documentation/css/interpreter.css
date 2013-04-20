@@ -1,0 +1,20 @@
+
+.interpreter table {
+    width: 100%;
+}
+
+.interpreter .code-panels td {
+    padding: 0 0.5em;
+    position: relative;
+    height: 200px;
+}
+
+.interpreter textarea {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    font-family: monospace;
+    font-size: 9pt;
+}

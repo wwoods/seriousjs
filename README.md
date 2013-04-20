@@ -76,6 +76,10 @@ dependable and providing extensions for a uniform code base across NodeJS and
 browser implementations.  Emphasis is on making projects easy to manage and
 learn.
 
+There's an interactive interpreter available at:
+
+https://wwoods.github.io/seriousjs
+
 
 Usage
 -----
