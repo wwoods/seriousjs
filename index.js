@@ -108,25 +108,7 @@ this._buildEmbedded = function() {
 
   //Now, build our "compile" function.
   contents.push("\nfunction compile(text, options) {\n\
-      var tree;\n\
-      if (options == null) { options = {}; }\n\
-      if (text.charAt(text.length - 1) !== '\\n') {\n\
-        text += '\\n';\n\
-      }\n\
-\n\
-      try {\n\
-        tree = parser.parse(text, { });\n\
-      }\n\
-      catch (e) {\n\
-        var header = 'Line ' + e.line + ', column ' + e.column;\n\
-        if (options.filename) {\n\
-          header += ' of ' + options.filename;\n\
-        }\n\
-        e.message = header + ': ' + e.message;\n\
-        throw e;\n\
-      }\n\
-\n\
-      return compiler.compile(tree, options);\n\
+      return compiler.compile(parser, text, options);\n\
   }\nthis.seriousjs = { compile: compile };\nreturn this;\n");
 
   contents.push('}).call(this, this);');
@@ -167,42 +149,13 @@ if (parserSource === null) {
 this.parser = eval(parserSource);
 this.compile = function(text, options) {
   //Returns the legible javascript version of text.
-  var tree;
   if (!options) {
     options = {};
   }
-
-  //All text must end in a newline; however, this is a grammar limitation, and
-  //we won't inflict it on users.
-  if (text.charAt(text.length - 1) !== '\n') {
-    text += '\n';
+  if (!options.filename && permaOptions.showScriptAfterText) {
+    options.showScript = function(t) { self.testAddCompiledScript(t); };
   }
-
-  try {
-    tree = self.parser.parse(text, { });
-  }
-  catch (e) {
-    var header = 'Line ' + e.line + ', column ' + e.column;
-    if (options.filename) {
-      header += ' of ' + options.filename;
-    }
-    e.message = header + ': ' + e.message;
-    throw e;
-  }
-
-  script = sjsCompiler.compile(tree, options);
-  if (options.showScript 
-      || (!options.filename && permaOptions.showScriptAfterTest)) {
-    var lines = util.inspect(tree, null, 30) + "\n\n" + script;
-    if (options.showScript) {
-      console.log(lines);
-    }
-    else {
-      //test
-      self.testAddCompiledScript(lines);
-    }
-  }
-
+  var script = sjsCompiler.compile(self.parser, text, options);
   return script;
 };
 
