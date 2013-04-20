@@ -14,14 +14,51 @@
             <h1>Interactive interpreter</h1>
             <table>
                 <tr>
-                    <td>SeriousJS</td>
+                    <td>SeriousJS (ctrl+enter or cmd+enter to run)</td>
                     <td>Javascript</td>
                 </tr>
                 <tr class="code-panels">
-                    <td><textarea class="seriousjs"></textarea></td>
+                    <td><textarea class="seriousjs">
+# Welcome to SeriousJS' interactive interpreter
+### Block comments
+like this ###
+
+console.log("You can print results")
+console.log "Simple methods don't need parenthesis"
+console.log(
+        "You also don't need closing parens; indentation is what matters.  "
+        + "Note that you need a DOUBLE indent for a line continuation; a "
+        + "single indent is used for function bodies or conditional clauses, "
+        + "for instance."
+
+fib = (n) ->
+    a = 1
+    b = 1
+    while n > 0
+        t = b
+        b = a
+        a = a + t
+        n -= 1
+    return a
+console.log fib(4)
+console.log fib(5)
+console.log fib(6)
+</textarea></td>
                     <td><textarea class="javascript"></textarea></td>
                 </tr>
+                <tr>
+                    <td></td>
+                    <td><a href="javascript:;" class="runJs">Run</a></td>
+                </tr>
             </table>
+            <p style="max-width: 800px;margin-left:1em;">
+                Remember that SeriousJS is designed for module compilation, so
+                you'll see some oddities if you're used to CoffeeScript output.
+                For instance, if at the global scope you write "a = 8", then in
+                order to work with NodeJS as well as RequireJS, SeriousJS will
+                put "this.a=a = 8" for you, as it needs to expose the variable at
+                the module level as well as locally.
+            </p>
         </div>
     </body>
 </html>

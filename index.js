@@ -250,7 +250,7 @@ this.setupRequireJs = function(webappPath) {
     fs.mkdirSync(baseTarg);
   }
 
-  function symlink(name, isAbsolute) {
+  function copy(name, isAbsolute) {
     var source = name;
     if (!isAbsolute) {
       source = path.join(base, name);
@@ -260,23 +260,16 @@ this.setupRequireJs = function(webappPath) {
     }
     var target = path.join(baseTarg, name);
 
-    var needsUpdate = true;
     if (fs.existsSync(target)) {
-      if (fs.realpathSync(target) === source) {
-        needsUpdate = false;
-      }
-      else {
-        fs.unlinkSync(target);
-      }
+      fs.unlinkSync(target);
     }
-    if (needsUpdate) {
-      fs.symlinkSync(source, target);
-    }
+    var contents = fs.readFileSync(source, 'utf8')
+    fs.writeFileSync(target, contents);
   }
   //Copy require.js into path...
-  symlink(_getEmbeddedFile(), true);
-  symlink('require.js');
-  symlink('sjs.js');
-  symlink('loader.js');
+  copy(_getEmbeddedFile(), true);
+  copy('require.js');
+  copy('sjs.js');
+  copy('loader.js');
 };
 
