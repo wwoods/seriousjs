@@ -15,3 +15,4 @@ ReservedWordInner
   / "or"
   / "return"
   / "super"
+  / "while"

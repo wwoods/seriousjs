@@ -36,6 +36,7 @@ statement
 statement_with_body
   = stmt:if_stmt { return R(stmt); }
   / stmt:for_stmt { return R(stmt); }
+  / stmt:while_stmt { return R(stmt); }
   / try_stmt
 
 
@@ -70,6 +71,11 @@ else_part
 for_stmt
   = "for" _ id:Identifier _ "in" _ expr:expression body:statement_body {
       return R({ op: "forList", ids: [ id ], expr: expr, body: body });
+    }
+
+while_stmt
+  = "while" _ expr:expression body:statement_body {
+      return R({ op: "while", expr: expr, body: body });
     }
 
 try_stmt

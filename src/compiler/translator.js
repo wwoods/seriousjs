@@ -468,6 +468,13 @@ this.Translator = (function() {
           e.translate(n.right);
           w.write(")");
         },
+     "while": function(e, n, w) {
+          w.write("while (");
+          e.translate(n.expr);
+          w.write(") {");
+          e.translate(n.body);
+          w.write("}");
+        },
      "()": function(e, n, w) {
           w.write("(");
           e.translate(n.expr);
