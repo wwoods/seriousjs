@@ -157,3 +157,7 @@ Dict unmapping as lambda arguments:
     { a, b } -> a + b
     (a, b, {< add = true}) -> add ? a + b : a
 
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/wwoods/seriousjs/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
