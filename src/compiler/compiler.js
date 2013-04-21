@@ -66,15 +66,8 @@ this.compile = function(parser, text, options) {
     script = self._makeScriptAmd(requires, script);
   }
 
-  if (options.showScript) {
-    if (typeof options.showScript === "function") {
-      //Probably for a test method; anyway, call the function with our debug
-      //text (and the tree if they want it)
-      options.showScript(script, tree);
-    }
-    else {
-      console.log(lines);
-    }
+  if (options.debugCallback) {
+    options.debugCallback(script, tree);
   }
   return script;
 };

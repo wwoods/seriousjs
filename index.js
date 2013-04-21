@@ -11,7 +11,7 @@ var util = require('util');
 var vm = require('vm');
 var sjsCompiler = require('./src/compiler/compiler.js');
 
-//Options for all builds... used typically for testing and showScript = true.
+//Options for all builds... used typically for testing
 var permaOptions = this.permaOptions = {};
 
 if (typeof process !== 'undefined' 
@@ -186,7 +186,7 @@ this.compile = function(text, options) {
     options = {};
   }
   if (!options.filename && permaOptions.showScriptAfterTest) {
-    options.showScript = function(script, tree) {
+    options.debugCallback = function(script, tree) {
       var lines = util.inspect(tree, null, 30) + "\n\n" + script;
       self.testAddCompiledScript(lines);
     };
