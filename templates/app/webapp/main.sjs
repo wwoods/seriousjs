@@ -1,3 +1,6 @@
+
+require css!plugin
+
 require ./sibling
 require js!./plainJs
 

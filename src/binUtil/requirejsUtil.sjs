@@ -30,6 +30,7 @@ setupProject = (app, express, embeddedFile, source, webappPath) ->
   # Copy require.js into path...
   copy(embeddedFile, true)
   copy('require.js')
+  copy('css.js')
   copy('sjs.js')
   copy('loader.js')
   copy('app.build.js')

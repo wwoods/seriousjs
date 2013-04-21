@@ -429,8 +429,11 @@ this.Translator = (function() {
           e.translate(n.defs);
         },
      "require_import": function(e, n, w) {
-          w.variable(n.as, true);
-          w.write(' = require("');
+          if (n.as !== null) {
+            w.variable(n.as, true);
+            w.write(' = ');
+          }
+          w.write('require("');
           w.write(n.from);
           w.write('")');
         },

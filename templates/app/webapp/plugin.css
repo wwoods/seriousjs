@@ -1,0 +1,5 @@
+p:after {
+    content: "Loaded CSS plugin!  Check console for JS / SJS plugins.";
+    margin-left: 1em;
+    color: #f00;
+}

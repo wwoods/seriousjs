@@ -1,0 +1,16 @@
+/** So that the page load during development looks nice (when compiled, this is
+    not an issue), this file should be included in the HTML page template
+    rather than through RequireJS.  It should also probably be brief, and just
+    describe the loading screen, essentially.
+    */
+
+body {
+    background-color: #efe;
+    font-family: sans-serif;
+    font-size: 10pt;
+    padding: 0.3em;
+}
+
+h1 {
+    font-size: 1.5em;
+}

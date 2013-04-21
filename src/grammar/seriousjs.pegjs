@@ -200,8 +200,11 @@ require_import
 require_import_from
   = chs:string_for_require+ {
       var s = chs.join("");
-      var slash = s.lastIndexOf('/');
-      return { from: s, defaultAs: s.substring(slash + 1) };
+      var defaultName = /([a-zA-Z0-9_]+)\/?$/.exec(s);
+      return {
+        from: s,
+        defaultAs: defaultName && defaultName[1] || null
+      };
     }
 
 ##include statement.pegjs
