@@ -38,6 +38,6 @@ dict_argument
   / dict_argument_inner
       
 dict_argument_inner
-  = id:Identifier _ ":" _ expr:expression {
+  = id:(Identifier / string) _ ":" _ expr:expression {
       return R({ "op": "keyValue", "key": id, "value": expr });
     }

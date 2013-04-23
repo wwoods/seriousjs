@@ -215,6 +215,7 @@ require_import_from
 
 ##include statement.pegjs
 ##include assign.pegjs
+##include class.pegjs
 ##include expression.pegjs
 ##include lambda.pegjs
 ##include string.pegjs

@@ -80,6 +80,7 @@ this._makeScriptAmd = function(requires, script, options) {
     */
   var output = [ "define([" ];
   var varNames = [];
+  var forPartAssigns = [];
   for (var i = 0, m = requires.length; i < m; i++) {
     var reqChain = requires[i].defs;
     for (var j = 0, k = reqChain.length; j < k; j++) {
@@ -96,11 +97,25 @@ this._makeScriptAmd = function(requires, script, options) {
       }
       output.push("'" + fromPart + "'");
       varNames.push(reqChain[j].as);
+
+      var forParts = reqChain[j].forParts;
+      if (forParts !== null) {
+        for (var l = 0, n = forParts.length; l < n; l++) {
+          var fpId = forParts[l].id;
+          forPartAssigns.push(fpId + "=" + "this." + fpId
+              + "=" + reqChain[j].as + "." + fpId);
+        }
+      }
     }
   }
   output.push("],function(");
   output.push(varNames.join(","));
   output.push(") {var exports = {};(function(exports){");
+  if (forPartAssigns.length > 0) {
+    output.push("var ");
+    output.push(forPartAssigns.join(","));
+    output.push(";");
+  }
   output.push(script);
   output.push("\n}).call(exports, exports);return exports});");
   return output.join("");

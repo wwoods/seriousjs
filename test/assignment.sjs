@@ -21,6 +21,16 @@ describe "Assignment", ->
     assert.equal 56, m.a.d
     assert.equal 12, m.a.e.f
     assert.equal 13, m.a.e.g
+  it "Should work with multi-line dicts and strings", ->
+    m = sjs.eval """
+        a =
+            "c": 28
+            'd': 56
+            e: 72
+        """
+    assert.equal 28, m.a.c
+    assert.equal 56, m.a.d
+    assert.equal 72, m.a.e
   it "Should work with dicts", ->
     assert.equal 3, (sjs.eval "{a}={a:3,b:4}").a
   it "Should work with dicts and defaults", ->

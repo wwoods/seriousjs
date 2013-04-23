@@ -19,3 +19,23 @@ describe "of operator", ->
   it "Should work with not", ->
     assert.equal false, sjs.eval("a = not 'b' of { b: 'c' }").a
     assert.equal false, sjs.eval("a = 'b' not of { b: 'c' }").a
+
+describe "not operator", ->
+  it "Should work", ->
+    assert.equal true, sjs.eval("a = not false").a
+    assert.equal false, sjs.eval("a = not true").a
+
+  it "Should bind to the closest boolean statement, not var", ->
+    assert.equal true, sjs.eval("a = not 1 - 1").a
+
+  it "Should work with in", ->
+    assert.equal false, sjs.eval("a = 'b' not in [ 'a', 'b', 'c' ]").a
+    assert.equal true, sjs.eval("a = 'b' not in [ 'a', 'd', 'c' ]").a
+    assert.equal false, sjs.eval("a = not 'b' in [ 'a', 'b', 'c' ]").a
+    assert.equal true, sjs.eval("a = not 'b' in [ 'a', 'd', 'c' ]").a
+
+  it "Should work with of", ->
+    assert.equal false, sjs.eval("a = 'b' not of { a: 1, b: 2, c: 3 }").a
+    assert.equal true, sjs.eval("a = 'b' not of { a: 1, d: 2, c: 3 }").a
+    assert.equal false, sjs.eval("a = not 'b' of { a: 1, b: 2, c: 3 }").a
+    assert.equal true, sjs.eval("a = not 'b' of { a: 1, d: 2, c: 3 }").a

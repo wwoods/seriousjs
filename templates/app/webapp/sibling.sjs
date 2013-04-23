@@ -1,4 +1,6 @@
 
+$('body').append("<p>Loaded sibling.sjs!</p>")
+
 method = () ->
-  console.log("World!")
+  $('body').append("<p>Hello from sibling.sjs!</p>")
 

@@ -51,8 +51,9 @@ this.Translator = (function() {
           w.write(c);
           if (options.isConstructorFor) {
             //Check if we're a function invocation or not
-            w.write("if(this.constructor!==");
+            w.write("if(!(this instanceof ");
             w.write(options.isConstructorFor);
+            w.write(")");
             w.write("){");
             w.write('throw new Error("not called with new operator")');
 
@@ -151,16 +152,10 @@ this.Translator = (function() {
           if (n.elements.length > 0) {
             w.goToNode(n.elements[0]);
           }
-          if (w.getClosure().props.className) {
-            //Assigning member methods
-            e.translate(n.elements, { separator: ';' });
-          }
-          else {
-            //Normal dict work
-            w.write("{");
-            e.translate(n.elements, { separator: ',' });
-            w.write("}");
-          }
+
+          w.write("{");
+          e.translate(n.elements, { separator: ',' });
+          w.write("}");
         },
      "dictAssign": function(e, n, w) {
           //n has keys, mod, and right.
@@ -393,6 +388,10 @@ this.Translator = (function() {
           }
           throw new Error("Unexpected member identifier: line " + n.line);
         },
+     "memberSelf": function(e, n, w) {
+          w.goToNode(n);
+          w.write(w.getInstanceVariable());
+        },
      "number": function(e, n, w) {
           w.write(n.num);
         },
@@ -457,13 +456,17 @@ this.Translator = (function() {
           w.write('"');
         },
      "super": function(e, n, w) {
+          var cls = w.getClosure({ isClass: true });
+          if (!cls || !cls.props.className) {
+            throw new Error("Could not find class name: line "
+                + (n.state && n.state.line));
+          }
           var c = w.getClosure({ isClassMethod: true });
           if (!c || !c.props.methodName) {
             throw new Error("Could not find method name: line "
                 + (n.state && n.state.line));
           }
-          w.write("return ");
-          w.write(w.getInstanceVariable());
+          w.write(cls.props.className);
           w.write(".__super__.");
           w.write(c.props.methodName);
           w.write(".apply(this, arguments);");
@@ -548,14 +551,23 @@ this.Translator = (function() {
             e.translate(n.left, { isAssign: true });
             w.write(" = ");
             var rightOptions = {};
-            var c = w.getClosure({ isClass: true });
-            if (c
+            var cc = w.getClosure({ isClass: true });
+            if (cc
                 && (n.left.op === 'memberId' || n.left.op === 'id')
                 && n.right.op === "->"
                 ) {
               rightOptions.methodName = n.left.id;
             }
+            var useFakeClosure = (c === cc && n.right.op !== "->");
+            if (useFakeClosure) {
+              //Since assigned ids in a class block are translated, make a fake
+              //closure around the translation.
+              w.startClosure();
+            }
             e.translate(n.right, rightOptions);
+            if (useFakeClosure) {
+              w.endClosure();
+            }
           }
         },
      "+=": binary,

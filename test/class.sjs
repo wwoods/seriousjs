@@ -75,9 +75,9 @@ describe "Classes", ->
   it "Should work with class variables", ->
     m = sjs.eval """
         class a
-          @v = 6
+          @v: 6
 
-          inc = () -> @class.v += 1
+          inc: () -> @class.v += 1
         q = new a()
         q.inc()
         q.inc()
@@ -92,4 +92,50 @@ describe "Classes", ->
     catch e
       assert.equal "Unexpected member identifier: line 2",
           e.message
+
+  it "Should work with @ for this", ->
+    m = sjs.eval """
+        class a
+          b: () ->
+            return @
+        q = new a()
+        """
+    assert.equal m.q, m.q.b()
+
+  it "Should work with extends", ->
+    m = sjs.eval """
+        class a
+          hey: 88
+          method: () -> @hey + 6
+        class b extends a
+        m = new b()
+        """
+    assert.equal 88, m.m.hey
+    assert.equal 94, m.m.method()
+    assert.equal true, m.m instanceof m.b
+    assert.equal true, m.m instanceof m.a
+
+  it "Should throw an error without new for extended classes", ->
+    m = sjs.eval """
+        class a
+        class b extends a
+        """
+    assert.throws -> m.a()
+    assert.throws -> m.b()
+
+  it "Should disallow = in body", ->
+    assert.throws -> sjs.eval """
+        class a
+          b = 8
+        """
+
+  it "Should not break like it did once", ->
+    m = sjs.eval """
+        class a
+          innerDict:
+              b: 6
+              c: 7
+        inst = new a()
+        """
+    assert.equal 6, m.inst.innerDict.b
 

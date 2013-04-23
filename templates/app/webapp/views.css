@@ -1,0 +1,7 @@
+
+.color-view {
+    display: inline-block;
+    width: 100px;
+    height: 100px;
+    background-color: #f00;
+}

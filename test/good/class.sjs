@@ -9,10 +9,10 @@ class b extends a
 
 
 class c extends a
-  @test = 5
+  @test: 5
   
-  test = () ->
+  test: () ->
     @class.test += 1
     
   # inline assignment
-  inc = () -> @class.test += 1
+  inc: () -> @class.test += 1

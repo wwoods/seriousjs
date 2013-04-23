@@ -1,6 +1,9 @@
 extends layout
 block scripts
-  script(type="text/javascript", data-main="/src/_requirejs/loader", 
+  script(type="text/javascript", src="/src/jquery-1.9.1.min.js")
+  script(type="text/javascript", src="/src/shared/underscore-min.js")
+  script(type="text/javascript", src="/src/shared/backbone-min.js")
+  script(type="text/javascript", data-main="/src/_requirejs/loader",
       src="/src/_requirejs/require.js")
 
 block content

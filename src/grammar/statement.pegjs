@@ -88,14 +88,3 @@ try_stmt_catch
   = "catch" _ id:Identifier {
       return R(id);
     }
-
-class_stmt
-  = "class" _ id:Identifier ext:(_ "extends" _ Identifier)?
-        body:statement_body? {
-      var parent = null;
-      if (ext) {
-        parent = ext[3];
-      }
-      return R({ op: "class", name: id, parent: parent, body: body });
-    }
-

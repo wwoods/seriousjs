@@ -1,3 +1,6 @@
 define([], function() {
-  return { test: function() { console.log("And a JS method"); } };
+  $('body').append("<p>Loaded plainJs.js!</p>")
+  return { test: function() {
+    $('body').append("<p>Hello from plain JS!</p>");
+  }};
 });

@@ -78,5 +78,5 @@ describe "bin/seriousjs and dependencies", ->
                 console.log("== stderr ==\n#{ stderr }")
                 console.log("== error ==\n#{ error }")
                 assert.equal "", stderr
-                assert.equal "", stdout
+                assert.equal "Build finished.\n", stdout
                 done()
