@@ -186,7 +186,8 @@ require_chain
     }
 
 require_import
-  = from:require_import_from as:(_ "as" _ Identifier)? {
+  = from:require_import_from as:(_ "as" _ Identifier)?
+      fr:(_ "for" _ Identifier (ARG_SEP Identifier)*)? {
     var a = null;
     if (as) {
       a = as[3].id;
@@ -194,7 +195,12 @@ require_import
     else {
       a = from.defaultAs;
     }
-    return { "op": "require_import", "from": from.from, "as": a };
+    var forParts = null;
+    if (fr) {
+      forParts = getArray(fr[3], fr[4], 1);
+    }
+    return { "op": "require_import", "from": from.from, "as": a,
+        "forParts": forParts };
   }
 
 require_import_from

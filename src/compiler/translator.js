@@ -429,13 +429,22 @@ this.Translator = (function() {
           e.translate(n.defs);
         },
      "require_import": function(e, n, w) {
-          if (n.as !== null) {
-            w.variable(n.as, true);
-            w.write(' = ');
-          }
+          w.variable(n.as, true);
+          w.write(' = ');
           w.write('require("');
           w.write(n.from);
           w.write('")');
+          if (n.forParts !== null) {
+            for (var i = 0, m = n.forParts.length; i < m; i++) {
+              var forPart = n.forParts[i].id;
+              w.write(", ");
+              w.variable(forPart, true);
+              w.write(" = ");
+              w.write(n.as);
+              w.write(".");
+              w.variable(forPart);
+            }
+          }
         },
      "string": function(e, n, w) {
           w.write('"');
