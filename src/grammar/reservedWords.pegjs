@@ -1,4 +1,4 @@
-ReservedWord
+ReservedWord "ReservedWord"
   = ReservedWordInner !IdentifierPart
   
 ReservedWordInner
@@ -6,9 +6,11 @@ ReservedWordInner
   / "break"
   / "class"
   / "continue"
+  / "for"
   / "if"
   / "instanceof"
   / "in"
+  / "is"
   / "new"
   / "not"
   / "of"

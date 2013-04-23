@@ -12,32 +12,39 @@ function setup() {
         }
     });
 
-    function compileScript() {
-        showErrorTimer && clearTimeout(showErrorTimer);
+    function compileScript(immediateError) {
         var newVal = sjsSide.val();
         if (newVal !== lastVal) {
             lastVal = newVal;
+            showErrorTimer && clearTimeout(showErrorTimer);
+
             try {
                 jsSide.val(seriousjs.compile(lastVal));
             }
             catch (e) {
                 var text = "Error: " + e + "\n\n" + e.stack;
-                showErrorTimer = setTimeout(
-                    function() { jsSide.val(text); },
-                    1000
-                );
+                if (immediateError) {
+                    jsSide.val(text);
+                }
+                else {
+                    showErrorTimer = setTimeout(
+                        function() { jsSide.val(text); },
+                        100
+                    );
+                }
             }
         }
     }
 
     function runScript() {
         try {
-            jsSide.val(seriousjs.compile(lastVal));
+            compileScript(true);
             console.clear();
             eval(jsSide.val());
         }
         catch (e) {
             //Just wait for the window to update
+            console.error(e);
         }
     }
 
@@ -51,6 +58,11 @@ function setup() {
             console._dom.empty().append(
                     '<div class="results-header">Console Output</div>');
             console._dom.show();
+        },
+        error: function(e) {
+            var errorDom = $('<div class="results-error"></div>')
+            errorDom.append(e.stack);
+            console._add(errorDom);
         },
         log: function(msg) {
             console._add("> " + msg);

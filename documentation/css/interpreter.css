@@ -30,8 +30,15 @@
     background-color: #feb;
     font-family: monospace;
     font-size: 9pt;
+    overflow-x: auto;
 }
 
 .interpreter .results-header {
     border-bottom: solid 1px #555;
+}
+
+.interpreter .results-error {
+    color: #f00;
+    font-size: 8pt;
+    white-space: pre;
 }
