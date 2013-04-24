@@ -186,9 +186,11 @@ this.compile = function(text, options) {
     options = {};
   }
   if (!options.filename && permaOptions.showScriptAfterTest) {
-    options.debugCallback = function(script, tree) {
-      var lines = util.inspect(tree, null, 30) + "\n\n" + script;
-      self.testAddCompiledScript(lines);
+    options.debugTreeCallback = function(tree) {
+      self.testAddCompiledScript(util.inspect(tree, null, 30));
+    };
+    options.debugCallback = function(script) {
+      self.testAddCompiledScript(script);
     };
   }
   var script = sjsCompiler.compile(self.parser, text, options);

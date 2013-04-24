@@ -155,6 +155,7 @@ script
       return { tree: r };
     }
 
+##include async.pegjs
 ##include indentsAndSpacing.pegjs
 ##include numbers.pegjs
 ##include unicode.pegjs

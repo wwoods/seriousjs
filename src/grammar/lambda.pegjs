@@ -6,14 +6,19 @@ lambda_op
 
 
 lambda
-  = parms:lambda_args? op:lambda_op
+  = spec:lambda_spec parms:lambda_args? op:lambda_op
         body:lambda_body {
       if (!parms) {
         parms = [];
       }
       log("Finished lambda at " + _pos());
-      return { op: op, parms: parms, body: body.body, doc: body.doc };
+      return { op: op, parms: parms, body: body.body, doc: body.doc,
+          spec: spec };
     }
+
+
+lambda_spec
+  = async:("async" _)? { return { async: (async ? true : false) }; }
 
 
 lambda_args

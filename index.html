@@ -45,6 +45,40 @@ fib = (n) ->
 console.log fib(4)
 console.log fib(5)
 console.log fib(6)
+
+# Or you can do complicated async stuff
+
+progressDemo = async ->
+    console.log 1
+    await 500
+    console.log 2
+    await 500
+    console.log 3
+    await 500
+    console.log 4
+    await 500
+    console.log 5
+    await 500
+    console.log "Done!"
+
+jqueryGetter = (url, callback) ->
+    console.log("Getting #{ url } with callback #{ callback }")
+    $.ajax(
+            url
+            success: (data) ->
+                console.log(data.substring(0, 100))
+                callback(null, data)
+            error: (jqXhr, textStatus, errorThrown) ->
+                callback("#{ textStatus } / #{ errorThrown }")
+
+method = async () ->
+    async progressDemo
+    for a in ['http://www.google.com', 'http://www.yahoo.com', 'http://www.bing.com']
+        async jqueryGetter a
+
+method (error, result) ->
+    console.log error
+    console.log result
 </textarea></td>
                     <td><textarea class="javascript"></textarea></td>
                 </tr>

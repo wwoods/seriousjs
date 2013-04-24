@@ -20,7 +20,11 @@ statement_list_inner
 
 statement_body
   = CHECK_NEWLINE !ASSERT_ON_NEWLINE _ head:expression { return [ head ]; }
-  / INDENT_BLOCK_START inner:statement_list_inner? BLOCK_END
+  / statement_body_block
+
+
+statement_body_block
+  = INDENT_BLOCK_START inner:statement_list_inner? BLOCK_END
         & { return inner; } {
       return inner;
     }
@@ -46,6 +50,8 @@ statement_no_body
     }
   / stmt:assign_stmt { return stmt; }
   / stmt:class_stmt { return stmt; }
+  / stmt:throw_stmt { return stmt; }
+  / stmt:async_stmt { return stmt; }
   / expr:expression { return R(expr); }
 
 
@@ -94,4 +100,9 @@ try_stmt_catch
 try_stmt_finally
   = "finally" body:statement_body {
       return R({ op: "finally", body: body });
+    }
+
+throw_stmt
+  = "throw" _ body:expression {
+      return R({ op: "throw", body: body });
     }

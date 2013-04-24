@@ -1,5 +1,7 @@
 (function() {
 
+var realConsole = console;
+
 function setup() {
     var sjsSide = $('.interpreter .seriousjs');
     var jsSide = $('.interpreter .javascript');
@@ -12,7 +14,18 @@ function setup() {
         }
     });
 
+    var compileTimer = null;
     function compileScript(immediateError) {
+        clearTimeout(compileTimer);
+        if (immediateError) {
+            _compileScript(true);
+        }
+        else {
+            compileTimer = setTimeout(function() { _compileScript(); }, 200);
+        }
+    }
+
+    function _compileScript(immediateError) {
         var newVal = sjsSide.val();
         if (newVal !== lastVal) {
             lastVal = newVal;
@@ -63,9 +76,11 @@ function setup() {
             var errorDom = $('<div class="results-error"></div>')
             errorDom.append(e.stack);
             console._add(errorDom);
+            realConsole.error(e);
         },
         log: function(msg) {
             console._add("> " + msg);
+            realConsole.log(msg);
         },
         _add: function(obj) {
             if (!(obj instanceof $)) {

@@ -1,5 +1,31 @@
 
+var ASYNC_COUNT = "c";
+var ASYNC_RETURN_FUNC = "v";
+var ASYNC_RESULT_CALLBACK = "r";
+var ASYNC_THIS = "s";
+var ASYNC_TRIGGERED = "t";
+
 var allFeatures = {
+  async: ""
+      + "__asyncCheck=function(obj,error){"
+      + " if(obj." + ASYNC_TRIGGERED + "){return}"
+      + " obj." + ASYNC_COUNT + "--;"
+      + " if(error){"
+      + "  __asyncTrigger(obj,error);"
+      + " }"
+      + " else if(obj." + ASYNC_COUNT + "===0){"
+      + "  __asyncTrigger(obj,null,"
+      +     "obj." + ASYNC_RETURN_FUNC + " && obj." + ASYNC_RETURN_FUNC + "());"
+      + " }"
+      + "},"
+      + "__asyncTrigger=function(obj,error,result){"
+      //Guard for ASYNC_TRIGGERED being false is in asyncCheck.
+      + " obj." + ASYNC_TRIGGERED + "=true;"
+      + " obj." + ASYNC_RESULT_CALLBACK + " && obj." + ASYNC_RESULT_CALLBACK
+      +       ".call("
+      +     "obj." + ASYNC_THIS + ",error,result"
+      + " );"
+      + "}",
   dictCheckAvailable: ""
       + "__dictCheckAvailable=function(spec,dict){"
       + " for(var k in dict){"
@@ -81,6 +107,19 @@ this.Closure = Closure = (function() {
     this.features = {};
     this.afterStart = [];
     this.props = props || {};
+    this._asyncCheckVar = null;
+
+    if (this.props.isAsync) {
+      //This means we also have asyncParent if we have a parent scope to
+      //get variable names from.
+      if (this.props.asyncParent) {
+        var varParent = this.resolveAsyncRoot();
+        this._asyncDataVar = varParent.newTemp(true);
+      }
+      else {
+        this._asyncDataVar = this.newTemp(true);
+      }
+    }
   }
   
   Closure.prototype.getNamedInstanceVariable = function() {
@@ -88,7 +127,9 @@ this.Closure = Closure = (function() {
     return "__this";
   };
   
-  Closure.prototype.newTemp = function() {
+  Closure.prototype.newTemp = function(isLocalVar) {
+    //isLocalVar is normally set by the Writer, but if we're allocating our own,
+    //we need it.
     var c = 0;
     for (var k in this.tmpVars) {
       c += 1;
@@ -99,7 +140,86 @@ this.Closure = Closure = (function() {
     }
     var id = '__t' + c;
     this.tmpVars[id] = 1;
+    if (isLocalVar) {
+      this.vars[id] = 1;
+    }
     return id;
+  };
+
+  Closure.prototype.releaseTemp = function(id) {
+    this.tmpVars[id] = 0;
+  };
+
+  Closure.prototype.resolveAsyncRoot = function() {
+    var root = this.props.asyncParent;
+    if (!root) {
+      return this;
+    }
+    while (root.props.asyncParent) {
+      root = root.props.asyncParent;
+    }
+    return root;
+  };
+
+  Closure.prototype.setAsyncCallback = function(callbackName) {
+    this.asyncCallback = callbackName;
+  };
+
+  Closure.prototype._getAsyncCallback = function() {
+    if (!this.asyncCallback) {
+      throw new Error("Never set asyncCallback!");
+    }
+    return this.asyncCallback;
+  };
+
+  Closure.prototype.getAsyncCheckAsVar = function() {
+    //Cache out a function wrapper of our async check.  Used internally, not
+    //designed to be used for the last call since it has no access to a result.
+    if (!this._asyncCheckVar) {
+      this._asyncCheckVar = this.resolveAsyncRoot().newTemp(true);
+    }
+    return this._asyncCheckVar;
+  };
+
+  Closure.prototype.getAsyncDataVar = function() {
+    return this._asyncDataVar;
+  };
+
+  Closure.prototype.asyncAddCall = function(writer) {
+    //There's another async request for us, so increment our counter.
+    writer.write(this._asyncDataVar + "." + ASYNC_COUNT + "++");
+  };
+
+  Closure.prototype.asyncCheck = function(writer, errorVar) {
+    writer.write("__asyncCheck(");
+    writer.write(this.getAsyncDataVar());
+    if (errorVar) {
+      writer.write(",");
+      writer.write(errorVar);
+    }
+    writer.write(")");
+  };
+
+  Closure.prototype.asyncCloseTry = function(writer) {
+    //Add the tail to a try statement.
+    writer.write("}catch(e){");
+    //Add 1 to count since we'll also trigger in the finally block!
+    this.asyncAddCall(writer);
+    writer.write(";");
+    this.asyncCheck(writer, "e");
+    writer.write("}finally{");
+    this.asyncCheck(writer);
+    writer.write("}");
+  };
+
+  Closure.prototype.asyncResult = function(writer, writeResultCallback) {
+    //Write the meta code for calling our result callback
+    writer.write(this._asyncDataVar);
+    writer.write(".");
+    writer.write(ASYNC_RETURN_FUNC);
+    writer.write("=function(){return ");
+    writeResultCallback();
+    writer.write("};return");
   };
   
   Closure.prototype.toString = function() {
@@ -108,32 +228,46 @@ this.Closure = Closure = (function() {
     if (this.props.usesNamedThis) {
       this.vars['__this'] = true;
     }
+    checkVar = function() {
+      if (r === '') {
+        r += 'var ';
+      }
+      else {
+        r += ',';
+      }
+    }
     for (var v in this.vars) {
       if (v in this.funcArgs) {
         continue;
       }
-      if (r === '') {
-        r += 'var ';
-      }
-      else {
-        r += ',';
-      }
+      checkVar();
       r += v;
     }
     for (var v in this.features) {
-      if (r === '') {
-        r += 'var ';
-      }
-      else {
-        r += ',';
-      }
+      checkVar();
       r += allFeatures[v];
+    }
+    if (this.props.usesNamedThis) {
+      checkVar();
+      r += '__this=this';
+    }
+    if (this.props.isAsync) {
+      checkVar();
+      r += this._asyncDataVar + "={";
+      //Start with 1 count for our thread
+      r += ASYNC_COUNT + ":1";
+      r += "," + ASYNC_THIS + ":this";
+      r += "," + ASYNC_RESULT_CALLBACK + ":" + this._getAsyncCallback();
+      r += "}";
+      if (this._asyncCheckVar !== null) {
+        checkVar();
+        r += this._asyncCheckVar + "=function(error){";
+        r += "__asyncCheck(" + this._asyncDataVar + ",error)";
+        r += "}";
+      }
     }
     if (r !== '') {
       r += ';';
-    }
-    if (this.props.usesNamedThis) {
-      r += '__this=this;';
     }
     return r;
   };
@@ -221,6 +355,16 @@ this.Writer = (function() {
         return false;
       }
     }
+    if (spec.isFunction) {
+      if (!c.props.isFunction) {
+        return false;
+      }
+    }
+    if (spec.isAsync) {
+      if (!c.props.isAsync) {
+        return false;
+      }
+    }
     return true;
   };
   
@@ -228,13 +372,17 @@ this.Writer = (function() {
     //Returns the created Closure object; hasn't pushed it to output yet
     var c = new Closure(props);
     this._closures.push(c);
-    this._indent += 1;
+    if (!props.noIndent) {
+      this._indent += 1;
+    }
     return c;
   };
   
   Writer.prototype.endClosure = function() {
-    this._closures.pop();
-    this._indent -= 1;
+    var c = this._closures.pop();
+    if (!c.noIndent) {
+      this._indent -= 1;
+    }
   };
   
   Writer.prototype.afterClosure = function(fn) {

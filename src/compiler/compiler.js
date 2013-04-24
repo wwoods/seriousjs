@@ -2,6 +2,7 @@
 var self = this;
 var translator = require('./translator.js');
 var writer = require('./writer.js');
+var asyncTransform = require('./asyncTransform.js');
 
 this.cleanupTree = function(tree) {
   for (var n in tree) {
@@ -42,6 +43,9 @@ this.compile = function(parser, text, options) {
   }
 
   self.cleanupTree(tree);
+  if (options.debugTreeCallback) {
+    options.debugTreeCallback(tree);
+  }
 
   var requires = [];
   if (options.amdModule) {
@@ -59,7 +63,8 @@ this.compile = function(parser, text, options) {
 
   var writerObj = new writer.Writer();
   var translatorObj = new translator.Translator(writerObj, options);
-  translatorObj.translate(tree);
+  var translatorTree = asyncTransform.transformTree(tree);
+  translatorObj.translate(translatorTree);
   var script = writerObj.getOutput();
 
   if (options.amdModule) {

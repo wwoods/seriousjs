@@ -28,8 +28,10 @@ this.Translator = (function() {
               || nearClosure.props.className);
           var c = w.startClosure({
               isClassMethod: isClassMethod,
-              methodName: options.methodName
-              });
+              methodName: options.methodName,
+              isFunction: true,
+              isAsync: n.spec.async
+          });
           if (n.doc) {
             w.write("(function() {var __doc__ = ");
             w.newline();
@@ -37,24 +39,44 @@ this.Translator = (function() {
             w.write(";    var __inner__ = ");
           }
           if (options.isConstructorFor) {
-              w.write("function ");
-              w.write(options.isConstructorFor);
-              w.write("(");
+            w.write("function ");
+            w.write(options.isConstructorFor);
+            w.write("(");
           }
           else {
             w.write("function(");
           }
           w.startArgs();
           e.translate(n.parms, { separator: ',' });
+          if (c.props.isAsync) {
+            w.usesFeature("async");
+            var asyncCallback = null;
+            for (var i = 0, m = n.parms.length; i < m; i++) {
+              if (n.parms[i].id === "callback") {
+                asyncCallback = "callback";
+                break;
+              }
+            }
+            if (asyncCallback === null) {
+              if (n.parms.length > 0) {
+                w.write(",");
+              }
+              asyncCallback = w.tmpVar();
+            }
+            c.setAsyncCallback(asyncCallback);
+          }
           w.endArgs();
           w.write(") {");
           w.write(c);
+          if (c.props.isAsync) {
+            //Whole method must be in a try..catch..finally
+            w.write("try{");
+          }
           if (options.isConstructorFor) {
             //Check if we're a function invocation or not
             w.write("if(!(this instanceof ");
             w.write(options.isConstructorFor);
-            w.write(")");
-            w.write("){");
+            w.write(")){");
             w.write('throw new Error("not called with new operator")');
 
             if (false) {
@@ -73,6 +95,11 @@ this.Translator = (function() {
             w.write("}");
           }
           e.translate(n.body, { isReturnClosure: true });
+          if (c.props.isAsync) {
+            //Whole method must be in a try..catch..finally.  It's imperative
+            //that we call our result.
+            c.asyncCloseTry(w);
+          }
           w.write("}");
           w.endClosure();
           if (n.doc) {
@@ -90,10 +117,105 @@ this.Translator = (function() {
           e.translate(n.expr);
           w.write("]");
         },
+     "asyncCall": function(e, n, w) {
+          w.usesFeature("async");
+          //Get the closure whose completion we affect
+          var c = w.getClosure({ isAsync: true });
+          if (!c) {
+            throw new Error("async calls require an await context or "
+                + "async function");
+          }
+          //Find the temp var parent to stop from overwriting stuff since we
+          //refer up all the time in async code
+          var cVarParent = c.resolveAsyncRoot();
+
+          var callbackArg = 0;
+          while (callbackArg < n.call.args.length) {
+            if (n.call.args[callbackArg].id === "callback") {
+              break;
+            }
+            callbackArg += 1;
+          }
+          var argCount = Math.max(callbackArg + 1, n.call.args.length);
+          c.asyncAddCall(w);
+          w.write(",");
+          var myCallback = cVarParent.newTemp(true);
+          w.write(myCallback);
+          w.write("=function(error");
+          //variables...
+          w.write("){");
+          //variables...
+          w.write("__asyncCheck(");
+          w.write(c.getAsyncDataVar());
+          w.write(",error)};");
+          w.goToNode(n);
+          e.translate(n.call.func);
+          w.write("(");
+          for (var i = 0; i < argCount; i++) {
+            if (i > 0) {
+              w.write(",");
+            }
+            if (i === callbackArg) {
+              w.write(myCallback);
+            }
+            else {
+              e.translate(n.call.args[i]);
+            }
+          }
+          w.write(")");
+          //No longer need this variable...
+          cVarParent.releaseTemp(myCallback);
+        },
      "atom": function(e, n, w) {
           e.translate(n.unary);
           e.translate(n.atom);
           e.translate(n.chain, { separator: '' });
+        },
+     "await": function(e, n, w) {
+          if (n.after == null) {
+            throw new Error("Await never got after?  Line " + n.line);
+          }
+
+          //We accomplish await blocks by creating a new async closure that's
+          //not at the function level...
+          var cParent = w.getClosure({ isAsync: true });
+          if (cParent === null
+              || w.getClosure({ isAsync: true, isFunction: true }) == null) {
+            throw new Error("Await may only be used within async method; line "
+                + n.line);
+          }
+
+          //Add a count for us and the after chunk.
+          cParent.asyncAddCall(w);
+
+          var c = w.startClosure({ isAsync: true, asyncParent: cParent });
+          var cName = c.getAsyncDataVar() + "_f";
+          c.setAsyncCallback(cName);
+          //Our await block's wrapper
+          w.write(",(function() {");
+          w.write(c);
+          w.write("try{");
+          e.translate(n.body);
+          c.asyncCloseTry(w);
+          w.write("})();");
+          w.endClosure();
+
+          //Now fill in the things to call after we're done, which is in itself
+          //another async closure.
+          var cAfter = w.startClosure({ isAsync: true, asyncParent: cParent });
+          cAfter.setAsyncCallback(cParent.getAsyncCheckAsVar());
+          w.write("function ");
+          w.write(cName);
+          w.write("(__error){");
+          w.write(cAfter);
+          w.write("if(__error){");
+          w.write(cParent.getAsyncCheckAsVar());
+          w.write("(__error);return}");
+          w.write("try{");
+          e.translate(n.after);
+          cAfter.asyncCloseTry(w);
+          w.write("}");
+          w.endClosure();
         },
      "call": function(e, n, w) {
           w.write('(');
@@ -361,7 +483,15 @@ this.Translator = (function() {
         },
      "memberClass": function(e, n, w) {
           var c = w.getClosure({ isClass: true });
-          w.write(c.props.className);
+          if (!c) {
+            throw new Error("@class only valid in a class; line " + n.line);
+          }
+          var f = w.getClosure({ isFunction: true });
+          if (!f) {
+            throw new Error("@class only vaoid in a class' function; line "
+                + n.line);
+          }
+          w.write(c.props.className + ".prototype");
         },
      "memberId": function(e, n, w) {
           w.goToNode(n);
@@ -380,9 +510,10 @@ this.Translator = (function() {
             w.write(n.id);
             return;
           }
-          c = w.getClosure({ isClass: true });
+          c = w.getClosure({ isFunction: true });
           if (c) {
-            w.write(c.props.className + ".");
+            //We're in an unbound method, just use this
+            w.write("this.");
             w.write(n.id);
             return;
           }
@@ -418,10 +549,18 @@ this.Translator = (function() {
           w.write(n.literal);
         },
      "return": function(e, n, w) {
-          w.write("return ");
-          if (n.result) {
-            //Otherwise, blank return statement.
-            e.translate(n.result);
+          var c = w.getClosure({ isFunction: true });
+          if (c.props.isAsync) {
+            c.asyncResult(w, function() {
+              e.translate(n.result);
+            });
+          }
+          else {
+            w.write("return ");
+            if (n.result) {
+              //Otherwise, blank return statement.
+              e.translate(n.result);
+            }
           }
         },
      "require": function(e, n, w) {
@@ -479,6 +618,11 @@ this.Translator = (function() {
           w.write(" : ");
           e.translate(n.else);
           w.write(")");
+        },
+     "throw": function(e, n, w) {
+          w.goToNode(n);
+          w.write("throw ");
+          e.translate(n.body);
         },
      "try": function(e, n, w) {
           w.write("try {");
@@ -575,7 +719,7 @@ this.Translator = (function() {
             if (useFakeClosure) {
               //Since assigned ids in a class block are translated, make a fake
               //closure around the translation.
-              w.startClosure();
+              w.startClosure({ noIndent: true });
             }
             e.translate(n.right, rightOptions);
             if (useFakeClosure) {
@@ -589,11 +733,19 @@ this.Translator = (function() {
      "/=": binary,
   };
 
+  var badOpsForGoto = {
+    asyncCall: true,
+    await: true
+  };
+
   var badOpsForReturn = {
+    asyncCall: true,
+    await: true,
     forList: true,
     if: true,
     return: true,
     try: true,
+    throw: true
   };
 
   function Translator(writer, options) {
@@ -616,13 +768,23 @@ this.Translator = (function() {
 
     if (Array.isArray(node)) {
       for (var i = 0, m = node.length; i < m; i++) {
-        if (i === m - 1 && options.isReturnClosure) {
-          if (!(node[i].op in badOpsForReturn)) {
-            w.goToNode(node[i]);
+        if (i === m - 1 && options.isReturnClosure
+            && !(node[i].op in badOpsForReturn)) {
+          var c = w.getClosure({ isFunction: true });
+          w.goToNode(node[i]);
+          if (c.props.isAsync) {
+            c.asyncResult(w, function() {
+              self.translate(node[i], options);
+            });
+          }
+          else {
             w.write("return ");
+            self.translate(node[i], options);
           }
         }
-        self.translate(node[i], options);
+        else {
+          self.translate(node[i], options);
+        }
         if (i < m - 1) {
           w.write(separator);
         }
@@ -633,10 +795,12 @@ this.Translator = (function() {
       self.translate(node.tree, treeOptions);
     }
     else if (typeof node === "object") {
-      w.goToNode(node);
+      if (!(node.op in badOpsForGoto)) {
+        w.goToNode(node);
+      }
       var op = opTable[node['op']];
       if (op === undefined) {
-        throw "Unrecognized op: " + node['op'];
+        throw new Error("Unrecognized op: " + node['op']);
       }
       op(self, node, w, options);
     }

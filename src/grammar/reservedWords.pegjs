@@ -3,6 +3,8 @@ ReservedWord "ReservedWord"
   
 ReservedWordInner
   = "and"
+  / "async"
+  / "await"
   / "break"
   / "catch"
   / "class"
@@ -19,4 +21,5 @@ ReservedWordInner
   / "or"
   / "return"
   / "super"
+  / "throw"
   / "while"

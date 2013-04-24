@@ -59,6 +59,22 @@ describe "Classes", ->
         q = new a()"""
     assert.equal 32, m.q.f()
 
+  it "Should support inheritance of instance vars", ->
+    m = sjs.eval """
+        class a
+          b: 'val'
+          dict: {}
+        class b extends a
+        c = new b()
+        d = new b()
+        d.b += "lav"
+        d.dict.value = "test"
+        """
+    assert.equal "val", m.c.b
+    assert.equal "vallav", m.d.b
+    assert.equal "test", m.d.dict.value
+    assert.equal "test", m.c.dict.value
+
   it "Should bind @ to closest class member", ->
     m = sjs.eval """
         class a
@@ -72,17 +88,53 @@ describe "Classes", ->
         """
     assert.equal 18, m.inst.f()
 
-  it "Should work with class variables", ->
+  it "Should work with @ for this", ->
     m = sjs.eval """
         class a
-          @v: 6
+          b: () ->
+            return @
+        q = new a()
+        """
+    assert.equal m.q, m.q.b()
+
+  it "Should allow @ to be used in unbound methods", ->
+    m = sjs.eval """
+        unbound = () -> @value
+        """
+    assert.equal 42, m.unbound.call(value: 42)
+
+  it "Should disallow @ in class definitions", ->
+    assert.throws -> sjs.eval """
+        class a
+          @b: 8
+        """
+
+  it "Should disallow @class in class definitions", ->
+    assert.throws -> sjs.eval """
+        class a
+          @class.b: 8
+        """
+
+  it "Should disallow @class outside of class definitions", ->
+    assert.throws -> sjs.eval """
+        a = () ->
+          @class.b: 8
+        """
+
+  it "Should work with class variables", ->
+    """Note that class variables actually operate on the prototype, since
+    prototypes are inherited but the classes themselves are not.
+    """
+    m = sjs.eval """
+        class a
+          v: 6
 
           inc: () -> @class.v += 1
         q = new a()
         q.inc()
         q.inc()
         """
-    assert.equal 8, m.a.v
+    assert.equal 8, m.a.prototype.v
 
   it "Should throw error for bad member expressions", ->
     try
@@ -92,15 +144,6 @@ describe "Classes", ->
     catch e
       assert.equal "Unexpected member identifier: line 2",
           e.message
-
-  it "Should work with @ for this", ->
-    m = sjs.eval """
-        class a
-          b: () ->
-            return @
-        q = new a()
-        """
-    assert.equal m.q, m.q.b()
 
   it "Should work with extends", ->
     m = sjs.eval """
