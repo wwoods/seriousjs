@@ -267,9 +267,9 @@ describe "async functionality", ->
 
           await
             tsStart = Date.now()
-            results.push "Async start: #{ tsStart }"
+            results.push "Async start: #""" + """{ tsStart }"
             await blah, halo = myMethod 1, 2, callback
-            results.push "Blah, halo: #{ blah }, #{ halo }"
+            results.push "Blah, halo: #""" + """{ blah }, #""" + """{ halo }"
             await
               # If there is an await block above an async call, they will be
               # tied together, and async's results will be available to the
@@ -280,16 +280,16 @@ describe "async functionality", ->
                 async
                   results.push "Making call at #{ Date.now() }"
                   await a, b = myMethod v, 2, callback
-                  r.push("#{ v }: #{ a }")
+                  r.push("#""" + """{ v }: #""" + """{ a }")
                 catch e
-                  r.push("Failed #{ v }: #{ e }")
+                  r.push("Failed #""" + """{ v }: #""" + """{ e }")
                 finally
                   if v < 3
-                      r.push("Finally from #{ v }")
+                      r.push("Finally from #""" + """{ v }")
                 # Make each request 100ms apart
                 await 20  # Could have been await 0.02s
             # Stuff with blah, halo, a1, a2, r...
-            results.push("a1: #{ a1 }")
+            results.push("a1: #""" + """{ a1 }")
           catch blah
             throw blah
           finally
@@ -299,7 +299,7 @@ describe "async functionality", ->
           try
             await v1, error, v2 = asyncWeirdError()
           catch e
-            results.push("Weird error caught: #{ e }")
+            results.push("Weird error caught: #""" + """{ e }")
 
           # And callbacks without errors
           await noerror v1, v2 = asyncSansError()

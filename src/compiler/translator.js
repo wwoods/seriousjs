@@ -30,7 +30,7 @@ this.Translator = (function() {
               isClassMethod: isClassMethod,
               methodName: options.methodName,
               isFunction: true,
-              isAsync: n.spec.async
+              isAsync: n.spec && n.spec.async
           });
           if (n.doc) {
             w.write("(function() {var __doc__ = ");
@@ -719,7 +719,7 @@ this.Translator = (function() {
             if (useFakeClosure) {
               //Since assigned ids in a class block are translated, make a fake
               //closure around the translation.
-              w.startClosure({ noIndent: true });
+              w.startClosure({ noIndent: true, isFunction: true });
             }
             e.translate(n.right, rightOptions);
             if (useFakeClosure) {

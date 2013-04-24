@@ -332,7 +332,12 @@ this.Writer = (function() {
   
   Writer.prototype.getClosure = function(spec) {
     if (!spec) {
-      return this._closures[this._closures.length - 1];
+      var r = this.getClosure({ isRealClosure: true });
+      if (r === null) {
+        //return module level, since it can define variables too.
+        r = this._closures[0];
+      }
+      return r;
     }
     
     for (var i = this._closures.length - 1; i >= 0; --i) {
@@ -345,6 +350,12 @@ this.Writer = (function() {
   };
   
   Writer.prototype._closureMatch = function(c, spec) {
+    if (spec.isRealClosure) {
+      //class or function; things that actually delimit variable scope.
+      if (!(c.props.className || c.props.isFunction)) {
+        return false;
+      }
+    }
     if (spec.isClass) {
       if (!c.props.className) {
         return false;
