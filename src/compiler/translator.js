@@ -484,12 +484,25 @@ this.Translator = (function() {
           w.write("try {");
           e.translate(n.stmt);
           w.write("}");
-          w.goToNode(n.catchId);
-          w.write("catch (");
-          e.translate(n.catchId);
-          w.write(") {");
-          e.translate(n.catchCode);
-          w.write("}");
+          if (n.catchStmt) {
+            w.goToNode(n.catchStmt);
+            w.write("catch (");
+            if (n.catchStmt.id) {
+              e.translate(n.catchStmt.id);
+            }
+            else {
+              w.write("__error");
+              }
+            w.write(") {");
+            e.translate(n.catchStmt.body);
+            w.write("}");
+          }
+          if (n.finallyStmt) {
+            w.goToNode(n.finallyStmt);
+            w.write("finally {");
+            e.translate(n.finallyStmt.body);
+            w.write("}");
+          }
         },
      "unary_negate": function(e, n, w) {
           w.write("-");

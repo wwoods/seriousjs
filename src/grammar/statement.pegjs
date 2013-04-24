@@ -79,12 +79,19 @@ while_stmt
     }
 
 try_stmt
-  = "try" stmt:statement_body id:try_stmt_catch then:statement_body {
-      return R({ op: "try", stmt: stmt, catchId: id, catchCode: then });
+  = "try" stmt:statement_body catchPart:try_stmt_catch?
+        finalPart:try_stmt_finally?
+        & { return catchPart || finalPart; } {
+      return R({ op: "try", stmt: stmt, catchStmt: catchPart,
+          finallyStmt: finalPart });
     }
 
 try_stmt_catch
-  //Separate rule to get the line #
-  = "catch" _ id:Identifier {
-      return R(id);
+  = "catch" id:(_ Identifier)? body:statement_body {
+      return R({ op: "catch", id: id && id[1], body: body });
+    }
+
+try_stmt_finally
+  = "finally" body:statement_body {
+      return R({ op: "finally", body: body });
     }
