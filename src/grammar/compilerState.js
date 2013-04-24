@@ -159,7 +159,7 @@ function indentBlockStop(mustMatch) {
   var result = false;
   var oldBlock = blockIndents.pop();
   //If a block ends, that means that we must be de-indenting.  If we don't
-  //use max, then a block can be followed by a continuation (since continuations
+  //use min, then a block can be followed by a continuation (since continuations
   //are 2 indents), which is an incorrect parsing.
   var expectedIndent = Math.min(oldBlock.indent, getBlockIndent());
   log(getBlockList());
