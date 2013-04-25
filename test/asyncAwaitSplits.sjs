@@ -84,8 +84,10 @@ describe "await splits", ->
         f = async ->
           r = 0
           while r < 10
+            r += 1
             await r += g r
+            r += 1
           return r
         """
     await r = m.f
-    assert.equal 15, r
+    assert.equal 12, r

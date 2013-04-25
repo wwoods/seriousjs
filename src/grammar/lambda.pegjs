@@ -69,7 +69,11 @@ lambda_dict_arg
 
 
 lambda_body
-  = CHECK_NEWLINE !ASSERT_ON_NEWLINE _ head:(assign_stmt / expression) {
+  = CHECK_NEWLINE !ASSERT_ON_NEWLINE _
+        CONTINUATION_OPEN
+        head:(assign_stmt / expression)?
+        CONTINUATION_END? // Doesn't have to be end of line
+        & { return head; } {
       return R({ body: [ head ] });
     }
   / INDENT_BLOCK_START doc:lambda_doc? inner:statement_list_inner? BLOCK_END

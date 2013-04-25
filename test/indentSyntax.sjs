@@ -16,3 +16,20 @@ describe "Indent syntax", ->
             1
             2
         """
+
+  it "Should group params not with lambdas", ->
+    m = sjs.eval """
+        f = (p, inner) ->
+          p(
+              -> inner "example"
+              "other"
+        """
+    inner = ((a) -> a)
+    seen = [ 0 ]
+    checkArgs = (callback, other) ->
+      assert.equal "other", other
+      assert.equal "example", callback()
+      seen[0] = 1
+    m.f(checkArgs, inner)
+    assert.equal 1, seen[0]
+
