@@ -179,6 +179,19 @@ describe "async functionality", ->
       done()
 
 
+  it "Should work with await statements with explicit callback", (done) ->
+    m = sjs.eval """
+        f = (callback, a, b) ->
+          callback(null, a + b)
+        g = async ->
+          await ar = f callback, 4, 8
+          return ar
+        """
+    m.g (error, r) ->
+      assert.equal 12, r
+      done()
+
+
   it "Should work with assigned await statements", (done) ->
     m = sjs.eval """
         val = [ 0 ]
@@ -364,7 +377,7 @@ describe "async functionality", ->
           await
             tsStart = Date.now()
             results.push "Async start: #""" + """{ tsStart }"
-            await blah, halo = myMethod 1, 2, callback
+            await blah, halo = myMethod 1, 2
             results.push "Blah, halo: #""" + """{ blah }, #""" + """{ halo }"
             await
               # If there is an await block above an async call, they will be
@@ -375,7 +388,7 @@ describe "async functionality", ->
               for v in [1..8]
                 async
                   results.push "Making call at #{ Date.now() }"
-                  await a, b = myMethod v, 2, callback
+                  await a, b = myMethod v, 2
                   r.push("#""" + """{ v }: #""" + """{ a }")
                 catch e
                   r.push("Failed #""" + """{ v }: #""" + """{ e }")
@@ -392,8 +405,7 @@ describe "async functionality", ->
             # do more stuff
             results.push "Outer await finally"
 
-          try
-            await v1, error, v2 = asyncWeirdError()
+          await v1, error, v2 = asyncWeirdError()
           catch e
             results.push("Weird error caught: #""" + """{ e }")
 
