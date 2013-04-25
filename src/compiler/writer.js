@@ -126,13 +126,15 @@ this.Closure = Closure = (function() {
     return "__this";
   };
   
-  Closure.prototype.newTemp = function(isLocalVar) {
+  Closure.prototype.newTemp = function(isLocalVar, forceNewVar) {
     //isLocalVar is normally set by the Writer, but if we're allocating our own,
     //we need it.
+    //forceNewVar is useful for async, if we're late-binding a variable that
+    //needs to never have another value.
     var c = 0;
     for (var k in this.tmpVars) {
       c += 1;
-      if (this.tmpVars[k] === 0) {
+      if (this.tmpVars[k] === 0 && (!forceNewVar || !(k in this.vars))) {
         this.tmpVars[k] = 1;
         return k;
       }
@@ -175,7 +177,7 @@ this.Closure = Closure = (function() {
     //Cache out a function wrapper of our async check.  Used internally, not
     //designed to be used for the last call since it has no access to a result.
     if (!this._asyncCheckVar) {
-      this._asyncCheckVar = this.resolveAsyncRoot().newTemp(true);
+      this._asyncCheckVar = this.resolveAsyncRoot().newTemp(true, true);
     }
     return this._asyncCheckVar;
   };

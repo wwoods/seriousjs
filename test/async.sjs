@@ -179,6 +179,20 @@ describe "async functionality", ->
       done()
 
 
+  it "Should work with assigned await statements to dicts", (done) ->
+    m = sjs.eval """
+        inner = async ->
+          await 0
+          return { a: 8, b: 9
+        g = async ->
+          await { a, b } = inner
+          return a - b
+        """
+    m.g (error, r) ->
+      assert.equal -1, r
+      done()
+
+
   it "Should work with assigned async statements", (done) ->
     m = sjs.eval """
         val = [ 0 ]
