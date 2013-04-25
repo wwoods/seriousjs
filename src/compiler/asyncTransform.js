@@ -22,19 +22,9 @@ var deepCopy = function(obj) {
 };
 
 function iterTree(path, node) {
-  path.push(node);
-  for (var n in node) {
-    var o = node[n];
-    if (typeof o !== 'object' || o === null) {
-      continue;
-    }
-    iterTree(path, o);
-  }
-  path.pop();
-
   if (isArray(node)) {
     //Work backwards to collapse awaits in the right order
-    for (var i = node.length - 1; i >= 0; i--) {
+    for (var i = 0; i < node.length; i++) {
       if (node[i].op === "await") {
         //Is it valid?
         var parent = path[path.length - 1];
@@ -61,9 +51,21 @@ function iterTree(path, node) {
         }
 
         node[i].after = node.splice(i + 1);
+        //We just moved everything after us into ourselves, so we're done.
+        break;
       }
     }
   }
+
+  path.push(node);
+  for (var n in node) {
+    var o = node[n];
+    if (typeof o !== 'object' || o === null) {
+      continue;
+    }
+    iterTree(path, o);
+  }
+  path.pop();
 }
 
 this.transformTree = function(tree) {

@@ -33,3 +33,28 @@ describe "await splits", ->
         """
     await r = m.f()
     assert.equal "result", r
+
+
+  it "Should work with if statements", async ->
+    m = sjs.eval """
+        g = async ->
+          await 0
+          return 5
+        f = async (a) ->
+          '''Inputs > 8 get 8 added, <= 8 get 0 added'''
+          a += 1
+          if a > 9
+            a += 1
+            await a += g
+            a += 1
+          else
+            a -= 2
+          a += 1
+          return a
+        """
+    await r = m.f 9
+    assert.equal 14, r
+    await r = m.f 8
+    assert.equal 8, r
+    await r = m.f 19
+    assert.equal 24, r

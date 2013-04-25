@@ -308,23 +308,6 @@ describe "async functionality", ->
       done()
 
 
-  it "Should fail with for loops", () ->
-    assert.throws -> sjs.compile """
-        m = async ->
-          for i in [1,2,3]
-            await method
-        """
-
-
-  it "Should fail with while loops", () ->
-    assert.throws -> sjs.compile """
-        m = async ->
-          while i < 22
-            await method
-        """
-    thisshouldreallyworkatleastifstatements
-
-
   it "Should work with a rather complicated example", (done) ->
     """So, async keyword means "take this block out of the control flow, but
     execute it up to the first await (the whole thing if there is none)."
