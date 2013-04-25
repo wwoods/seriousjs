@@ -52,8 +52,7 @@ While those aren't huge, they got me thinking.  What are some other ways that
 Coffee-Script could be improved?  Well, how about:
 
 * Support for asynchronous fibers / continuations?  Programming callbacks in
-  an imperative manner rather than a bunch of nested functions (not implemented
-  yet)
+  an imperative manner rather than a bunch of nested functions
 
 * Tight integration with RequireJS, to provide a uniform, consistent language
   between NodeJS and the browser, that runs in all environments and
