@@ -743,11 +743,27 @@ this.Translator = (function() {
           w.write(")");
         },
      "while": function(e, n, w) {
-          w.write("while (");
-          e.translate(n.expr);
-          w.write(") {");
-          e.translate(n.body);
-          w.write("}");
+          if (!n.hasAwait) {
+            w.write("while (");
+            e.translate(n.expr);
+            w.write(") {");
+            e.translate(n.body);
+            w.write("}");
+          }
+          else {
+            var loop = w.tmpVar(true, true);
+            var realLoop = {
+                op: "await",
+                name: loop,
+                body: n.body,
+                after: [ { op: "if", condition: n.expr,
+                  then: [ { op: "atom", atom: loop, chain: [
+                    { op: "call", args: [] } ] } ] }]
+            };
+            var ifClause = { op: "if", condition: n.expr,
+              then: [ realLoop ] };
+            e.translate(ifClause);
+          }
         },
      "()": function(e, n, w) {
           w.write("(");

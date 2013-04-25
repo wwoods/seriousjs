@@ -74,3 +74,18 @@ describe "await splits", ->
         """
     await r = m.f
     assert.equal 30, r
+
+
+  it "Should work with while statements", async ->
+    m = sjs.eval """
+        g = async (val) ->
+          await 0
+          return val + 1
+        f = async ->
+          r = 0
+          while r < 10
+            await r += g r
+          return r
+        """
+    await r = m.f
+    assert.equal 15, r

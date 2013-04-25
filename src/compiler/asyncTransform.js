@@ -78,6 +78,9 @@ function iterTree(path, node) {
     else if (node.op === "forList") {
       _transformForList(path, node);
     }
+    else if (node.op === "while") {
+      _transformWhile(path, node);
+    }
     else {
       throw new Error("Could not handle await for node: " + node.op);
     }
@@ -170,6 +173,12 @@ function _transformForList(path, node) {
   //loop initially deterred that thought.  Another benefit of it being with
   //the forList code is that it's more readily apparent that we have to
   //support the features of forList in both code paths.
+  var newAwait = { op: "await", body: [ node ] };
+  _pathReplace(path, newAwait);
+}
+
+
+function _transformWhile(path, node) {
   var newAwait = { op: "await", body: [ node ] };
   _pathReplace(path, newAwait);
 }
