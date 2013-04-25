@@ -1,12 +1,18 @@
 
 async_stmt
   = "async" _ call:async_call {
-      return R({ op: "asyncCall", call: call });
+      return R(call);
     }
   / await_stmt
 
 
 async_call
+  = assign:assign_clause* call:inner_async_call {
+      return R({ op: "asyncCall", assign: assign, call: call });
+    }
+
+
+inner_async_call
   = base:atom_chain args:([ \t]+ arguments_list)? {
       return R({ op: "asyncCallee", func: base, args: args && args[1] || [] });
     }
@@ -39,7 +45,7 @@ await_stmt
     }
   / "await" _ call:async_call {
       return R({ op: "await", after: null,
-          body: [ R({ op: "asyncCall", call: call }) ] });
+          body: [ R(call) ] });
     }
   / "await" body:statement_body_block {
       return R({ op: "await", after: null, body: body });

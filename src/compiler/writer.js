@@ -1,6 +1,6 @@
 
 var ASYNC_COUNT = "c";
-var ASYNC_RETURN_FUNC = "v";
+var ASYNC_RETURN_VALUE = "v";
 var ASYNC_RESULT_CALLBACK = "r";
 var ASYNC_THIS = "s";
 var ASYNC_TRIGGERED = "t";
@@ -14,8 +14,7 @@ var allFeatures = {
       + "  __asyncTrigger(obj,error);"
       + " }"
       + " else if(obj." + ASYNC_COUNT + "===0){"
-      + "  __asyncTrigger(obj,null,"
-      +     "obj." + ASYNC_RETURN_FUNC + " && obj." + ASYNC_RETURN_FUNC + "());"
+      + "  __asyncTrigger(obj,null,obj." + ASYNC_RETURN_VALUE + ");"
       + " }"
       + "},"
       + "__asyncTrigger=function(obj,error,result){"
@@ -212,14 +211,19 @@ this.Closure = Closure = (function() {
     writer.write("}");
   };
 
-  Closure.prototype.asyncResult = function(writer, writeResultCallback) {
+  Closure.prototype.asyncResult = function(writer, e, resultNode) {
     //Write the meta code for calling our result callback
     writer.write(this._asyncDataVar);
     writer.write(".");
-    writer.write(ASYNC_RETURN_FUNC);
-    writer.write("=function(){return ");
-    writeResultCallback();
-    writer.write("};return");
+    writer.write(ASYNC_RETURN_VALUE);
+    writer.write("=");
+    if (resultNode) {
+      e.translate(resultNode);
+    }
+    else {
+      writer.write("null");
+    }
+    writer.write(";return");
   };
   
   Closure.prototype.toString = function() {
@@ -256,7 +260,7 @@ this.Closure = Closure = (function() {
       r += this._asyncDataVar + "={";
       //Start with 1 count for our thread
       r += ASYNC_COUNT + ":1";
-      r += "," + ASYNC_THIS + ":this";
+      r += "," + ASYNC_THIS + ":\"" + this._asyncDataVar + "\"";
       r += "," + ASYNC_RESULT_CALLBACK + ":" + this._getAsyncCallback();
       r += "}";
       if (this._asyncCheckVar !== null) {
@@ -373,6 +377,11 @@ this.Writer = (function() {
     }
     if (spec.isAsync) {
       if (!c.props.isAsync) {
+        return false;
+      }
+    }
+    if (spec.isAwait) {
+      if (!c.props.isAwait) {
         return false;
       }
     }

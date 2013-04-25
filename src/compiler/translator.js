@@ -119,15 +119,16 @@ this.Translator = (function() {
         },
      "asyncCall": function(e, n, w) {
           w.usesFeature("async");
-          //Get the closure whose completion we affect
-          var c = w.getClosure({ isAsync: true });
-          if (!c) {
-            throw new Error("async calls require an await context or "
-                + "async function");
+          //Get the closure whose variables we affect
+          var c = w.getClosure({ isAwait: true });
+          var cAsyncParent = w.getClosure({ isAsync: true });
+          if (!c && n.assign && n.assign.length > 0) {
+            throw new Error("async calls with assigned variables require an "
+                + "await context");
           }
           //Find the temp var parent to stop from overwriting stuff since we
           //refer up all the time in async code
-          var cVarParent = c.resolveAsyncRoot();
+          var cVarParent = w.getClosure();
 
           var callbackArg = 0;
           while (callbackArg < n.call.args.length) {
@@ -136,18 +137,46 @@ this.Translator = (function() {
             }
             callbackArg += 1;
           }
+          if (cAsyncParent === null) {
+            callbackArg = -1;
+          }
           var argCount = Math.max(callbackArg + 1, n.call.args.length);
-          c.asyncAddCall(w);
-          w.write(",");
-          var myCallback = cVarParent.newTemp(true);
-          w.write(myCallback);
-          w.write("=function(error");
-          //variables...
-          w.write("){");
-          //variables...
-          w.write("__asyncCheck(");
-          w.write(c.getAsyncDataVar());
-          w.write(",error)};");
+          if (cAsyncParent !== null) {
+            //If we don't have a parent, there's no state to sync
+            cAsyncParent.asyncAddCall(w);
+            w.write(",");
+            var myCallback = w.tmpVar(true);
+            w.write("=function(error");
+            var maxArgs = 0;
+            if (n.assign) {
+              //n.assign is undefined for custom crafted setTimeout calls.
+              for (var i = 0, m = n.assign.length; i < m; i++) {
+                if (false) {
+                  //TODO Tuple assignment
+                }
+                else {
+                  maxArgs = 1;
+                }
+              }
+              var argNames = [];
+              for (var i = 0; i < maxArgs; i++) {
+                argNames.push("a" + i);
+                w.write("," + argNames[i]);
+              }
+            }
+            w.write("){if(!error){");
+            //variables...
+            if (n.assign) {
+              for (var i = 0, m = n.assign.length; i < m; i++) {
+                n.assign[i].right = { op: "id", id: argNames[0] };
+                e.translate(n.assign[i]);
+              }
+            }
+            w.write("}");
+            w.write("__asyncCheck(");
+            w.write(cAsyncParent.getAsyncDataVar());
+            w.write(",error)};");
+          }
           w.goToNode(n);
           e.translate(n.call.func);
           w.write("(");
@@ -164,7 +193,7 @@ this.Translator = (function() {
           }
           w.write(")");
           //No longer need this variable...
-          cVarParent.releaseTemp(myCallback);
+          w.tmpVarRelease(myCallback);
         },
      "atom": function(e, n, w) {
           e.translate(n.unary);
@@ -188,7 +217,8 @@ this.Translator = (function() {
           //Add a count for us and the after chunk.
           cParent.asyncAddCall(w);
 
-          var c = w.startClosure({ isAsync: true, asyncParent: cParent });
+          var c = w.startClosure({ isAsync: true, asyncParent: cParent,
+              isAwait: true });
           var cName = c.getAsyncDataVar() + "_f";
           c.setAsyncCallback(cName);
           //Our await block's wrapper
@@ -202,7 +232,8 @@ this.Translator = (function() {
 
           //Now fill in the things to call after we're done, which is in itself
           //another async closure.
-          var cAfter = w.startClosure({ isAsync: true, asyncParent: cParent });
+          var cAfter = w.startClosure({ isAsync: true, asyncParent: cParent,
+              isAwait: true });
           cAfter.setAsyncCallback(cParent.getAsyncCheckAsVar());
           w.write("function ");
           w.write(cName);
@@ -551,9 +582,7 @@ this.Translator = (function() {
      "return": function(e, n, w) {
           var c = w.getClosure({ isFunction: true });
           if (c.props.isAsync) {
-            c.asyncResult(w, function() {
-              e.translate(n.result);
-            });
+            c.asyncResult(w, e, n.result);
           }
           else {
             w.write("return ");
@@ -773,9 +802,7 @@ this.Translator = (function() {
           var c = w.getClosure({ isFunction: true });
           w.goToNode(node[i]);
           if (c.props.isAsync) {
-            c.asyncResult(w, function() {
-              self.translate(node[i], options);
-            });
+            c.asyncResult(w, self, node[i]);
           }
           else {
             w.write("return ");

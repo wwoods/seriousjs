@@ -54,3 +54,9 @@ program
   });
 
 program.parse(process.argv);
+
+//No args
+if (program.rawArgs.length === 2) {
+  var repl = require("../src/binUtil/sjsRepl");
+  repl.start();
+}

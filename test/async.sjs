@@ -31,6 +31,15 @@ describe "async functionality", ->
         2
 
 
+  it "Should work with a blank return", (done) ->
+    m = sjs.eval """
+        f = async ->
+          return
+        """
+    m.f()
+    done()
+
+
   it "Should support and wait for internal async", (done) ->
     m = sjs.eval """
         g = [ 0 ]
@@ -42,15 +51,40 @@ describe "async functionality", ->
               0
         q = async ->
           n = 0
-          while n < 100
-            async m
-            n += 1
-          console.log __t0.c
+          await
+            while n < 100
+              async m
+              n += 1
           return g[0]"""
     m.q(
         (error, r) ->
           assert.equal 100, r
           done()
+
+
+  it "Should support async at global (non-function) levels", () ->
+    m = sjs.eval """
+        val = [ 0 ]
+        f = async () ->
+          val[0] += 1
+        async f
+        """
+    assert.equal 1, m.val
+
+
+  it "Should disallow async with results at global level", () ->
+    assert.throws -> sjs.compile """async r = f"""
+
+
+  it "Should disallow async with results at function level outside await", () ->
+    assert.throws -> sjs.compile """
+        f = async () ->
+          async r = f
+        """
+
+
+  it "Should not support await at global levels", () ->
+    assert.throws -> sjs.compile """await q"""
 
 
   it "Should propagate errors", (done) ->
@@ -127,6 +161,39 @@ describe "async functionality", ->
     m.q () ->
       assert.equal 2, m.val[0]
       assert.equal true, Date.now() - n >= 10
+      done()
+
+
+  it "Should work with assigned await statements", (done) ->
+    m = sjs.eval """
+        val = [ 0 ]
+        inner = async ->
+          await 0
+          return 12
+
+        g = async ->
+          await val[0] = inner
+        """
+    m.g (error) ->
+      assert.equal 12, m.val[0]
+      done()
+
+
+  it "Should work with assigned async statements", (done) ->
+    m = sjs.eval """
+        val = [ 0 ]
+        inner = async ->
+          await 0
+          return 12
+
+        g = async ->
+          await
+            async a = inner
+            async b = inner
+          val[0] = a + b
+        """
+    m.g (error) ->
+      assert.equal 24, m.val[0]
       done()
 
 
@@ -210,6 +277,23 @@ describe "async functionality", ->
     m.q (error) ->
       assert.equal "Inner error", error
       done()
+
+
+  it "Should fail with for loops", () ->
+    assert.throws -> sjs.compile """
+        m = async ->
+          for i in [1,2,3]
+            await method
+        """
+
+
+  it "Should fail with while loops", () ->
+    assert.throws -> sjs.compile """
+        m = async ->
+          while i < 22
+            await method
+        """
+    thisshouldreallyworkatleastifstatements
 
 
   it "Should work with a rather complicated example", (done) ->
