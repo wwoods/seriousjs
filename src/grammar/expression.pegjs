@@ -79,7 +79,7 @@ mul_expr
 
 atom_chain
   = un:unary_op* base:base_atom chain:atom_mod* {
-    var r = R({ op: "atom", unary: un, atom: base, chain: chain });
+    var r = R({ op: "atom", atom: base, chain: chain });
     for (var i = un.length - 1; i >= 0; --i) {
       r = { op: un[i], right: r };
     }

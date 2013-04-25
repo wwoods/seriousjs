@@ -210,17 +210,14 @@ this.Closure = Closure = (function() {
 
   Closure.prototype.asyncResult = function(writer, e, resultNode) {
     //Write the meta code for calling our result callback
-    writer.write(this._asyncDataVar);
-    writer.write(".");
-    writer.write(ASYNC_RETURN_VALUE);
-    writer.write("=");
+    writer.write("return ");
     if (resultNode) {
+      writer.write(this._asyncDataVar);
+      writer.write(".");
+      writer.write(ASYNC_RETURN_VALUE);
+      writer.write("=");
       e.translate(resultNode);
     }
-    else {
-      writer.write("null");
-    }
-    writer.write(";return");
   };
   
   Closure.prototype.toString = function() {
@@ -451,10 +448,10 @@ this.Writer = (function() {
     }
   };
   
-  Writer.prototype.tmpVar = function(isAssign) {
+  Writer.prototype.tmpVar = function(isAssign, noWrite) {
     var c = this.getClosure();
     var id = c.newTemp();
-    this.variable(id, isAssign);
+    this.variable(id, isAssign, noWrite);
     return id;
   };
   
@@ -468,7 +465,7 @@ this.Writer = (function() {
     featureDump(f, c);
   };
   
-  Writer.prototype.variable = function(id, isAssign) {
+  Writer.prototype.variable = function(id, isAssign, noWrite) {
     var c = this.getClosure();
     if (isAssign) {
       if (!this._isInArgs) {
@@ -478,7 +475,8 @@ this.Writer = (function() {
         c.funcArgs[id] = true;
       }
       if (
-          c.props.isModule
+          !noWrite
+          && c.props.isModule
           && (
             c.exports === null && id[0] !== '_'
             || c.exports !== null && id in c.exports)
@@ -486,7 +484,9 @@ this.Writer = (function() {
         this.write('this.' + id + '=');
       }
     }
-    this.write(id);
+    if (!noWrite) {
+      this.write(id);
+    }
   };
   
   Writer.prototype._getIndent = function() {

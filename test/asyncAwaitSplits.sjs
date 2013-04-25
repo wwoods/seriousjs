@@ -41,7 +41,7 @@ describe "await splits", ->
           await 0
           return 5
         f = async (a) ->
-          '''Inputs > 8 get 8 added, <= 8 get 0 added'''
+          '''Inputs > 8 get 9 added, <= 8 get 0 added'''
           a += 1
           if a > 9
             a += 1
@@ -53,8 +53,24 @@ describe "await splits", ->
           return a
         """
     await r = m.f 9
-    assert.equal 14, r
+    assert.equal 18, r
     await r = m.f 8
     assert.equal 8, r
     await r = m.f 19
-    assert.equal 24, r
+    assert.equal 28, r
+
+
+  it "Should work with for statements", async ->
+    m = sjs.eval """
+        g = async (val) ->
+          await 0
+          return val + 5
+        f = async ->
+          r = 0
+          for val in [ 1, 2, 3, 4 ]
+            await r += g val
+            console.log "HERE #""" + """{ r }"
+          return r
+        """
+    await r = m.f
+    assert.equal 30, r

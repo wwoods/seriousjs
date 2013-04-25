@@ -196,7 +196,6 @@ this.Translator = (function() {
           w.tmpVarRelease(myCallback);
         },
      "atom": function(e, n, w) {
-          e.translate(n.unary);
           e.translate(n.atom);
           e.translate(n.chain, { separator: '' });
         },
@@ -212,6 +211,11 @@ this.Translator = (function() {
               || w.getClosure({ isAsync: true, isFunction: true }) == null) {
             throw new Error("Await may only be used within async method; line "
                 + n.line);
+          }
+
+          if (n.name) {
+            w.write(n.name);
+            w.write("=function(){");
           }
 
           //Add a count for us and the after chunk.
@@ -247,6 +251,12 @@ this.Translator = (function() {
           cAfter.asyncCloseTry(w);
           w.write("}");
           w.endClosure();
+
+          if (n.name) {
+            w.write("};");
+            w.write(n.name);
+            w.write("();");
+          }
         },
      "call": function(e, n, w) {
           w.write('(');
@@ -407,27 +417,65 @@ this.Translator = (function() {
           var r = w.tmpVar(true);
           w.write("=");
           e.translate(n.expr);
-          w.write(";for(");
+          if (!n.hasAwait) {
+            w.write(";");
+            w.write("for(");
+          }
+          else {
+            w.write(",");
+          }
           var iter = w.tmpVar(true);
           w.write("=0,");
           var iterLen = w.tmpVar(true);
           w.write("=");
           w.variable(r);
-          w.write(".length;");
-          w.variable(iter);
-          w.write("<");
-          w.variable(iterLen);
-          w.write(";");
-          w.variable(iter);
-          w.write("++){");
-          e.translate(n.ids[0], { isAssign: true });
-          w.write("=");
-          w.variable(r);
-          w.write("[");
-          w.variable(iter);
-          w.write("];");
-          e.translate(n.body);
-          w.write("}");
+          w.write(".length");
+          if (!n.hasAwait) {
+            w.write(";");
+            w.variable(iter);
+            w.write("<");
+            w.variable(iterLen);
+            w.write(";");
+            w.variable(iter);
+            w.write("++){");
+            e.translate(n.ids[0], { isAssign: true });
+            w.write("=");
+            w.variable(r);
+            w.write("[");
+            w.variable(iter);
+            w.write("];");
+            e.translate(n.body);
+            w.write("}");
+          }
+          else {
+            //Crazy async version
+            w.write(";if(");
+            w.write(iter);
+            w.write("<");
+            w.write(iterLen);
+            w.write("){");
+            var targetName = w.tmpVar(true, true);
+            var namedTarget = {
+                op: "await",
+                name: targetName,
+                body: (
+                  [
+                    { op: "=", left: n.ids[0],
+                      right: { op: "atom", atom: r, unary: [],
+                        chain: [ { op: "arrayMember", expr: iter } ] } }
+                  ].concat(n.body)
+                ),
+                after: [
+                  { op: "+=", left: iter, right: 1 },
+                    { op: "if",
+                      condition: { op: "<", left: iter, right: iterLen },
+                      then: [ { op: "atom", atom: targetName, unary: [],
+                        chain: [ { op: "call", args: [] } ] } ] }
+                ]
+            };
+            e.translate(namedTarget);
+            w.write("}");
+          }
           w.tmpVarRelease(iter);
           w.tmpVarRelease(iterLen);
           w.tmpVarRelease(r);
@@ -837,6 +885,13 @@ this.Translator = (function() {
     }
     else if (typeof node === "number") {
       w.write(node);
+    }
+    else if (typeof node === "string") {
+      //Supported for debugging, shouldn't really be used elsewhere...
+      w.write(node);
+    }
+    else {
+      throw new Error("Unsupported type: " + typeof node);
     }
   };
 
