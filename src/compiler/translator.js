@@ -654,6 +654,10 @@ this.Translator = (function() {
           e.translate(n.body);
         },
      "try": function(e, n, w) {
+          if (w.getClosure().props.isAsync) {
+            throw new Error("'try' may not be used in an async function; "
+                + "use 'await' instead.  Line " + n.line);
+          }
           w.write("try {");
           e.translate(n.stmt);
           w.write("}");

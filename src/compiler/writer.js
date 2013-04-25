@@ -111,13 +111,8 @@ this.Closure = Closure = (function() {
     if (this.props.isAsync) {
       //This means we also have asyncParent if we have a parent scope to
       //get variable names from.
-      if (this.props.asyncParent) {
-        var varParent = this.resolveAsyncRoot();
-        this._asyncDataVar = varParent.newTemp(true);
-      }
-      else {
-        this._asyncDataVar = this.newTemp(true);
-      }
+      var varParent = this.resolveAsyncRoot();
+      this._asyncDataVar = varParent.newTemp(true, true);
     }
   }
   

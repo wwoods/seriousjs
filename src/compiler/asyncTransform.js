@@ -1,9 +1,13 @@
 
+var isArray = function(obj) {
+  return Object.prototype.toString.call(obj) === '[object Array]';
+};
+
 var deepCopy = function(obj) {
   if (typeof obj !== 'object' || obj == null) {
     return obj;
   }
-  else if (Object.prototype.toString.call(obj) === '[object Array]') {
+  else if (isArray(obj)) {
     var r = [];
     for (var i = 0, m = obj.length; i < m; i++) {
       r.push(deepCopy(obj[i]));
@@ -28,23 +32,34 @@ function iterTree(path, node) {
   }
   path.pop();
 
-  if (Object.prototype.toString.call(node) === '[object Array]') {
+  if (isArray(node)) {
+    //Work backwards to collapse awaits in the right order
     for (var i = node.length - 1; i >= 0; i--) {
       if (node[i].op === "await") {
         //Is it valid?
+        var parent = path[path.length - 1];
+        if (parent.op === "->" || parent.op === "await") {
+          //ok
+        }
+        else {
+          //not implemented.
+          throw new Error("Cannot use await nested in a " + parent.op);
+        }
+
+        //If we get here, the tree should be transformed, but we will go ahead
+        //and assert that
         for (var j = path.length - 1; j >= 0; j--) {
-          var n = path[j];
-          if (n.op === undefined) {
-            continue;
-          }
-          if (n.op === "->") {
-            break;
-          }
-          if (n.op === "forList" || n.op === "while") {
-            //not implemented.
-            throw new Error("Cannot use await in for or while loops");
+          if (isArray(path[j])) {
+            for (var k = 0, n = path[j].length; k < n; k++) {
+              if (path[j][k].op === "await") {
+                if (k !== n - 1) {
+                  throw new Error("await transform failed: " + path[j - 1].op);
+                }
+              }
+            }
           }
         }
+
         node[i].after = node.splice(i + 1);
       }
     }

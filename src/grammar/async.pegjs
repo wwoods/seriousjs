@@ -14,6 +14,15 @@ async_call
 
 inner_async_call
   = base:atom_chain args:([ \t]+ arguments_list)? {
+      //atom_chain also catches implicit call, so if the last part of base is
+      //a call and we have no args, use that.
+      if (!args) {
+        if (base.chain.length > 0
+            && base.chain[base.chain.length - 1].op === "call") {
+          var realCall = base.chain.pop();
+          args = realCall.args;
+        }
+      }
       return R({ op: "asyncCallee", func: base, args: args && args[1] || [] });
     }
   / base:atom_chain "(" args:arguments_delimited ")"? {

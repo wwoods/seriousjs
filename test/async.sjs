@@ -40,6 +40,21 @@ describe "async functionality", ->
     done()
 
 
+  it "Should disallow try", () ->
+    try
+      m = sjs.eval """
+          f = async ->
+            try
+              a
+            catch e
+              return e
+          """
+      assert.fail "Never threw"
+    catch e
+      assert.equal "'try' may not be used in an async function; use "
+          + "'await' instead.  Line 3", e.message
+
+
   it "Should support and wait for internal async", (done) ->
     m = sjs.eval """
         g = [ 0 ]
