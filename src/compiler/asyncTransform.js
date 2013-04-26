@@ -1,4 +1,8 @@
 
+var canHandleAwait = function(obj) {
+  return obj.op === "->" || obj.op === "await" || obj.op === "async";
+};
+
 var isArray = function(obj) {
   return Object.prototype.toString.call(obj) === '[object Array]';
 };
@@ -143,7 +147,7 @@ function _transformAwait(path, node) {
         }
         continue;
       }
-      if (path[i].op === "->" || path[i].op === "await") {
+      if (canHandleAwait(path[i])) {
         break;
       }
       path[i].hasAwait = true;

@@ -19,6 +19,11 @@
     font-size: 9pt;
 }
 
+.interpreter textarea.javascript {
+    word-wrap: normal;
+    white-space: pre;
+}
+
 .interpreter .results {
     position: absolute;
     top: 0;

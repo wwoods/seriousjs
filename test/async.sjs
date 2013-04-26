@@ -5,7 +5,7 @@ require ../ as sjs
 describe "async functionality", ->
   # If async isn't working we won't catch stuff.  Don't let the tests run
   # forever.
-  @timeout(30)
+  @timeout(100)
 
   it "Should be applicable to lambdas", (done) ->
     m = sjs.eval """q = async -> 32"""
@@ -319,6 +319,54 @@ describe "async functionality", ->
     m.q (error) ->
       assert.equal "Inner error", error
       done()
+
+
+  it "Should support async blocks", (done) ->
+    m = sjs.eval """
+        q = async ->
+          r = [ 0 ]
+          await
+            for i in [ 1, 2, 3, 4, 5 ]
+              async
+                await 0
+                r[0] += 1
+          return r[0]
+        """
+    m.q (error, r) ->
+      assert.equal null, error
+      assert.equal 5, r
+      done()
+
+
+  it "Should support async closure blocks", (done) ->
+    m = sjs.eval """
+        r = []
+        q = async ->
+          for i in [ 1, 2, 3, 4, 5 ]
+            async closure
+              await (6 - i)
+              r.push(i)
+          return r
+        """
+    m.q (error, r) ->
+      if error
+        assert.equal null, error.message
+      assert.equal 5, r[0]
+      assert.equal 4, r[1]
+      assert.equal 3, r[2]
+      assert.equal 2, r[3]
+      assert.equal 1, r[4]
+      done()
+
+
+  it "Should support async closure blocks at any level", () ->
+    m = sjs.eval """
+        r = [ 33 ]
+        async
+          a = b + 5
+          r[0] = b
+        """
+    assert.equal 33, m.r[0]
 
 
   it "Should work with a rather complicated example", (done) ->

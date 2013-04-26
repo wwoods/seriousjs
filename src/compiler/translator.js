@@ -1,4 +1,6 @@
 
+var ASYNC_BUFFER = "    ";
+
 this.Translator = (function() {
   //All ops get three args - the translator, the node, and the writer
   var binary = function(e, n, w) {
@@ -117,6 +119,51 @@ this.Translator = (function() {
           e.translate(n.expr);
           w.write("]");
         },
+     "async": function(e, n, w) {
+          w.usesFeature("async");
+          //Get our async synchronization closure
+          var cAsyncParent = w.getClosure({ isAsync: true });
+
+          //Note that we don't set asyncParent since we set isFunction.
+          var c = w.startClosure({ isAsync: true });
+          if (!n.hasClosure) {
+            c.props.isFunction = true;
+          }
+          else {
+            c.props.asyncParent = w.getClosure();
+          }
+
+          w.goToNode(n);
+          w.write("/* async */" + ASYNC_BUFFER);
+
+          if (cAsyncParent) {
+            cAsyncParent.asyncAddCall(w);
+            if (n.hasClosure) {
+              c.props.asyncParent.setVarUsed(cAsyncParent.getAsyncDataVar());
+            }
+            w.write(";");
+          }
+          if (!n.hasClosure) {
+            w.write("(function(){");
+          }
+          w.write(c);
+          if (cAsyncParent) {
+            var parentCallback = cAsyncParent.getAsyncCheckAsVar();
+            c.setVarUsed(parentCallback);
+            c.setAsyncCallback(parentCallback);
+          }
+          else {
+            c.setAsyncCallback(null);
+          }
+          w.write("try{");
+          e.translate(n.body);
+          w.write(ASYNC_BUFFER);
+          c.asyncCloseTry(w);
+          if (!n.hasClosure) {
+            w.write("})()");
+          }
+          w.endClosure();
+        },
      "asyncCall": function(e, n, w) {
           w.usesFeature("async");
           //Get the closure whose variables we affect
@@ -204,6 +251,11 @@ this.Translator = (function() {
             throw new Error("Await never got after?  Line " + n.line);
           }
 
+          if (n.body.length !== 1 || n.body[0].line !== n.line) {
+            w.goToNode(n);
+            w.write("/* await */" + ASYNC_BUFFER);
+          }
+
           //We accomplish await blocks by creating a new async closure that's
           //not at the function level...
           var cParent = w.getClosure({ isAsync: true });
@@ -230,6 +282,7 @@ this.Translator = (function() {
           w.write(c);
           w.write("try{");
           e.translate(n.body);
+          w.write(ASYNC_BUFFER);
           c.asyncCloseTry(w);
           w.write("})();");
           w.endClosure();
@@ -248,6 +301,7 @@ this.Translator = (function() {
           w.write("(__error);return}");
           w.write("try{");
           e.translate(n.after);
+          w.write(ASYNC_BUFFER);
           cAfter.asyncCloseTry(w);
           w.write("}");
           w.endClosure();
@@ -309,6 +363,37 @@ this.Translator = (function() {
           else {
             w.write("Object");
           }
+          w.write(")");
+        },
+     "closure": function(e, n, w) {
+          var cType = (function() {
+            function cType(closure) {
+              this.closure = closure;
+            }
+            cType.prototype.toString = function() {
+              var r = [];
+              for (var v in this.closure.vars) {
+                if (this.closure.vars[v]) {
+                  //Assigned
+                  continue;
+                }
+                r.push(v);
+              }
+              return r.join(",");
+            };
+            return cType;
+          })();
+
+          var c = w.startClosure({ isFunction: true });
+          var args = new cType(c);
+          w.write("(function(");
+          w.write(args);
+          w.write("){");
+          w.write(c);
+          e.translate(n.body);
+          w.endClosure();
+          w.write("})(");
+          w.write(args);
           w.write(")");
         },
      "dict": function(e, n, w) {
@@ -486,11 +571,16 @@ this.Translator = (function() {
             w.variable(n.id);
             addArgDefault(e, n, w);
           }
+          else if (options.isMember) {
+            //Don't use variable; we don't want to create this in the local
+            //scope and we're not using a variable named this.
+            w.write(n.id);
+          }
           else if (options.isAssign) {
             var c = w.getClosure();
             if (c === w.getClosure({ isClass: true })) {
               w.write(c.props.className + '.prototype.');
-              w.variable(n.id);
+              w.write(n.id);
             }
             else {
               w.variable(n.id, true);
@@ -558,7 +648,7 @@ this.Translator = (function() {
         },
      "member": function(e, n, w) {
           w.write(".");
-          e.translate(n.id);
+          e.translate(n.id, { isMember: true });
         },
      "memberClass": function(e, n, w) {
           var c = w.getClosure({ isClass: true });
@@ -831,6 +921,7 @@ this.Translator = (function() {
   };
 
   var badOpsForGoto = {
+    async: true,
     asyncCall: true,
     await: true
   };

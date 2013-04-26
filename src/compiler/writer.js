@@ -126,20 +126,22 @@ this.Closure = Closure = (function() {
     //we need it.
     //forceNewVar is useful for async, if we're late-binding a variable that
     //needs to never have another value.
-    var c = 0;
-    for (var k in this.tmpVars) {
+    var c = -1;
+    while (true) {
       c += 1;
-      if (this.tmpVars[k] === 0 && (!forceNewVar || !(k in this.vars))) {
-        this.tmpVars[k] = 1;
-        return k;
+      var id = '__t' + c;
+      if (id in this.vars && !(id in this.tmpVars)) {
+        continue;
+      }
+      if ((!(id in this.tmpVars) || this.tmpVars[id] === 0)
+          && (!forceNewVar || !(id in this.vars))) {
+        this.tmpVars[id] = 1;
+        if (isLocalVar) {
+          this.vars[id] = 1;
+        }
+        return id;
       }
     }
-    var id = '__t' + c;
-    this.tmpVars[id] = 1;
-    if (isLocalVar) {
-      this.vars[id] = 1;
-    }
-    return id;
   };
 
   Closure.prototype.releaseTemp = function(id) {
@@ -162,7 +164,7 @@ this.Closure = Closure = (function() {
   };
 
   Closure.prototype._getAsyncCallback = function() {
-    if (!this.asyncCallback) {
+    if (this.asyncCallback === undefined) {
       throw new Error("Never set asyncCallback!");
     }
     return this.asyncCallback;
@@ -219,6 +221,12 @@ this.Closure = Closure = (function() {
       e.translate(resultNode);
     }
   };
+
+  Closure.prototype.setVarUsed = function(id) {
+    if (!(id in this.vars)) {
+      this.vars[id] = false;
+    }
+  };
   
   Closure.prototype.toString = function() {
     var r = '';
@@ -235,6 +243,10 @@ this.Closure = Closure = (function() {
       }
     }
     for (var v in this.vars) {
+      if (!this.vars[v]) {
+        //inherited
+        continue;
+      }
       if (v in this.funcArgs) {
         continue;
       }
@@ -483,6 +495,9 @@ this.Writer = (function() {
           ) {
         this.write('this.' + id + '=');
       }
+    }
+    else {
+      c.setVarUsed(id);
     }
     if (!noWrite) {
       this.write(id);

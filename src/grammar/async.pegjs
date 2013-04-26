@@ -1,9 +1,23 @@
 
 async_stmt
-  = "async" _ call:async_call {
-      return R(call);
+  = "async" inner:async_stmt_inner {
+      return R(inner);
     }
   / await_stmt
+
+
+async_stmt_inner
+  = closure:(_ "closure")? body:statement_body_block {
+      var r = R({ op: "async", body: body });
+      if (closure) {
+        r.hasClosure = true;
+        r = R({ op: "closure", body: r });
+      }
+      return r;
+    }
+  / _ call:async_call {
+      return R(call);
+    }
 
 
 async_call
@@ -30,17 +44,24 @@ inner_async_call
     }
 
 
+await_time
+  = time:DecimalLiteral interval:await_interval? {
+      interval = interval || 1.0;
+      return R({ op: "number", num: parseFloat(time) * interval });
+    }
+  / "(" expr:expression ")" {
+      //If expr was atom, we're actually an async call, so don't handle here.
+      return expr;
+    }
+
+
+await_interval
+  = "s" { return 1000.0; }
+  / "ms" { return 1.0; }
+
+
 await_stmt
-  = "await" _ time:DecimalLiteral interval:"s"? {
-      var timeMs = parseFloat(time);
-      if (interval) {
-        if (interval === "s") {
-          timeMs *= 1000.0;
-        }
-        else {
-          throw new Error("Could not parse await interval: " + interval);
-        }
-      }
+  = "await" _ time:await_time {
       //note that "after" will be filled in automagically before we get to
       //the translator.
       return R({
@@ -48,8 +69,7 @@ await_stmt
           after: null,
           body: [ R({ op: "asyncCall", call: {
             op: "asyncCallee", func: { op: "id", id: "setTimeout" },
-            args: [ { op: "id", id: "callback" },
-              { op: "number", num: timeMs } ] } }) ]
+            args: [ { op: "id", id: "callback" }, time ] } }) ]
       });
     }
   / "await" _ call:async_call {
