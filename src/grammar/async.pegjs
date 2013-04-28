@@ -17,9 +17,26 @@ async_stmt_inner
 
 
 async_call
-  = assign:assign_clause* call:inner_async_call {
+  = assign:async_assign_clause* call:inner_async_call {
       return R({ op: "asyncCall", assign: assign, call: call });
     }
+
+
+async_assign_clause
+  = head:async_tuple_assign_part tail:(ARG_SEP async_tuple_assign_part)* _ "=" _
+      {
+      var r = [ head ];
+      for (var i = 0, m = tail.length; i < m; i++) {
+        r.push(tail[i][1]);
+      }
+      return R({ op: "tupleAssign", left: r });
+    }
+  / assign_clause
+
+
+async_tuple_assign_part
+  = dict_assignable
+  / left:assignable_atom { return R({ op: "=", left: left }); }
 
 
 inner_async_call

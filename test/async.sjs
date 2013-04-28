@@ -203,6 +203,7 @@ describe "async functionality", ->
           await val[0] = inner
         """
     m.g (error) ->
+      assert.equal null, error
       assert.equal 12, m.val[0]
       done()
 
@@ -387,6 +388,62 @@ describe "async functionality", ->
     assert.equal true, undefined == m.a
 
 
+  it "Should work with tuple assignments", (done) ->
+    m = sjs.eval """
+        f = (callback) ->
+          callback(null, 1, 2)
+        g = async ->
+          await a, b = f
+          return [ a, b ]
+        """
+    m.g (error, value) ->
+      assert.equal 1, value[0]
+      assert.equal 2, value[1]
+      done()
+
+
+  it "Should work with tuple assignments and dicts", (done) ->
+    m = sjs.eval """
+        f = (callback) ->
+          callback(null, { a: 1, b: 3 }, 2)
+        g = async ->
+          await { a, b }, c = f
+          return [ a, b, c ]
+        """
+    m.g (error, value) ->
+      assert.equal 1, value[0]
+      assert.equal 3, value[1]
+      assert.equal 2, value[2]
+      done()
+
+
+  it "Should work with tuple assignments and out of place error", (done) ->
+    m = sjs.eval """
+        f = (callback) ->
+          callback(1, null, 2)
+        g = async ->
+          await a, error, b = f
+          return [ a, b ]
+        """
+    m.g (error, value) ->
+      assert.equal 1, value[0]
+      assert.equal 2, value[1]
+      done()
+
+
+  it "Should raise exception for out of place error", (done) ->
+    m = sjs.eval """
+        f = (callback) ->
+          callback(1, "error!", 2)
+        g = async ->
+          await a, error, b = f
+          return [ a, b ]
+        """
+    m.g (error, value) ->
+      assert.equal "error!", error
+      done()
+
+
   it "Should work with a rather complicated example", (done) ->
     """So, async keyword means "take this block out of the control flow, but
     execute it up to the first await (the whole thing if there is none)."
@@ -451,7 +508,7 @@ describe "async functionality", ->
               # await block's parent scope.
               async a1, a2 = myMethod 1, 2
               r = []
-              for v in [1..8]
+              for v in [1, 2, 3, 4, 5, 6, 7, 8]
                 async
                   results.push "Making call at #{ Date.now() }"
                   await a, b = myMethod v, 2

@@ -181,36 +181,87 @@ this.Translator = (function() {
             cAsyncParent.asyncAddCall(w);
             w.write(",");
             var myCallback = w.tmpVar(true);
-            w.write("=function(error");
+            w.write("=function(");
             var maxArgs = 0;
+            var errorPos = -1;
+            var errorIsImplicit = false;
             if (n.assign) {
               //n.assign is undefined for custom crafted setTimeout calls.
               for (var i = 0, m = n.assign.length; i < m; i++) {
-                if (false) {
-                  //TODO Tuple assignment
+                if (n.assign[i].op === "tupleAssign") {
+                  var nas = n.assign[i].left;
+                  maxArgs = Math.max(maxArgs, nas.length);
+                  for (var j = 0, k = nas.length; j < k; j++) {
+                    if (nas[j].op === "=" && nas[j].left.op === "id"
+                        && nas[j].left.id === "error") {
+                      errorPos = j;
+                      break;
+                    }
+                  }
                 }
                 else {
                   maxArgs = 1;
                 }
               }
+              if (errorPos < 0) {
+                //Defaults to first arg
+                maxArgs += 1;
+                errorPos = 0;
+                errorIsImplicit = true;
+              }
               var argNames = [];
               for (var i = 0; i < maxArgs; i++) {
-                argNames.push("a" + i);
-                w.write("," + argNames[i]);
+                var argName;
+                if (i === errorPos) {
+                  argName = "error";
+                }
+                else {
+                  argName = "a" + i;
+                }
+                argNames.push(argName);
+                if (i > 0) {
+                  w.write(",");
+                }
+                w.write(argName);
               }
             }
-            w.write("){if(!error){");
-            //variables...
-            if (n.assign) {
+            w.write("){");
+            if (n.assign && n.assign.length > 0) {
+              if (errorPos >= 0) {
+                w.write("if(!error){");
+              }
+              //variables...
+              var firstArg = 1;
+              if (errorPos !== 0) {
+                firstArg = 0;
+              }
               for (var i = 0, m = n.assign.length; i < m; i++) {
-                n.assign[i].right = { op: "id", id: argNames[0] };
-                e.translate(n.assign[i]);
+                if (n.assign[i].op === "tupleAssign") {
+                  var parts = n.assign[i].left;
+                  for (var j = 0, k = parts.length; j < k; j++) {
+                    var argMatched = j;
+                    if (errorIsImplicit) {
+                      argMatched += 1;
+                    }
+                    parts[j].right = { op: "id", id: argNames[argMatched] };
+                  }
+                  e.translate(parts);
+                }
+                else {
+                  n.assign[i].right = { op: "id", id: argNames[firstArg] };
+                  e.translate(n.assign[i]);
+                }
+              }
+              if (errorPos >= 0) {
+                w.write("}");
               }
             }
-            w.write("}");
             w.write("__asyncCheck(");
             w.write(cAsyncParent.getAsyncDataVar());
-            w.write(",error)};");
+            if (errorPos >= 0) {
+              w.write("," + argNames[errorPos]);
+            }
+            w.write(")};");
           }
           w.goToNode(n);
           e.translate(n.call.func);
