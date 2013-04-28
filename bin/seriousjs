@@ -37,7 +37,7 @@ program
   .description('create a client/server pair with given name')
   .action(function(appname) {
     var project = require(path.join(__dirname, '../src/binUtil/project'));
-    project.createApp(appname);
+    project.createFromTemplate('app', appname);
   });
 
 program

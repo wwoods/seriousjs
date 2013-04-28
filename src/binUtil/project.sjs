@@ -20,14 +20,14 @@ copyAndFormat = (fileOrDir, target, {>project} = options) ->
   fs.writeFileSync(target, newContents)
 
 
-this.createApp = (name) ->
+this.createFromTemplate = (template, name) ->
   base = path.resolve(name)
   name = path.basename(name)
   if fs.existsSync(base)
     console.error("Project at #{base} exists")
     process.exit(1)
 
-  copyAndFormat(path.join(__dirname, '../../templates/app'), base,
+  copyAndFormat(path.join(__dirname, '../../templates', template), base,
       project: name)
 
   # Run npm install so that they have dependencies installed
@@ -36,5 +36,6 @@ this.createApp = (name) ->
       [ "install", "." ],
       { cwd: base }
   child.on 'exit', (code) ->
-    console.log("Project #{name} created")
+    if code == 0
+      console.log("Project #{name} created")
     process.exit(code)
