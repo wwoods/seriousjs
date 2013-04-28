@@ -338,35 +338,53 @@ describe "async functionality", ->
       done()
 
 
+  it "Should have a closure for async blocks", ->
+    m = sjs.eval """
+        i = 5
+        f = {}
+        async
+          f.b = -> i
+        i = 99
+        """
+    assert.equal 5, m.f.b()
+
+
   it "Should support async closure blocks", (done) ->
     m = sjs.eval """
         r = []
         q = async ->
           for i in [ 1, 2, 3, 4, 5 ]
-            async closure
-              await (6 - i)
-              r.push(i)
+            async
+              # Delay each one so that the variable i is propagated; we are
+              # ensuring that the above closure closes i even though i is
+              # used in a child scope.
+              await 0
+              async
+                r.push(i)
           return r
         """
     m.q (error, r) ->
       if error
         assert.equal null, error.message
-      assert.equal 5, r[0]
-      assert.equal 4, r[1]
+      assert.equal 1, r[0]
+      assert.equal 2, r[1]
       assert.equal 3, r[2]
-      assert.equal 2, r[3]
-      assert.equal 1, r[4]
+      assert.equal 4, r[3]
+      assert.equal 5, r[4]
       done()
 
 
-  it "Should support async closure blocks at any level", () ->
+  it "Should support async blocks at any level", () ->
     m = sjs.eval """
         r = [ 33 ]
+        b = 55
         async
           a = b + 5
-          r[0] = b
+          r[0] = a
         """
-    assert.equal 33, m.r[0]
+    assert.equal 60, m.r[0]
+    # and a shouldn't be defined, since the async block has its own closure.
+    assert.equal true, undefined == m.a
 
 
   it "Should work with a rather complicated example", (done) ->

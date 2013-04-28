@@ -7,12 +7,8 @@ async_stmt
 
 
 async_stmt_inner
-  = closure:(_ "closure")? body:statement_body_block {
-      var r = R({ op: "async", body: body });
-      if (closure) {
-        r.hasClosure = true;
-        r = R({ op: "closure", body: r });
-      }
+  = body:statement_body_block {
+      var r = R({ op: "closure", body: R({ op: "async", body: body }) });
       return r;
     }
   / _ call:async_call {
@@ -68,7 +64,7 @@ await_stmt
           op: "await",
           after: null,
           body: [ R({ op: "asyncCall", call: {
-            op: "asyncCallee", func: { op: "id", id: "setTimeout" },
+            op: "asyncCallee", func: "setTimeout",
             args: [ { op: "id", id: "callback" }, time ] } }) ]
       });
     }

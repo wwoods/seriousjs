@@ -107,13 +107,7 @@ this.Closure = Closure = (function() {
     this.afterStart = [];
     this.props = props || {};
     this._asyncCheckVar = null;
-
-    if (this.props.isAsync) {
-      //This means we also have asyncParent if we have a parent scope to
-      //get variable names from.
-      var varParent = this.resolveAsyncRoot();
-      this._asyncDataVar = varParent.newTemp(true, true);
-    }
+    this._asyncDataVar = null;
   }
   
   Closure.prototype.getNamedInstanceVariable = function() {
@@ -180,12 +174,20 @@ this.Closure = Closure = (function() {
   };
 
   Closure.prototype.getAsyncDataVar = function() {
+    if (this._asyncDataVar === null) {
+      if (!this.props.isAsync) {
+        throw new Error("No async data var?");
+      }
+      //This means we also have asyncParent if we have a parent scope to
+      //get variable names from.
+      this._asyncDataVar = this.resolveAsyncRoot().newTemp(false, true);
+    }
     return this._asyncDataVar;
   };
 
   Closure.prototype.asyncAddCall = function(writer) {
     //There's another async request for us, so increment our counter.
-    writer.write(this._asyncDataVar + "." + ASYNC_COUNT + "++");
+    writer.write(this.getAsyncDataVar() + "." + ASYNC_COUNT + "++");
   };
 
   Closure.prototype.asyncCheck = function(writer, errorVar) {
@@ -214,7 +216,7 @@ this.Closure = Closure = (function() {
     //Write the meta code for calling our result callback
     writer.write("return ");
     if (resultNode) {
-      writer.write(this._asyncDataVar);
+      writer.write(this.getAsyncDataVar());
       writer.write(".");
       writer.write(ASYNC_RETURN_VALUE);
       writer.write("=");
@@ -224,7 +226,7 @@ this.Closure = Closure = (function() {
 
   Closure.prototype.setVarUsed = function(id) {
     if (!(id in this.vars)) {
-      this.vars[id] = false;
+      this.vars[id] = "used";
     }
   };
   
@@ -243,7 +245,7 @@ this.Closure = Closure = (function() {
       }
     }
     for (var v in this.vars) {
-      if (!this.vars[v]) {
+      if (this.vars[v] === "used") {
         //inherited
         continue;
       }
@@ -263,16 +265,16 @@ this.Closure = Closure = (function() {
     }
     if (this.props.isAsync) {
       checkVar();
-      r += this._asyncDataVar + "={";
+      r += this.getAsyncDataVar() + "={";
       //Start with 1 count for our thread
       r += ASYNC_COUNT + ":1";
-      r += "," + ASYNC_THIS + ":\"" + this._asyncDataVar + "\"";
+      r += "," + ASYNC_THIS + ":\"" + this.getAsyncDataVar() + "\"";
       r += "," + ASYNC_RESULT_CALLBACK + ":" + this._getAsyncCallback();
       r += "}";
       if (this._asyncCheckVar !== null) {
         checkVar();
         r += this._asyncCheckVar + "=function(error){";
-        r += "__asyncCheck(" + this._asyncDataVar + ",error)";
+        r += "__asyncCheck(" + this.getAsyncDataVar() + ",error)";
         r += "}";
       }
     }
@@ -408,6 +410,15 @@ this.Writer = (function() {
     var c = this._closures.pop();
     if (!c.noIndent) {
       this._indent -= 1;
+    }
+
+    //Any var === "used" on c should be propagated to the parent closure as
+    //it is inherited.  This is how the "closure" keyword works.
+    var parent = this._closures[this._closures.length - 1];
+    for (var v in c.vars) {
+      if (c.vars[v] === "used") {
+        parent.setVarUsed(v);
+      }
     }
   };
   

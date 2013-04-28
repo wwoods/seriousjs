@@ -124,27 +124,18 @@ this.Translator = (function() {
           //Get our async synchronization closure
           var cAsyncParent = w.getClosure({ isAsync: true });
 
-          //Note that we don't set asyncParent since we set isFunction.
-          var c = w.startClosure({ isAsync: true });
-          if (!n.hasClosure) {
-            c.props.isFunction = true;
-          }
-          else {
-            c.props.asyncParent = w.getClosure();
-          }
+          //async blocks are always inside a closure.  So use the closure as
+          //our asyncParent.
+          var c = w.startClosure({ isAsync: true,
+              asyncParent: w.getClosure() });
 
           w.goToNode(n);
           w.write("/* async */" + ASYNC_BUFFER);
 
           if (cAsyncParent) {
             cAsyncParent.asyncAddCall(w);
-            if (n.hasClosure) {
-              c.props.asyncParent.setVarUsed(cAsyncParent.getAsyncDataVar());
-            }
+            c.props.asyncParent.setVarUsed(cAsyncParent.getAsyncDataVar());
             w.write(";");
-          }
-          if (!n.hasClosure) {
-            w.write("(function(){");
           }
           w.write(c);
           if (cAsyncParent) {
@@ -159,9 +150,6 @@ this.Translator = (function() {
           e.translate(n.body);
           w.write(ASYNC_BUFFER);
           c.asyncCloseTry(w);
-          if (!n.hasClosure) {
-            w.write("})()");
-          }
           w.endClosure();
         },
      "asyncCall": function(e, n, w) {
@@ -259,10 +247,9 @@ this.Translator = (function() {
           //We accomplish await blocks by creating a new async closure that's
           //not at the function level...
           var cParent = w.getClosure({ isAsync: true });
-          if (cParent === null
-              || w.getClosure({ isAsync: true, isFunction: true }) == null) {
-            throw new Error("Await may only be used within async method; line "
-                + n.line);
+          if (cParent === null) {
+            throw new Error("Await may only be used within async method or "
+                + "block; line n.line");
           }
 
           if (n.name) {
@@ -373,7 +360,7 @@ this.Translator = (function() {
             cType.prototype.toString = function() {
               var r = [];
               for (var v in this.closure.vars) {
-                if (this.closure.vars[v]) {
+                if (this.closure.vars[v] !== "used") {
                   //Assigned
                   continue;
                 }
