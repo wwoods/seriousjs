@@ -1,14 +1,16 @@
 
 async_stmt
   = "async" inner:async_stmt_inner {
-      return R(inner);
+      return inner;
     }
   / await_stmt
 
 
 async_stmt_inner
-  = body:statement_body_block {
-      var r = R({ op: "closure", body: R({ op: "async", body: body }) });
+  = body:statement_body_block catchStmt:async_catch? finallyStmt:async_finally?
+        {
+      var r = { op: "closure", body: R({ op: "async", body: body,
+          catchStmt: catchStmt, finallyStmt: finallyStmt }) };
       return r;
     }
   / _ call:async_call {
@@ -17,8 +19,15 @@ async_stmt_inner
 
 
 async_call
-  = assign:async_assign_clause* call:inner_async_call {
-      return R({ op: "asyncCall", assign: assign, call: call });
+  = assign:async_assign_clause* call:inner_async_call catchStmt:async_catch?
+      finallyStmt:async_finally? {
+      var r = R({ op: "asyncCall", assign: assign, call: call });
+      if (catchStmt || finallyStmt) {
+        //Adding a closure here is a bit dirty...
+        r = { op: "closure", body: [ { op: "async", body: r,
+            catchStmt: catchStmt, finallyStmt: finallyStmt } ] };
+      }
+      return r;
     }
 
 
@@ -57,6 +66,21 @@ inner_async_call
     }
 
 
+async_catch
+  = CONTINUATION_END inner:(NEWLINE_SAME "catch" (_ Identifier)? statement_body)?
+      CONTINUATION_OPEN & { return inner; } {
+      var eId = inner[2] && inner[2][1];
+      return R({ op: "catch", id: eId, body: inner[3] });
+    }
+
+
+async_finally
+  = CONTINUATION_END inner:(NEWLINE_SAME "finally" statement_body)?
+      CONTINUATION_OPEN & { return inner; } {
+      return R({ op: "finally", body: inner[2] });
+    }
+
+
 await_time
   = time:DecimalLiteral interval:await_interval? {
       interval = interval || 1.0;
@@ -86,9 +110,24 @@ await_stmt
       });
     }
   / "await" _ call:async_call {
-      return R({ op: "await", after: null,
-          body: [ R(call) ] });
+      var r = R({ op: "await", after: null, body: [ call ] });
+      if (call.op === "closure") {
+        //It had try or finally...
+        var realCall = call.body[0];
+        if (realCall.catchStmt) {
+          r.catchStmt = realCall.catchStmt;
+          realCall.catchStmt = null;
+        }
+        if (realCall.finallyStmt) {
+          r.finallyStmt = realCall.finallyStmt;
+          realCall.finallyStmt = null;
+        }
+        //r.body = realCall;
+      }
+      return r;
     }
-  / "await" body:statement_body_block {
-      return R({ op: "await", after: null, body: body });
+  / "await" body:statement_body_block catchStmt:async_catch?
+        finallyStmt:async_finally? {
+      return R({ op: "await", after: null, body: body, catchStmt: catchStmt,
+          finallyStmt: finallyStmt });
     }

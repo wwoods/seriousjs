@@ -73,6 +73,7 @@ describe "async functionality", ->
           return g[0]"""
     m.q(
         (error, r) ->
+          assert.equal null, error and error.message
           assert.equal 100, r
           done()
 
@@ -359,14 +360,15 @@ describe "async functionality", ->
               # Delay each one so that the variable i is propagated; we are
               # ensuring that the above closure closes i even though i is
               # used in a child scope.
+              console.log i
               await 0
+              console.log "End #""" + """{ i }"
               async
                 r.push(i)
           return r
         """
     m.q (error, r) ->
-      if error
-        assert.equal null, error.message
+      assert.equal null, error and error.message or error
       assert.equal 1, r[0]
       assert.equal 2, r[1]
       assert.equal 3, r[2]
@@ -441,6 +443,23 @@ describe "async functionality", ->
         """
     m.g (error, value) ->
       assert.equal "error!", error
+      done()
+
+
+  it "Should catch on await calls", (done) ->
+    m = sjs.eval """
+        g = async ->
+          await 0
+          throw "ERRORED"
+        f = async ->
+          await g
+          catch e
+            return "HANDLED!"
+          return "OK"
+        """
+    m.f (error, result) ->
+      assert.equal null, error
+      assert.equal "HANDLED!", result
       done()
 
 

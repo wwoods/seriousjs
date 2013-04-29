@@ -34,7 +34,7 @@ statement
   = statement_with_body
   / CONTINUATION_START stmt:statement_no_body? CONTINUATION_END
       & { return stmt; }
-      { stmt.line = line(); return R(stmt); }
+      { return stmt; }
 
 
 statement_with_body

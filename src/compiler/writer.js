@@ -1,28 +1,31 @@
 
-var ASYNC_COUNT = "c";
-var ASYNC_RETURN_VALUE = "v";
-var ASYNC_RESULT_CALLBACK = "r";
-var ASYNC_THIS = "s";
-var ASYNC_TRIGGERED = "t";
+var ASYNC = {
+    BUFFER: "    ",
+    COUNT: "c",
+    RETURN_VALUE: "v",
+    RESULT_CALLBACK: "r",
+    THIS: "s",
+    TRIGGERED: "t",
+};
 
 var allFeatures = {
   async: ""
       + "__asyncCheck=function(obj,error){"
-      + " if(obj." + ASYNC_TRIGGERED + "){return}"
-      + " obj." + ASYNC_COUNT + "--;"
+      + " if(obj." + ASYNC.TRIGGERED + "){return}"
+      + " obj." + ASYNC.COUNT + "--;"
       + " if(error){"
       + "  __asyncTrigger(obj,error);"
       + " }"
-      + " else if(obj." + ASYNC_COUNT + "===0){"
-      + "  __asyncTrigger(obj,null,obj." + ASYNC_RETURN_VALUE + ");"
+      + " else if(obj." + ASYNC.COUNT + "===0){"
+      + "  __asyncTrigger(obj,null,obj." + ASYNC.RETURN_VALUE + ");"
       + " }"
       + "},"
       + "__asyncTrigger=function(obj,error,result){"
-      //Guard for ASYNC_TRIGGERED being false is in asyncCheck.
-      + " obj." + ASYNC_TRIGGERED + "=true;"
-      + " obj." + ASYNC_RESULT_CALLBACK + " && obj." + ASYNC_RESULT_CALLBACK
+      //Guard for ASYNC.TRIGGERED being false is in asyncCheck.
+      + " obj." + ASYNC.TRIGGERED + "=true;"
+      + " obj." + ASYNC.RESULT_CALLBACK + " && obj." + ASYNC.RESULT_CALLBACK
       +       ".call("
-      +     "obj." + ASYNC_THIS + ",error,result"
+      +     "obj." + ASYNC.THIS + ",error,result"
       + " );"
       + "}",
   dictCheckAvailable: ""
@@ -155,6 +158,10 @@ this.Closure = Closure = (function() {
 
   Closure.prototype.setAsyncCallback = function(callbackName) {
     this.asyncCallback = callbackName;
+    //Ensure our closure knows about the usage of this variable
+    if (callbackName !== null) {
+      this.resolveAsyncRoot().setVarUsed(callbackName, true);
+    }
   };
 
   Closure.prototype._getAsyncCallback = function() {
@@ -185,9 +192,16 @@ this.Closure = Closure = (function() {
     return this._asyncDataVar;
   };
 
+  Closure.prototype.setAsyncDataVar = function(newVar) {
+    if (this._asyncDataVar !== null) {
+      throw new Error("Cannot re-assign asyncDataVar!");
+    }
+    this._asyncDataVar = newVar;
+  };
+
   Closure.prototype.asyncAddCall = function(writer) {
     //There's another async request for us, so increment our counter.
-    writer.write(this.getAsyncDataVar() + "." + ASYNC_COUNT + "++");
+    writer.write(this.getAsyncDataVar() + "." + ASYNC.COUNT + "++");
   };
 
   Closure.prototype.asyncCheck = function(writer, errorVar) {
@@ -200,33 +214,108 @@ this.Closure = Closure = (function() {
     writer.write(")");
   };
 
-  Closure.prototype.asyncCloseTry = function(writer) {
+  Closure.prototype.asyncCloseTry = function(w, e, catchStmt,
+      finallyStmt) {
+    //NOTE - Does NOT end the closure!  That must be done by caller after this.
+    var catchCall = null;
+    var catchFollower = null;
+    var finallyCall = null;
+    var finallyFollower = null;
+    if (finallyStmt) {
+      //We use getClosure().newTemp() to avoid setting the "used" flag which
+      //would trigger a closure event
+      finallyCall = w.getClosure().newTemp(false, true);
+      finallyFollower = this.asyncCallback;
+      this.asyncCallback = finallyCall;
+    }
+    if (catchStmt) {
+      //See finallyStmt note.
+      catchCall = w.getClosure().newTemp(false, true);
+      catchFollower = this.asyncCallback;
+      this.asyncCallback = catchCall;
+    }
     //Add the tail to a try statement.
-    writer.write("}catch(e){");
+    w.write("}catch(");
+    w.startArgs();
+    w.variable("e", true);
+    w.endArgs();
+    w.write("){");
     //Add 1 to count since we'll also trigger in the finally block!
-    this.asyncAddCall(writer);
-    writer.write(";");
-    this.asyncCheck(writer, "e");
-    writer.write("}finally{");
-    this.asyncCheck(writer);
-    writer.write("}");
+    this.asyncAddCall(w);
+    w.write(";");
+    this.asyncCheck(w, "e");
+    w.write("}finally{");
+    this.asyncCheck(w);
+    w.write("}");
+
+    if (catchCall) {
+      w.goToNode(catchStmt);
+      w.write("function ");
+      w.write(catchCall);
+      w.write("(");
+      w.startArgs();
+      var eVar = "__error";
+      if (catchStmt.id) {
+        eVar = catchStmt.id.id;
+        e.translate(catchStmt.id);
+      }
+      else {
+        w.variable(eVar, true);
+      }
+      w.endArgs();
+      w.write("){");
+      var cBlock = w.newAsyncBlock(catchFollower);
+      w.write("if(");
+      w.write(eVar);
+      w.write("){");
+      e.translate(catchStmt.body);
+      w.write("}");
+      cBlock.asyncCloseTry(w, e);
+      w.endClosure();
+      w.write("}");
+    }
+    if (finallyCall) {
+      w.goToNode(finallyStmt);
+      w.write("function ");
+      w.write(finallyCall);
+      w.write("(__error){");
+      var callback = w.tmpVar(true, true);
+      var cBlock = w.newAsyncBlock(callback);
+      w.write(callback);
+      w.write("=function(){");
+      w.write(finallyFollower);
+      w.write("(__error)");
+      w.write("};");
+      e.translate(finallyStmt.body);
+      cBlock.asyncCloseTry(w, e);
+      w.endClosure();
+      w.write("}");
+    }
   };
 
   Closure.prototype.asyncResult = function(writer, e, resultNode) {
     //Write the meta code for calling our result callback
     writer.write("return ");
+    writer.write(this.getAsyncDataVar());
+    writer.write(".");
+    writer.write(ASYNC.RETURN_VALUE);
+    writer.write("=");
     if (resultNode) {
-      writer.write(this.getAsyncDataVar());
-      writer.write(".");
-      writer.write(ASYNC_RETURN_VALUE);
-      writer.write("=");
       e.translate(resultNode);
+    }
+    else {
+      //Assigning undefined is important, since it makes the return apply
+      //to higher asynchronous scopes.
+      writer.write("undefined");
     }
   };
 
-  Closure.prototype.setVarUsed = function(id) {
-    if (!(id in this.vars)) {
-      this.vars[id] = "used";
+  Closure.prototype.setVarUsed = function(id, notForClosures) {
+    //notForClosures is useful when, for instance, you have a variable that
+    //won't be changing and you shouldn't use in a closure (like a function
+    //declaration).
+    if (!(id in this.vars) && !(id in this.funcArgs)) {
+      this.vars[id] = (notForClosures ? "static" : "used");
     }
   };
   
@@ -245,7 +334,7 @@ this.Closure = Closure = (function() {
       }
     }
     for (var v in this.vars) {
-      if (this.vars[v] === "used") {
+      if (this.vars[v] !== true) {
         //inherited
         continue;
       }
@@ -267,9 +356,9 @@ this.Closure = Closure = (function() {
       checkVar();
       r += this.getAsyncDataVar() + "={";
       //Start with 1 count for our thread
-      r += ASYNC_COUNT + ":1";
-      r += "," + ASYNC_THIS + ":\"" + this.getAsyncDataVar() + "\"";
-      r += "," + ASYNC_RESULT_CALLBACK + ":" + this._getAsyncCallback();
+      r += ASYNC.COUNT + ":1";
+      r += "," + ASYNC.THIS + ":\"" + this.getAsyncDataVar() + "\"";
+      r += "," + ASYNC.RESULT_CALLBACK + ":" + this._getAsyncCallback();
       r += "}";
       if (this._asyncCheckVar !== null) {
         checkVar();
@@ -295,6 +384,9 @@ this.Writer = (function() {
     this._line = 1;
     this._isInArgs = false;
     this._redirects = [];
+
+    //Copy over enumeration
+    this.ASYNC = ASYNC;
     
     var c = this.startClosure({ isModule: true });
     this._output.push(c);
@@ -364,7 +456,12 @@ this.Writer = (function() {
   Writer.prototype._closureMatch = function(c, spec) {
     if (spec.isRealClosure) {
       //class or function; things that actually delimit variable scope.
-      if (!(c.props.className || c.props.isFunction)) {
+      if (!(c.props.className || c.props.isFunction || c.props.isClosure)) {
+        return false;
+      }
+    }
+    if (spec.isClosure) {
+      if (!c.props.isClosure) {
         return false;
       }
     }
@@ -470,10 +567,20 @@ this.Writer = (function() {
       return methodC.getNamedInstanceVariable();
     }
   };
+
+  Writer.prototype.newAsyncBlock = function(callback) {
+    var cParent = this.getClosure({ isAsync: true });
+    var c = this.startClosure({ isAsync: true, asyncParent: cParent });
+    c.setAsyncCallback(callback);
+    this.write(c);
+    this.write("try{");
+    return c;
+  };
   
   Writer.prototype.tmpVar = function(isAssign, noWrite) {
+    //noWrite implies that it must never have been allocated in the first place
     var c = this.getClosure();
-    var id = c.newTemp();
+    var id = c.newTemp(false, noWrite);
     this.variable(id, isAssign, noWrite);
     return id;
   };

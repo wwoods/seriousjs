@@ -1,6 +1,4 @@
 
-var ASYNC_BUFFER = "    ";
-
 this.Translator = (function() {
   //All ops get three args - the translator, the node, and the writer
   var binary = function(e, n, w) {
@@ -32,6 +30,7 @@ this.Translator = (function() {
               isClassMethod: isClassMethod,
               methodName: options.methodName,
               isFunction: true,
+              isClosure: true,
               isAsync: n.spec && n.spec.async
           });
           if (n.doc) {
@@ -102,8 +101,9 @@ this.Translator = (function() {
             //that we call our result.
             c.asyncCloseTry(w);
           }
-          w.write("}");
           w.endClosure();
+
+          w.write("}");
           if (n.doc) {
             w.write("; __inner__.__doc__ = __inner__.help = __doc__; ");
             w.write("return __inner__; })()");
@@ -128,17 +128,17 @@ this.Translator = (function() {
           //our asyncParent.
           var c = w.startClosure({ isAsync: true,
               asyncParent: w.getClosure() });
+          c.props.asyncParent.setAsyncDataVar(c.getAsyncDataVar());
 
           w.goToNode(n);
-          w.write("/* async */" + ASYNC_BUFFER);
+          w.write("/* async */" + w.ASYNC.BUFFER);
+          w.write(c);
 
           if (cAsyncParent) {
             cAsyncParent.asyncAddCall(w);
-            c.props.asyncParent.setVarUsed(cAsyncParent.getAsyncDataVar());
+            c.props.asyncParent.setVarUsed(cAsyncParent.getAsyncDataVar(),
+                true);
             w.write(";");
-          }
-          w.write(c);
-          if (cAsyncParent) {
             var parentCallback = cAsyncParent.getAsyncCheckAsVar();
             c.setVarUsed(parentCallback);
             c.setAsyncCallback(parentCallback);
@@ -148,8 +148,8 @@ this.Translator = (function() {
           }
           w.write("try{");
           e.translate(n.body);
-          w.write(ASYNC_BUFFER);
-          c.asyncCloseTry(w);
+          w.write(w.ASYNC.BUFFER);
+          c.asyncCloseTry(w, e, n.catchStmt, n.finallyStmt);
           w.endClosure();
         },
      "asyncCall": function(e, n, w) {
@@ -159,7 +159,7 @@ this.Translator = (function() {
           var cAsyncParent = w.getClosure({ isAsync: true });
           if (!c && n.assign && n.assign.length > 0) {
             throw new Error("async calls with assigned variables require an "
-                + "await context");
+                + "await or async context");
           }
           //Find the temp var parent to stop from overwriting stuff since we
           //refer up all the time in async code
@@ -228,7 +228,9 @@ this.Translator = (function() {
             w.write("){");
             if (n.assign && n.assign.length > 0) {
               if (errorPos >= 0) {
-                w.write("if(!error){");
+                w.write("if(!");
+                w.write(argNames[errorPos]);
+                w.write("){");
               }
               //variables...
               var firstArg = 1;
@@ -292,7 +294,7 @@ this.Translator = (function() {
 
           if (n.body.length !== 1 || n.body[0].line !== n.line) {
             w.goToNode(n);
-            w.write("/* await */" + ASYNC_BUFFER);
+            w.write("/* await */" + w.ASYNC.BUFFER);
           }
 
           //We accomplish await blocks by creating a new async closure that's
@@ -320,10 +322,11 @@ this.Translator = (function() {
           w.write(c);
           w.write("try{");
           e.translate(n.body);
-          w.write(ASYNC_BUFFER);
-          c.asyncCloseTry(w);
+          w.write(w.ASYNC.BUFFER);
+          c.asyncCloseTry(w, e, n.catchStmt, n.finallyStmt);
           w.write("})();");
-          w.endClosure();
+          //Don't end closure till after cAfter, so that we keep track of
+          //inherited and assigned variables properly.
 
           //Now fill in the things to call after we're done, which is in itself
           //another async closure.
@@ -335,13 +338,24 @@ this.Translator = (function() {
           w.write("(__error){");
           w.write(cAfter);
           w.write("if(__error){");
-          w.write(cParent.getAsyncCheckAsVar());
-          w.write("(__error);return}");
+          cAfter.asyncCheck(w, "__error");
+          w.write(";return}");
           w.write("try{");
+          //Embedded return clause in e.g. catch or finally.  Use closure and
+          //not async so that only the main control flow is blocked by a return.
+          var cFunction = w.getClosure({ isClosure: true });
+          if (cFunction !== null) {
+            w.write("if('" + w.ASYNC.RETURN_VALUE + "' in ");
+            w.write(cFunction.getAsyncDataVar());
+            w.write("){return};");
+          }
           e.translate(n.after);
-          w.write(ASYNC_BUFFER);
+          w.write(w.ASYNC.BUFFER);
           cAfter.asyncCloseTry(w);
+          w.endClosure();
           w.write("}");
+
+          //Close out c
           w.endClosure();
 
           if (n.name) {
@@ -422,7 +436,7 @@ this.Translator = (function() {
             return cType;
           })();
 
-          var c = w.startClosure({ isFunction: true });
+          var c = w.startClosure({ isClosure: true });
           var args = new cType(c);
           w.write("(function(");
           w.write(args);
@@ -695,7 +709,7 @@ this.Translator = (function() {
           }
           var f = w.getClosure({ isFunction: true });
           if (!f) {
-            throw new Error("@class only vaoid in a class' function; line "
+            throw new Error("@class only valid in a class' function; line "
                 + n.line);
           }
           w.write(c.props.className + ".prototype");
@@ -758,7 +772,10 @@ this.Translator = (function() {
      "return": function(e, n, w) {
           var c = w.getClosure({ isFunction: true });
           if (c.props.isAsync) {
-            c.asyncResult(w, e, n.result);
+            //Set the result on our closest closure, since "return" in an
+            //async block (return from closure) means something different
+            //from "return" in an await block (no closure, function return)
+            w.getClosure({ isClosure: true }).asyncResult(w, e, n.result);
           }
           else {
             w.write("return ");
