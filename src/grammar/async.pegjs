@@ -54,9 +54,9 @@ async_call
       finallyStmt:async_finally? {
       var r = R({ op: "asyncCall", assign: assign, call: call });
       if (catchStmt || finallyStmt) {
-        //Adding a closure here is a bit dirty...
-        r = { op: "closure", body: [ { op: "async", body: r,
-            catchStmt: catchStmt, finallyStmt: finallyStmt } ] };
+        //Don't add a closure here...  it has rammifications on variable scope.
+        r = { op: "async", body: r,
+            catchStmt: catchStmt, finallyStmt: finallyStmt };
       }
       return r;
     }
@@ -98,16 +98,16 @@ inner_async_call
 
 
 async_catch
-  = CONTINUATION_END inner:(NEWLINE_SAME "catch" (_ Identifier)? statement_body)?
-      CONTINUATION_OPEN & { return inner; } {
+  = cont:CONTINUATION_POP inner:(NEWLINE_SAME "catch" (_ Identifier)? statement_body)?
+        & { continuationPush(cont); return inner; } {
       var eId = inner[2] && inner[2][1];
       return R({ op: "catch", id: eId, body: inner[3] });
     }
 
 
 async_finally
-  = CONTINUATION_END inner:(NEWLINE_SAME "finally" statement_body)?
-      CONTINUATION_OPEN & { return inner; } {
+  = cont:CONTINUATION_POP inner:(NEWLINE_SAME "finally" statement_body)?
+        & { continuationPush(cont); return inner; } {
       return R({ op: "finally", body: inner[2] });
     }
 

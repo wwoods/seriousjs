@@ -127,8 +127,11 @@ this.Translator = (function() {
           //async blocks are always inside a closure.  So use the closure as
           //our asyncParent.
           var c = w.startClosure({ isAsync: true,
-              asyncParent: w.getClosure() });
-          c.props.asyncParent.setAsyncDataVar(c.getAsyncDataVar());
+              asyncParent: w.getClosure({ isAsyncOrClosure: true }) });
+          if (c.props.asyncParent.props.isClosure) {
+            //Belongs to this async block, so flag it
+            c.props.asyncParent.setAsyncDataVar(c.getAsyncDataVar());
+          }
 
           w.goToNode(n);
           w.write("/* async */" + w.ASYNC.BUFFER);
@@ -217,7 +220,7 @@ this.Translator = (function() {
                   argName = "error";
                 }
                 else {
-                  argName = "a" + i;
+                  argName = w.tmpVar(true, true);
                 }
                 argNames.push(argName);
                 if (i > 0) {

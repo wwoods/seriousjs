@@ -14,11 +14,14 @@ var state = { indent: null, line: 1, comments: [] };
 states[-1] = deepCopy(state);
 
 function getBlock() {
+  if (blockIndents.length === 0) {
+    throw new Error("Failed to find block!  At " + _upos());
+  }
   return blockIndents[blockIndents.length - 1];
 }
 
 function getBlockIndent() {
-  return blockIndents[blockIndents.length - 1].indent;
+  return getBlock().indent;
 }
 
 function getBlockList() {
@@ -182,4 +185,22 @@ function indentBlockStop(mustMatch) {
     //blockIndents.push(oldBlock);
   }
   return result;
+}
+
+
+function continuationPop() {
+  //If the top block is a continuation, pop it and return. Otherwise return
+  //null.  For use by CONTINUATION_POP followed by continuationPush.
+  if (getBlock().isContinuation) {
+    return blockIndents.pop();
+  }
+  return null;
+}
+
+
+function continuationPush(saved) {
+  if (saved === null) {
+    return;
+  }
+  blockIndents.push(saved);
 }

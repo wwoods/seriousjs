@@ -176,3 +176,7 @@ CONTINUATION_OPEN
 CONTINUATION_END
   = & { return indentBlockStop(false); } ASSERT_ON_ENDLINE
 
+
+CONTINUATION_POP
+  = & { return true; } { return continuationPop(); }
+

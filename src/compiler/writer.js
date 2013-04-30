@@ -487,6 +487,11 @@ this.Writer = (function() {
         return false;
       }
     }
+    if (spec.isAsyncOrClosure) {
+      if (!c.props.isAsync && !c.props.isClosure) {
+        return false;
+      }
+    }
     if (spec.isAwait) {
       if (!c.props.isAwait) {
         return false;

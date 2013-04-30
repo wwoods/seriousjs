@@ -473,6 +473,27 @@ describe "async functionality", ->
       done()
 
 
+  it "Should properly scope async variables with catch and finally", (done) ->
+    m = sjs.eval """
+        g = async ->
+          await 0
+          return 33
+        f = async ->
+          await
+            async r = g
+            catch e
+              ok = 3
+            finally
+              ok = 3
+          return [ r, ok ]
+        """
+    m.f (error, r) ->
+      assert.equal null, error and error.message or error
+      assert.equal 33, r[0]
+      assert.equal 3, r[1]
+      done()
+
+
   it "Should work with a rather complicated example", (done) ->
     """So, async keyword means "take this block out of the control flow, but
     execute it up to the first await (the whole thing if there is none)."
@@ -490,6 +511,7 @@ describe "async functionality", ->
 
     await "method" is shorthand for await async.
     """
+    @timeout 500
     m = sjs.eval """
         myMethod = (a, b, callback) ->
           '''Plain async method without keywords to interface with'''
@@ -525,7 +547,6 @@ describe "async functionality", ->
         # a function.
         doAsyncWork = async () ->
           results = []
-
           await
             tsStart = Date.now()
             results.push "Async start: #""" + """{ tsStart }"
@@ -546,12 +567,13 @@ describe "async functionality", ->
                   r.push("Failed #""" + """{ v }: #""" + """{ e }")
                 finally
                   if v < 3
-                      r.push("Finally from #""" + """{ v }")
+                    r.push("Finally from #""" + """{ v }")
                 # Make each request 100ms apart
                 await 20  # Could have been await 0.02s
             # Stuff with blah, halo, a1, a2, r...
             results.push("a1: #""" + """{ a1 }")
           catch blah
+            results.push "Caught #""" + """{ blah }"
             throw blah
           finally
             # do more stuff
@@ -561,12 +583,14 @@ describe "async functionality", ->
           catch e
             results.push("Weird error caught: #""" + """{ e }")
 
-          # And callbacks without errors
-          await noerror v1, v2 = asyncSansError()
+          # And callbacks without errors.. poorly
+          await v1, v2, error = asyncSansError()
+          results.push "Got #""" + """{ v1 + ', ' + v2 }"
 
           return results
         """
 
     m.doAsyncWork (error, results) ->
+      assert.equal null, error and error.message or error
       assert.equal [], results
       done()
