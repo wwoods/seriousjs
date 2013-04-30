@@ -3,7 +3,7 @@ SeriousJS
 
 A simple syntax for a complicated world.
 
-There is an interactive interpreter available at: http://wwoods.github.io/seriousjs
+There is an interactive interpreter available at: http://wwoods.github.io/seriousjs/
 
 ## Motivation
 
@@ -77,7 +77,7 @@ dependable and providing extensions for a uniform code base across NodeJS and
 browser implementations.  Emphasis is on making projects easy to manage and
 learn.
 
-Remember, there is an interactive interpreter to play with at: http://wwoods.github.io/seriousjs
+Remember, there is an interactive interpreter to play with at: http://wwoods.github.io/seriousjs/
 
 
 Usage
