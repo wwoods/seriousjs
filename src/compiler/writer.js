@@ -280,12 +280,14 @@ this.Closure = Closure = (function() {
       w.write(finallyCall);
       w.write("(__error){");
       var callback = w.tmpVar(true, true);
-      var cBlock = w.newAsyncBlock(callback);
+      //Be sure we write in the variable before assigning the return function
+      //in the async closure!
       w.write(callback);
       w.write("=function(){");
       w.write(finallyFollower);
       w.write("(__error)");
       w.write("};");
+      var cBlock = w.newAsyncBlock(callback);
       e.translate(finallyStmt.body);
       cBlock.asyncCloseTry(w, e);
       w.endClosure();

@@ -182,6 +182,7 @@ this.Translator = (function() {
             w.write(",");
             var myCallback = w.tmpVar(true);
             w.write("=function(");
+            w.startArgs();
             var maxArgs = 0;
             var errorPos = -1;
             var errorIsImplicit = false;
@@ -222,9 +223,10 @@ this.Translator = (function() {
                 if (i > 0) {
                   w.write(",");
                 }
-                w.write(argName);
+                w.variable(argName, true);
               }
             }
+            w.endArgs();
             w.write("){");
             if (n.assign && n.assign.length > 0) {
               if (errorPos >= 0) {
