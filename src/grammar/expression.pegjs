@@ -10,6 +10,7 @@ expression
       base.chain.push(call);
       return base;
     }
+  / async_expr
   / ternary_expr
 
 ternary_expr

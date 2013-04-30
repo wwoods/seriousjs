@@ -74,10 +74,3 @@ describe "Async catch/finally", ->
         """
     await r = m.g
     assert.equal 22, r
-
-
-  it "Should work with this", ->
-    m = sjs.eval """
-        assert = { throws: () -> "ok" }
-        assert.throws async -> await m.g
-        """

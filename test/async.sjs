@@ -14,6 +14,16 @@ describe "async functionality", ->
       done()
 
 
+  it "Should work with this", ->
+    # This was a grammar error...  apparently the "await" part was choking
+    # because there weren't expressions for it (as single-line lambdas only
+    # support)
+    m = sjs.eval """
+        assert = { throws: () -> "ok" }
+        assert.throws async -> await m.g
+        """
+
+
   it "Should be applicable to lambdas with callback specified", (done) ->
     m = sjs.eval """q = async (callback) -> 33"""
     m.q (error, r) ->

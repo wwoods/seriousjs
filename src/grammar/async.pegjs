@@ -1,20 +1,51 @@
 
 async_stmt
-  = "async" inner:async_stmt_inner {
-      return inner;
-    }
+  = async_stmt_inner
   / await_stmt
+  / async_expr
+
+
+/* Separate to allow for usage in async lambdas */
+async_expr
+  = "async" _ call:async_call {
+      return call;
+    }
+  / "await" _ time:await_time {
+      //note that "after" will be filled in automagically before we get to
+      //the translator.
+      return R({
+          op: "await",
+          after: null,
+          body: [ R({ op: "asyncCall", call: {
+            op: "asyncCallee", func: "setTimeout",
+            args: [ { op: "id", id: "callback" }, time ] } }) ]
+      });
+    }
+  / "await" _ call:async_call {
+      var r = R({ op: "await", after: null, body: [ call ] });
+      if (call.op === "closure") {
+        //It had try or finally...
+        var realCall = call.body[0];
+        if (realCall.catchStmt) {
+          r.catchStmt = realCall.catchStmt;
+          realCall.catchStmt = null;
+        }
+        if (realCall.finallyStmt) {
+          r.finallyStmt = realCall.finallyStmt;
+          realCall.finallyStmt = null;
+        }
+        //r.body = realCall;
+      }
+      return r;
+    }
 
 
 async_stmt_inner
-  = body:statement_body_block catchStmt:async_catch? finallyStmt:async_finally?
-        {
+  = "async" body:statement_body_block catchStmt:async_catch?
+        finallyStmt:async_finally? {
       var r = { op: "closure", body: R({ op: "async", body: body,
           catchStmt: catchStmt, finallyStmt: finallyStmt }) };
       return r;
-    }
-  / _ call:async_call {
-      return R(call);
     }
 
 
@@ -98,35 +129,7 @@ await_interval
 
 
 await_stmt
-  = "await" _ time:await_time {
-      //note that "after" will be filled in automagically before we get to
-      //the translator.
-      return R({
-          op: "await",
-          after: null,
-          body: [ R({ op: "asyncCall", call: {
-            op: "asyncCallee", func: "setTimeout",
-            args: [ { op: "id", id: "callback" }, time ] } }) ]
-      });
-    }
-  / "await" _ call:async_call {
-      var r = R({ op: "await", after: null, body: [ call ] });
-      if (call.op === "closure") {
-        //It had try or finally...
-        var realCall = call.body[0];
-        if (realCall.catchStmt) {
-          r.catchStmt = realCall.catchStmt;
-          realCall.catchStmt = null;
-        }
-        if (realCall.finallyStmt) {
-          r.finallyStmt = realCall.finallyStmt;
-          realCall.finallyStmt = null;
-        }
-        //r.body = realCall;
-      }
-      return r;
-    }
-  / "await" body:statement_body_block catchStmt:async_catch?
+  = "await" body:statement_body_block catchStmt:async_catch?
         finallyStmt:async_finally? {
       return R({ op: "await", after: null, body: body, catchStmt: catchStmt,
           finallyStmt: finallyStmt });
