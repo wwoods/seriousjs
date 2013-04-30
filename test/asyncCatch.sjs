@@ -62,6 +62,40 @@ describe "Async catch/finally", ->
       return
     assert.fail "No exception seen"
 
+  it "Should execute finally with a catch block", async ->
+    m = sjs.eval """
+        f = async ->
+          await 0
+        g = async ->
+          await
+            await f
+          catch e
+            3
+          finally
+            return 46
+        """
+    await r = m.g
+    assert.equal 46, r
+
+  it "Should execute finally with an error from catch block", async ->
+    m = sjs.eval """
+        f = async ->
+          await 0
+          throw "GOTCHA"
+        g = async ->
+          await
+            await f
+          catch e
+            throw e
+          finally
+            return 46
+        """
+    await
+      await r = m.g
+      assert.fail "No error!"
+    catch e
+      assert.equal "GOTCHA", e
+
   it "Should work with double layer", async ->
     m = sjs.eval """
         f = async ->
