@@ -1,14 +1,14 @@
 {
   "name": "seriousjs",
   "preferGlobal": true,
-  "version": "0.1.5",
+  "version": "0.1.6",
   "author": "Walt Woods <woodswalben@gmail.com>",
   "description": "An improved javascript syntax with tools for developing large-scale applications and websites",
   "bin": {
     "seriousjs": "./bin/seriousjs"
   },
   "scripts": {
-    "prepublish": "./bin/seriousjs compile-seriousjs",
+    "prepublish": "./bin/seriousjs compile-seriousjs --release",
     "test": "mocha --compilers sjs:./index test test/slowTests"
   },
   "main": "./index.js",
