@@ -1,6 +1,6 @@
 
 var ASYNC = {
-    BUFFER: "    ",
+    BUFFER: "        ",
     COUNT: "c",
     RETURN_VALUE: "v",
     RESULT_CALLBACK: "r",

@@ -4,6 +4,9 @@
 //our current position when we restore.
 var states = {};
 
+//Track all comments so that they're attached to relevant nodes
+var allComments = [];
+
 //Some parse states happen inside a "block" - that is, a set of lines with
 //the same or similar indentation.  We keep track of these in this array,
 //which will always be maintained regardless of good / bad parse states
@@ -77,6 +80,15 @@ function stateRestore() {
         log("Trimmed " + (m - i) + " bad block(s)");
       }
       break;
+    }
+  }
+
+  //Clean up comments
+  for (var i = 0, m = allComments.length; i < m; i++) {
+    if (allComments[i].startPos > p) {
+      allComments.splice(i, 1);
+      i -= 1;
+      m -= 1;
     }
   }
 

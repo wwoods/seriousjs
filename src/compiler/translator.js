@@ -453,6 +453,17 @@ this.Translator = (function() {
           w.write(args);
           w.write(")");
         },
+     "comment": function(e, n, w) {
+          var lines = n.comment.split(/\n/g);
+          w.write("/*");
+          for (var i = 0, m = lines.length; i < m; i++) {
+            if (i > 0) {
+              w.write("\n");
+            }
+            w.write(lines[i]);
+          }
+          w.write("*/" + w.ASYNC.BUFFER);
+        },
      "dict": function(e, n, w) {
           if (n.elements.length > 0) {
             w.goToNode(n.elements[0]);
@@ -1001,7 +1012,7 @@ this.Translator = (function() {
     this.options = options;
   }
 
-  Translator.prototype.translate = function(node, options) {
+  Translator.prototype.translate = function(node, options, addReturnFirst) {
     if (!options) {
       options = {};
     }
@@ -1019,13 +1030,11 @@ this.Translator = (function() {
         if (i === m - 1 && options.isReturnClosure
             && !(node[i].op in badOpsForReturn)) {
           var c = w.getClosure({ isFunction: true });
-          w.goToNode(node[i]);
           if (c.props.isAsync) {
             c.asyncResult(w, self, node[i]);
           }
           else {
-            w.write("return ");
-            self.translate(node[i], options);
+            self.translate(node[i], options, true);
           }
         }
         else {
@@ -1038,11 +1047,27 @@ this.Translator = (function() {
     }
     else if (typeof node === "object" && node.tree) {
       var treeOptions = { isModule: true };
+      self.comments = node.comments;
       self.translate(node.tree, treeOptions);
     }
     else if (typeof node === "object") {
+      if (node.line && node.op !== "comment") {
+        for (var i = 0, m = self.comments.length; i < m; i++) {
+          if (self.comments[i].line < node.line) {
+            //Make sure the comment's indentation matches our node
+            self.comments[i].state = node.state;
+            self.translate(self.comments[i]);
+            self.comments.splice(i, 1);
+            i -= 1;
+            m -= 1;
+          }
+        }
+      }
       if (!(node.op in badOpsForGoto)) {
         w.goToNode(node);
+      }
+      if (addReturnFirst) {
+        w.write("return ");
       }
       var op = opTable[node['op']];
       if (op === undefined) {

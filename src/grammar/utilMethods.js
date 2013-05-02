@@ -98,5 +98,12 @@ function R(ast) {
   //And since the line from state isn't always up to date, use the reported
   //pos
   ast['line'] = line();
+  ast['startPos'] = _pos();
+
+  //Comment handling
+  if (ast.op === "comment") {
+    allComments.push(ast);
+  }
+
   return ast;
 }

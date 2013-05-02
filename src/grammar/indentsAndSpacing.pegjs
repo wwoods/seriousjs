@@ -44,12 +44,6 @@ INDENT_LEVEL "indent"
 NEWLINE "newline"
   /* One or several newlines, ending in some indentation */
   = lines:([ \t]* COMMENT? "\r"? "\n" INDENT_LEVEL*)+ {
-    //Add comments to last state, since newlines are after the comments
-    for (var i = 0, m = lines.length; i < m; i++) {
-      if (lines[i][1]) {
-        state.comments.push(lines[i][1]);
-      }
-    }
     var indent = lines[lines.length - 1][4].length;
     if (state.indent === null) {
       state.indent = indent;
@@ -64,16 +58,25 @@ NEWLINE "newline"
 
 
 COMMENT "comment"
-  = "###" & {
+  = "###" comment:_COMMENT_BLOCK & {
         var p = _pos();
         var end = input.indexOf('###', p);
         if (end < 0) {
           return false;
         }
+        comment[0] = input.substring(p, end);
         _advance(end - p);
         return true;
-        } "###"
-   / "#" [^\n]+
+        } "###" {
+      return R({ op: "comment", comment: comment[0] });
+    }
+  / "#" comment:[^\n]+ {
+      return R({ op: "comment", comment: comment.join("") });
+    }
+
+
+_COMMENT_BLOCK
+  = "" { return [ "" ]; }
 
 
 CHECK_NEWLINE

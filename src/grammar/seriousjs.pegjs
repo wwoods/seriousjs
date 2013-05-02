@@ -152,7 +152,7 @@ script
       for (var i = 0, m = script.length; i < m; i++) {
         r.push(script[i]);
       }
-      return { tree: r };
+      return { tree: r, comments: allComments };
     }
 
 ##include async.pegjs
