@@ -128,3 +128,20 @@ describe "await splits", ->
         """
     await r = m.f
     assert.equal 12, r
+
+
+  it "Should preserve 'this' context across await splits", (done) ->
+    m = sjs.eval """
+      f = async ->
+        r = @value
+        console.log 'a'
+        console.log this
+        await 0
+        console.log 'b'
+        console.log this
+        return r + @value
+      """
+    m.f.call value: 4, (error, result) ->
+      assert.equal null, error and error.message or error
+      assert.equal 8, result
+      done()

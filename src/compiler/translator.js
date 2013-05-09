@@ -333,7 +333,7 @@ this.Translator = (function() {
           e.translate(n.body);
           w.write(w.ASYNC.BUFFER);
           c.asyncCloseTry(w, e, n.catchStmt, n.finallyStmt);
-          w.write("})();");
+          w.write("}).call(this);");
           w.endClosure();
           //Don't end closure till after cAfter, so that we keep track of
           //inherited and assigned variables properly.
@@ -448,9 +448,9 @@ this.Translator = (function() {
           w.write(c);
           e.translate(n.body);
           w.endClosure();
-          w.write("})(");
+          w.write("}).apply(this, [");
           w.write(args);
-          w.write(")");
+          w.write("])");
         },
      "comment": function(e, n, w) {
           var lines = n.comment.split(/\n/g);

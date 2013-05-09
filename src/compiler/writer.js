@@ -4,8 +4,9 @@ var ASYNC = {
     COUNT: "c",
     RETURN_VALUE: "v",
     RESULT_CALLBACK: "r",
-    THIS: "s",
-    TRIGGERED: "t",
+    SELF_NAME: "s",
+    THIS: "t",
+    TRIGGERED: "f",
     debug: false,
 };
 
@@ -370,8 +371,9 @@ this.Closure = Closure = (function() {
       r += this.getAsyncDataVar() + "={";
       //Start with 1 count for our thread
       r += ASYNC.COUNT + ":1";
-      r += "," + ASYNC.THIS + ":\"" + this.getAsyncDataVar() + "\"";
+      r += "," + ASYNC.SELF_NAME + ":\"" + this.getAsyncDataVar() + "\"";
       r += "," + ASYNC.RESULT_CALLBACK + ":" + this._getAsyncCallback();
+      r += "," + ASYNC.THIS + ":this";
       r += "}";
       if (this._asyncCheckVar !== null) {
         checkVar();
