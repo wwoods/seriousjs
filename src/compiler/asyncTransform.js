@@ -163,11 +163,8 @@ function _transformAwait(path, node) {
 
 
 function _transformIf(path, node) {
-  var newAwait = { op: "await", body: [] };
+  var newAwait = { op: "await", body: [ node] };
   _pathReplace(path, newAwait);
-
-  //Either then or else could have await; luckily for us, it should just work..?
-  newAwait.body.push(node);
 }
 
 

@@ -6,6 +6,9 @@ async_stmt
 
 
 /* Separate to allow for usage in async lambdas */
+/* Note that all "await" that the user types should have catchAsync: true so
+   that they stop any async blocks under them.  Generated awaits (such as a
+   for loop or if loop) do not have this attribute. */
 async_expr
   = "async" _ call:async_call {
       return call;
@@ -15,6 +18,7 @@ async_expr
       //the translator.
       return R({
           op: "await",
+          catchAsync: true,
           after: null,
           body: [ R({ op: "asyncCall", call: {
             op: "asyncCallee", func: "setTimeout",
@@ -22,7 +26,8 @@ async_expr
       });
     }
   / "await" _ call:async_call {
-      var r = R({ op: "await", after: null, body: [ call ] });
+      var r = R({ op: "await", catchAsync: true, after: null,
+          body: [ call ] });
       if (call.op === "closure") {
         //It had try or finally...
         var realCall = call.body[0];
@@ -83,16 +88,19 @@ inner_async_call
   = base:atom_chain args:([ \t]+ arguments_list)? {
       //atom_chain also catches implicit call, so if the last part of base is
       //a call and we have no args, use that.
-      if (!args) {
+      if (args) {
+        args = args[1];
+      }
+      else {
         if (base.chain.length > 0
             && base.chain[base.chain.length - 1].op === "call") {
           var realCall = base.chain.pop();
           args = realCall.args;
         }
+        else {
+          args = [];
+        }
       }
-      return R({ op: "asyncCallee", func: base, args: args && args[1] || [] });
-    }
-  / base:atom_chain "(" args:arguments_delimited ")"? {
       return R({ op: "asyncCallee", func: base, args: args });
     }
 
@@ -131,6 +139,6 @@ await_interval
 await_stmt
   = "await" body:statement_body_block catchStmt:async_catch?
         finallyStmt:async_finally? {
-      return R({ op: "await", after: null, body: body, catchStmt: catchStmt,
-          finallyStmt: finallyStmt });
+      return R({ op: "await", catchAsync: true, after: null, body: body,
+          catchStmt: catchStmt, finallyStmt: finallyStmt });
     }

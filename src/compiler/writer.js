@@ -6,11 +6,13 @@ var ASYNC = {
     RESULT_CALLBACK: "r",
     THIS: "s",
     TRIGGERED: "t",
+    debug: false,
 };
 
 var allFeatures = {
   async: ""
       + "__asyncCheck=function(obj,error){"
+      + (ASYNC.debug ? " console.log(obj.s + ' check - ' + obj.c);" : "")
       + " if(obj." + ASYNC.TRIGGERED + "){return}"
       + " obj." + ASYNC.COUNT + "--;"
       + " if(error){"
@@ -201,6 +203,15 @@ this.Closure = Closure = (function() {
 
   Closure.prototype.asyncAddCall = function(writer) {
     //There's another async request for us, so increment our counter.
+    if (ASYNC.debug) {
+      writer.write("console.log('");
+      writer.write(this.getAsyncDataVar());
+      writer.write(" called - '+");
+      writer.write(this.getAsyncDataVar());
+      writer.write(".");
+      writer.write(ASYNC.COUNT);
+      writer.write("),");
+    }
     writer.write(this.getAsyncDataVar() + "." + ASYNC.COUNT + "++");
   };
 
@@ -464,6 +475,11 @@ this.Writer = (function() {
     }
     if (spec.isClosure) {
       if (!c.props.isClosure) {
+        return false;
+      }
+    }
+    if (spec.catchAsync) {
+      if (!c.props.catchAsync) {
         return false;
       }
     }

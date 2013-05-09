@@ -511,7 +511,7 @@ describe "async functionality", ->
 
     await "method" is shorthand for await async.
     """
-    @timeout 500
+    @timeout 750
     m = sjs.eval """
         myMethod = (a, b, callback) ->
           '''Plain async method without keywords to interface with'''
@@ -548,30 +548,38 @@ describe "async functionality", ->
         doAsyncWork = async () ->
           results = []
           await
-            tsStart = Date.now()
-            results.push "Async start: #""" + """{ tsStart }"
+            timeSeries = [ 0 ]
+            nextTime = ->
+              timeSeries[0] += 1
+              return timeSeries[0]
+            results.push "Async start: #""" + """{ nextTime() }"
             await blah, halo = myMethod 1, 2
             results.push "Blah, halo: #""" + """{ blah }, #""" + """{ halo }"
             await
               # If there is an await block above an async call, they will be
               # tied together, and async's results will be available to the
               # await block's parent scope.
-              async a1, a2 = myMethod 1, 2
+              async a1, a2 = myMethod 3, 4
               r = []
               for v in [1, 2, 3, 4, 5, 6, 7, 8]
                 async
-                  results.push "Making call at #{ Date.now() }"
+                  if v == 4
+                    # Delay this request so that it's after 2 more
+                    results.push "Waiting 45"
+                    await 45
+                  results.push "Making call for #""" + """{ v } at #""" + """{ nextTime() }"
                   await a, b = myMethod v, 2
                   r.push("#""" + """{ v }: #""" + """{ a }")
                 catch e
-                  r.push("Failed #""" + """{ v }: #""" + """{ e }")
+                  results.push("Failed #""" + """{ v }: #""" + """{ e }")
                 finally
-                  if v < 3
-                    r.push("Finally from #""" + """{ v }")
-                # Make each request 100ms apart
+                  if v < 3 or v > 6
+                    results.push("Finally from #""" + """{ v }")
+                # Make each request some time apart
                 await 20  # Could have been await 0.02s
             # Stuff with blah, halo, a1, a2, r...
             results.push("a1: #""" + """{ a1 }")
+            results = results.concat(r)
           catch blah
             results.push "Caught #""" + """{ blah }"
             throw blah
@@ -591,6 +599,40 @@ describe "async functionality", ->
         """
 
     m.doAsyncWork (error, results) ->
-      assert.equal null, error and error.message or error
-      assert.equal [], results
+      expected = [
+          "Async start: 1"
+          "Blah, halo: 3, 1"
+          "Making call for 1 at 2"
+          "Finally from 1"
+          "Making call for 2 at 3"
+          "Finally from 2"
+          "Making call for 3 at 4"
+          "Waiting 45"
+          "Making call for 5 at 5"
+          "Making call for 6 at 6"
+          "Making call for 4 at 7"
+          "Making call for 7 at 8"
+          "Failed 7: Error: a > 6!! was 7"
+          "Finally from 7"
+          "Making call for 8 at 9"
+          "Failed 8: Error: a > 6!! was 8"
+          "Finally from 8"
+          "a1: 7"
+          # Async callbacks are happening
+          "1: 3"
+          "2: 4"
+          "3: 5"
+          "5: 7"
+          "6: 8"
+          "4: 6"
+          "Outer await finally"
+          "Weird error caught: Error: Weird error"
+          "Got 12, 13"
+
+      for v, i in expected
+        if i >= results.length
+          assert.fail "Did not get expected: #{ v }"
+        assert.equal v, results[i]
+      if results.length > expected.length
+        assert.fail "Got extra message: #{ results[expected.length] }"
       done()

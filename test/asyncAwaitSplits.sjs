@@ -41,7 +41,7 @@ describe "await splits", ->
           await 0
           return 5
         f = async (a) ->
-          '''Inputs > 8 get 9 added, <= 8 get 0 added'''
+          '''Inputs > 8 get 8 added then doubled, <= 8 gets 1 subtracted then doubled'''
           a += 1
           if a > 9
             a += 1
@@ -49,15 +49,52 @@ describe "await splits", ->
             a += 1
           else
             a -= 2
-          a += 1
+          a *= 2
           return a
         """
     await r = m.f 9
-    assert.equal 18, r
+    assert.equal 34, r
     await r = m.f 8
-    assert.equal 8, r
+    assert.equal 14, r
     await r = m.f 19
-    assert.equal 28, r
+    assert.equal 54, r
+
+
+  it "Async blocks should bind to the right await level", async ->
+    m = sjs.eval """
+        g = async (t) ->
+          console.log "g() before await: #""" + """{ 30 - t * 4 }"
+          await (30 - t * 4)
+          console.log "g() after await"
+        f = async ->
+          r = []
+          # Should bind here
+          await
+            for v in [ 1, 2, 3 ]
+              async
+                await (30 - v * 10)
+                r.push(v)
+              # This makes a new split over the for loop, so if coded
+              # improperly, the async block will finish before this continues.
+              await 0
+          # Again, bind here
+          await
+            for v in [ 4, 5, 6 ]
+              async
+                console.log("CALLING g(v)")
+                await g(v)
+                r.push(v)
+                console.log("EXITING")
+              await 0
+          return r
+        """
+    await r = m.f
+    assert.equal 3, r[0]
+    assert.equal 2, r[1]
+    assert.equal 1, r[2]
+    assert.equal 6, r[3]
+    assert.equal 5, r[4]
+    assert.equal 4, r[5]
 
 
   it "Should work with for statements", async ->

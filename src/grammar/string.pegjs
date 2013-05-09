@@ -31,7 +31,7 @@ string_not_single_quote
   
 string_interpol
   = "#{" _ expr:expression _ "}" {
-      return R(expr);
+      return R({ op: "()", expr: expr });
     }
 
 string_for_require
