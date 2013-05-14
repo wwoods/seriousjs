@@ -9,11 +9,9 @@ options =
       input = input.replace(/^\(([\s\S]*)\n\)$/m, '$1')
       if not input
         return
-      try
-        script = sjs.compile("_=" + input)
-        return vm.runInContext(script, context, filename)
-      catch e
-        throw e
+
+      script = sjs.compile("_=" + input)
+      return vm.runInContext(script, context, filename)
 
 start = () ->
   rpl = repl.start(options)
