@@ -7,7 +7,7 @@ require path
 copyAndFormat = (fileOrDir, target, {>project} = options) ->
   if fs.statSync(fileOrDir).isDirectory()
     if path.basename(fileOrDir) in [ "node_modules", "_requirejs",
-        "webapp.build", "webapp.build.new" ]
+        "build.webapp", "build.webapp.new" ]
       # Don't clone node_modules
       return
     fs.mkdirSync(target)

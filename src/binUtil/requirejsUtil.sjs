@@ -48,7 +48,7 @@ setupProject = (app, express, embeddedFile, source, webappPath, callback) ->
 
   # Link the app to /src and run callback to start the server
   if '--built' in process.argv
-    app.use('/src', express.static(path.join(webappPath, '../webapp.build.new')))
+    app.use('/src', express.static(path.join(webappPath, '../build.webapp')))
     _buildApp(path.join(target, '..'), callback)
   else
     app.use('/src/shared', express.static(path.join(webappPath, '../shared'))
@@ -72,8 +72,12 @@ _buildApp = (target, callback) ->
     allStderr.push(data)
   cleanup = (code) ->
     if code == 0
+      # Delete the old build.webapp, and put in the new one
+      sjsUtil.rmDir(path.join(target, '../build.webapp'))
+      fs.renameSync(path.join(target, '../build.webapp.new'),
+          path.join(target, '../build.webapp'))
       # Delete every file in the new build directory except _requirejs/*
-      sjsUtil.rmDirFiles(path.join(target, '../webapp.build.new'),
+      sjsUtil.rmDirFiles(path.join(target, '../build.webapp'),
           /\.(js|sjs)$/,
           /_requirejs\/loader\.js|_requirejs\/require\.js$/)
       not callback and console.log("Build finished.")
