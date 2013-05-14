@@ -37,9 +37,17 @@ setupProject = (app, express, embeddedFile, source, webappPath, callback) ->
 
   # Now that it's set up, check for compiles and whatnot.
   if '--build' in process.argv
-    _buildApp(
-        path.join(target, '..')
-  elif '--built' in process.argv
+    _buildApp(path.join(target, '..'))
+    # Exit without calling callback or any setup.
+    return
+
+  # Link lib folders, which are never compiled
+  app.use('/src/lib', express.static(path.join(webappPath, 'lib')))
+  app.use('/src/shared/lib',
+      express.static(path.join(webappPath, '../shared/lib')))
+
+  # Link the app to /src and run callback to start the server
+  if '--built' in process.argv
     app.use('/src', express.static(path.join(webappPath, '../webapp.build.new')))
     _buildApp(path.join(target, '..'), callback)
   else
