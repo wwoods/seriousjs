@@ -1,6 +1,6 @@
 
 class_stmt
-  = "class" _ id:Identifier ext:(_ "extends" _ Identifier)?
+  = "class" _ id:Identifier ext:(_ "extends" _ atom_chain)?
         body:class_body? {
       var parent = null;
       if (ext) {

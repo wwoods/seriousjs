@@ -158,6 +158,17 @@ describe "Classes", ->
     assert.equal true, m.m instanceof m.b
     assert.equal true, m.m instanceof m.a
 
+  it "Should work with extends of any valid ID path", ->
+    m = sjs.eval """
+        a = {}
+        class innerA
+          hey: 89
+        a.innerA = innerA
+        class b extends a.innerA
+        m = new b()
+        """
+    assert.equal 89, m.m.hey
+
   it "Should throw an error without new for extended classes", ->
     m = sjs.eval """
         class a
