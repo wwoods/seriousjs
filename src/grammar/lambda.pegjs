@@ -18,7 +18,12 @@ lambda
 
 
 lambda_spec
-  = async:("async" _)? { return { async: (async ? true : false) }; }
+  = async:("async" _ ("noerror" _)?)? {
+      return {
+          async: (async ? true : false),
+          asyncNoError: (async && async[2] ? true : false)
+      };
+    }
 
 
 lambda_args

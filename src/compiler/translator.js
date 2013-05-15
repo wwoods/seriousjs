@@ -32,6 +32,7 @@ this.Translator = (function() {
               isFunction: true,
               isClosure: true,
               isAsync: n.spec && n.spec.async,
+              isAsyncNoError: n.spec && n.spec.asyncNoError,
               catchAsync: true
           });
           if (n.doc) {
@@ -50,12 +51,14 @@ this.Translator = (function() {
           }
           w.startArgs();
           e.translate(n.parms, { separator: ',' });
+          var asyncCallback = null;
+          var asyncCallbackIndex = null;
           if (c.props.isAsync) {
             w.usesFeature("async");
-            var asyncCallback = null;
             for (var i = 0, m = n.parms.length; i < m; i++) {
               if (n.parms[i].id === "callback") {
                 asyncCallback = "callback";
+                asyncCallbackIndex = i;
                 break;
               }
             }
@@ -64,11 +67,38 @@ this.Translator = (function() {
                 w.write(",");
               }
               asyncCallback = w.tmpVar();
+              asyncCallbackIndex = n.parms.length;
             }
             c.setAsyncCallback(asyncCallback);
           }
           w.endArgs();
           w.write(") {");
+          if (asyncCallback !== null) {
+            w.write("if(");
+            w.write(asyncCallback);
+            w.write("===undefined){");
+            var hasWrittenAsyncSub = false;
+            for (var i = asyncCallbackIndex - 1; i >= 0; i--) {
+              if (n.parms[i].op !== "id") {
+                continue;
+              }
+              if (hasWrittenAsyncSub) {
+                w.write("else ");
+              }
+              hasWrittenAsyncSub = true;
+              w.write("if(typeof ");
+              w.write(n.parms[i].id);
+              w.write('==="function"){');
+              w.write(asyncCallback);
+              w.write("=");
+              w.write(n.parms[i].id);
+              w.write(";");
+              w.write(n.parms[i].id);
+              w.write("=undefined");
+              w.write("}");
+            }
+            w.write("}");
+          }
           w.write(c);
           if (c.props.isAsync) {
             //Whole method must be in a try..catch..finally
@@ -560,6 +590,27 @@ this.Translator = (function() {
             e.translate(n.assign);
           });
         },
+     "existence": function(e, n, w) {
+          if (n.atom.op === "id") {
+            //Slightly different code since we can't assign it to anything
+            w.write("(typeof ");
+            e.translate(n.atom);
+            w.write('!=="undefined"&&');
+            e.translate(n.atom);
+            w.write("!==null)");
+          }
+          else {
+            w.write("(");
+            var ref = w.tmpVar();
+            w.write("=");
+            e.translate(n.atom);
+            w.write(",typeof ");
+            w.write(ref);
+            w.write('!=="undefined"&&');
+            w.write(ref);
+            w.write("!==null)");
+          }
+        },
      "exports": function(e, n, w) {
           for (var i = 0, m = n.exports.length; i < m; i++) {
             w.export(n.exports[i].id);
@@ -897,6 +948,11 @@ this.Translator = (function() {
             e.translate(n.finallyStmt.body);
             w.write("}");
           }
+        },
+     "typeof": function(e, n, w) {
+          w.write("(typeof ");
+          e.translate(n.right);
+          w.write(")");
         },
      "unary_negate": function(e, n, w) {
           w.write("-");

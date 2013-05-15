@@ -14,7 +14,7 @@ expression
   / ternary_expr
 
 ternary_expr
-  = head:logic_expr tail:(_ "?" _ expression _ ":" _ expression)? {
+  = head:logic_expr tail:(_ "then" _ expression _ "else" _ expression)? {
       var r = head;
       if (tail) {
         r = { op: "ternary", if: r, then: tail[3], else: tail[7] };
@@ -28,8 +28,8 @@ logic_op
 
 logic_expr
   = head:not_expr tail:(_ logic_op _ not_expr)* {
-    return R(getBinary(head, tail, 1, 3));
-  }
+      return R(getBinary(head, tail, 1, 3));
+    }
 
 not_expr
   = "not" _ expr:compare_expr { return R({ op: "unary_not", right: expr }); }
@@ -67,28 +67,38 @@ add_op
 
 add_expr
   = head:mul_expr tail:(_ add_op _ mul_expr)* {
-    return getBinary(head, tail, 1, 3);
-  }
+      return getBinary(head, tail, 1, 3);
+    }
 
 mul_op
   = "*" / "/" / "%"
 
 mul_expr
-  = head:atom_chain tail:(_ mul_op _ atom_chain)* {
-    return getBinary(head, tail, 1, 3);
-  }
+  = head:existence_expr tail:(_ mul_op _ existence_expr)* {
+      return getBinary(head, tail, 1, 3);
+    }
+
+existence_expr
+  = base:atom_chain ex:(_ "?")? {
+      var r = base;
+      if (ex) {
+        r = R({ op: "existence", atom: r });
+      }
+      return r;
+    }
 
 atom_chain
   = un:unary_op* base:base_atom chain:atom_mod* {
-    var r = R({ op: "atom", atom: base, chain: chain });
-    for (var i = un.length - 1; i >= 0; --i) {
-      r = { op: un[i], right: r };
+      var r = R({ op: "atom", atom: base, chain: chain });
+      for (var i = un.length - 1; i >= 0; --i) {
+        r = { op: un[i], right: r };
+      }
+      return r;
     }
-    return r;
-  }
 
 unary_op
   = "new" _ { return "unary_new"; }
+  / "typeof" _ { return "typeof"; }
   / "-" { return "unary_negate"; }
 
 base_atom

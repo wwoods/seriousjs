@@ -39,3 +39,7 @@ describe "not operator", ->
     assert.equal true, sjs.eval("a = 'b' not of { a: 1, d: 2, c: 3 }").a
     assert.equal false, sjs.eval("a = not 'b' of { a: 1, b: 2, c: 3 }").a
     assert.equal true, sjs.eval("a = not 'b' of { a: 1, d: 2, c: 3 }").a
+
+describe "typeof operator", ->
+  it "Should bind correctly", ->
+    assert.equal true, sjs.eval("z = typeof a == 'undefined'").z

@@ -2,6 +2,7 @@
 var ASYNC = {
     BUFFER: "        ",
     COUNT: "c",
+    NOERROR: "n",
     RETURN_VALUE: "v",
     RESULT_CALLBACK: "r",
     SELF_NAME: "s",
@@ -26,10 +27,17 @@ var allFeatures = {
       + "__asyncTrigger=function(obj,error,result){"
       //Guard for ASYNC.TRIGGERED being false is in asyncCheck.
       + " obj." + ASYNC.TRIGGERED + "=true;"
-      + " obj." + ASYNC.RESULT_CALLBACK + " && obj." + ASYNC.RESULT_CALLBACK
+      + " if(obj." + ASYNC.NOERROR + "){"
+      + "  if(error){throw error}"
+      + "  obj." + ASYNC.RESULT_CALLBACK + " && obj." + ASYNC.RESULT_CALLBACK
+      +       ".call(obj." + ASYNC.THIS + ",result);"
+      + " }"
+      + " else {"
+      + "  obj." + ASYNC.RESULT_CALLBACK + " && obj." + ASYNC.RESULT_CALLBACK
       +       ".call("
-      +     "obj." + ASYNC.THIS + ",error,result"
-      + " );"
+      +      "obj." + ASYNC.THIS + ",error,result"
+      + "  );"
+      + " }"
       + "}",
   dictCheckAvailable: ""
       + "__dictCheckAvailable=function(spec,dict){"
@@ -374,6 +382,9 @@ this.Closure = Closure = (function() {
       r += "," + ASYNC.SELF_NAME + ":\"" + this.getAsyncDataVar() + "\"";
       r += "," + ASYNC.RESULT_CALLBACK + ":" + this._getAsyncCallback();
       r += "," + ASYNC.THIS + ":this";
+      if (this.props.isAsyncNoError) {
+        r += "," + ASYNC.NOERROR + ":true";
+      }
       r += "}";
       if (this._asyncCheckVar !== null) {
         checkVar();

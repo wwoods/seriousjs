@@ -65,6 +65,22 @@ describe "async functionality", ->
           + "'await' instead.  Line 3", e.message
 
 
+  it "Should trickle-back callback argument", (done) ->
+    """By which we mean that if a method expects two arguments and does
+    not get one of them, the callback argument should drift back to earlier
+    arguments.
+    """
+    m = sjs.eval """
+        f = async (data) ->
+          return typeof data + "46"
+        """
+    # Call it without the data argument
+    m.f (error, result) ->
+      assert.equal null, error
+      assert.equal "undefined46", result
+      done()
+
+
   it "Should support and wait for internal async", (done) ->
     m = sjs.eval """
         g = [ 0 ]
@@ -111,6 +127,24 @@ describe "async functionality", ->
 
   it "Should not support await at global levels", () ->
     assert.throws -> sjs.compile """await q"""
+
+
+  it "Should support noerror for result", (done) ->
+    m = sjs.eval """
+        f = async noerror ->
+          return 45
+        g = async noerror ->
+          throw "FAILURE!"
+        """
+    try
+      m.g()
+      assert.fail "No failure seen?"
+    catch e
+      assert.equal "FAILURE!", e
+
+    m.f (result) ->
+      assert.equal 45, result
+      done()
 
 
   it "Should propagate errors", (done) ->

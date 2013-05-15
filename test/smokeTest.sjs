@@ -8,7 +8,7 @@ require ../ as sjs
 addTest = (fname, shouldPass) ->
   """Adds a test to the suite for compiling the given file.
   """
-  it "Should #{ shouldPass ? "" : "not " }compile #{ fname }", ->
+  it "Should #{ shouldPass then "" else "not " }compile #{ fname }", ->
     contents = fs.readFileSync(fname, 'utf8')
     if shouldPass
       sjs.compile(contents)

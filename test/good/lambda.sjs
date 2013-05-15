@@ -27,5 +27,5 @@ g(1,
 
 # Dict args!
 { a, b } -> a + b
-(a, b, {< add = true}) -> add ? a + b : a
+(a, b, {< add = true}) -> add then a + b else a
 

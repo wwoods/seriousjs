@@ -179,7 +179,8 @@ function _getEmbeddedFile() {
 //Exposed for tests
 this._getEmbeddedFile = _getEmbeddedFile;
 
-this.parser = eval(parserSource);
+var _parserSandbox = vm.Script.createContext();
+this.parser = vm.runInContext(parserSource, _parserSandbox, _parserFile);
 this.compile = function(text, options) {
   //Returns the legible javascript version of text.
   if (!options) {
