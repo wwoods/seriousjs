@@ -130,6 +130,40 @@ describe "await splits", ->
     assert.equal 12, r
 
 
+  it "Should work within a catch", async ->
+    m = sjs.eval """
+        g = async ->
+          throw new Error()
+        m = async ->
+          await 0
+          return 42
+        f = async ->
+          await g
+          catch e
+            await v = m
+            return v
+          return "fail"
+        """
+    await r = m.f
+    assert.equal 42, r
+
+
+  it "Should work within a finally", async ->
+    m = sjs.eval """
+        m = async ->
+          await 0
+          return 33
+        f = async ->
+          await r = m
+          finally
+            await 0
+            r += 1
+          return r
+        """
+    await r = m.f
+    assert.equal 34, r
+
+
   it "Should preserve 'this' context across await splits", (done) ->
     m = sjs.eval """
       f = async ->

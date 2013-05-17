@@ -85,6 +85,9 @@ function iterTree(path, node) {
     else if (node.op === "while") {
       _transformWhile(path, node);
     }
+    else if (node.op === "catch" || node.op === "finally") {
+      //Already transformed
+    }
     else {
       throw new Error("Could not handle await for node: " + node.op);
     }
