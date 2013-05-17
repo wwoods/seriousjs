@@ -158,6 +158,18 @@ describe "async functionality", ->
           done()
 
 
+  it "Should throw the error if there is no callback", () ->
+    m = sjs.eval """
+        q = async ->
+          throw "ERROR"
+        """
+    try
+      m.q()
+      throw "Failed to throw!"
+    catch e
+      assert.equal "ERROR", e
+
+
   it "Should support await with a break in ms", (done) ->
     @timeout 50
     m = sjs.eval """

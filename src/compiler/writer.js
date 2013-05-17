@@ -27,7 +27,7 @@ var allFeatures = {
       + "__asyncTrigger=function(obj,error,result){"
       //Guard for ASYNC.TRIGGERED being false is in asyncCheck.
       + " obj." + ASYNC.TRIGGERED + "=true;"
-      + " if(obj." + ASYNC.NOERROR + "){"
+      + " if(obj." + ASYNC.NOERROR + "||!obj." + ASYNC.RESULT_CALLBACK + "){"
       + "  if(error){throw error}"
       + "  obj." + ASYNC.RESULT_CALLBACK + " && obj." + ASYNC.RESULT_CALLBACK
       +       ".call(obj." + ASYNC.THIS + ",result);"
