@@ -9,6 +9,7 @@ ReservedWordInner
   / "catch"
   / "class"
   / "continue"
+  / "default"
   / "else"
   / "finally"
   / "for"
