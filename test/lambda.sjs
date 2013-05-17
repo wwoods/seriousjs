@@ -39,6 +39,17 @@ describe "Lambdas", ->
     assert.deepEqual [ 10, c: 4 ], m.a(2, c: 4)
     assert.deepEqual [ 8, b: 3, c: 4 ], m.a(2, b: 3, c: 4)
 
+  it "Should work with a return statement with a dict", ->
+    # If the dict starts on a line other than the return, some JS engines
+    # interpret it as a new statement, which doesn't work.
+    m = sjs.eval """
+        defaults = () ->
+          return
+              cards: []
+              dropTarget: false
+        """
+    assert.equal 0, m.defaults().cards.length
+
   it "Should support nested dict specifications with defaults", ->
     m = sjs.eval("a = (a, {<b = 8, c}) -> a + (b or c) * 2")
     assert.equal 18, m.a(2, c: 3)

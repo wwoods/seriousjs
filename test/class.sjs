@@ -26,6 +26,17 @@ describe "Classes", ->
         q = new a(5)"""
     assert.equal 5, m.q.v
 
+  it "Should not auto-return from constructors", ->
+    m = sjs.eval """
+        class a
+          constructor: () ->
+            @test = []
+        q = new a()
+        """
+    # If the constructor returns, then q will be an array since that is what
+    # the method returned.
+    assert.equal true, m.q instanceof m.a
+
   it "Should work with constructors with @ properties", ->
     m = sjs.eval """
         class a

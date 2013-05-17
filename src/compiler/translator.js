@@ -126,7 +126,7 @@ this.Translator = (function() {
 
             w.write("}");
           }
-          e.translate(n.body, { isReturnClosure: true });
+          e.translate(n.body, { isReturnClosure: !options.isConstructorFor });
           if (c.props.isAsync) {
             //Whole method must be in a try..catch..finally.  It's imperative
             //that we call our result.
@@ -494,11 +494,14 @@ this.Translator = (function() {
           w.write("*/" + w.ASYNC.BUFFER);
         },
      "dict": function(e, n, w) {
+          //Bracket must happen first, since return statements will become
+          //disconnected from the next line in some javascript engines (chrome
+          //and node, anyway)
+          w.write("{");
           if (n.elements.length > 0) {
             w.goToNode(n.elements[0]);
           }
 
-          w.write("{");
           e.translate(n.elements, { separator: ',' });
           w.write("}");
         },
