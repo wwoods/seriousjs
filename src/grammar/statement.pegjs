@@ -74,13 +74,23 @@ else_part
       return R(stmt);
     }
 
+for_op
+  = "in"
+  / "of"
+
 for_stmt
-  = "for" _ id:Identifier counterId:("," _ Identifier)? _ "in" _ expr:expression body:statement_body {
-      var ids = [ id ];
-      if (counterId) {
-        ids.push(counterId[2]);
+  = "for" _ id:Identifier counterId:("," _ Identifier)? _ op:for_op _ expr:expression body:statement_body {
+      if (op === "in") {
+        var ids = [ id ];
+        if (counterId) {
+          ids.push(counterId[2]);
+        }
+        return R({ op: "forList", ids: ids, expr: expr, body: body });
       }
-      return R({ op: "forList", ids: ids, expr: expr, body: body });
+      else {
+        return R({ op: "forHash", keyId: id, valueId: counterId && counterId[2],
+            expr: expr, body: body });
+      }
     }
 
 while_stmt

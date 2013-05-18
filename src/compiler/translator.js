@@ -619,6 +619,67 @@ this.Translator = (function() {
             w.export(n.exports[i].id);
           }
         },
+     "forHash": function(e, n, w) {
+          var r = w.tmpVar(true);
+          w.write("=");
+          e.translate(n.expr);
+          if (!n.hasAwait) {
+            w.write(";");
+            w.write("for(");
+            //avoid writing (this.name=name in r) which is invalid syntax
+            w.variable(n.keyId.id, true, true);
+            e.translate(n.keyId);
+            w.write(" in ");
+            w.write(r);
+            w.write("){");
+            if (n.valueId) {
+              e.translate(n.valueId, { isAssign:true });
+              w.write(" = ");
+              w.write(r);
+              w.write("[");
+              e.translate(n.keyId);
+              w.write("];");
+            }
+            e.translate(n.body);
+            w.write("}");
+          }
+          else {
+            //crazy async version, which mostly just leverages forList's
+            //implementation.
+            w.write(",");
+            var rKeys = w.tmpVar(true);
+            w.write("=[],");
+            var rKeyTmp = w.tmpVar(true, true);
+            var rKeysOp = {
+                op: "forHash",
+                keyId: rKeyTmp,
+                expr: r,
+                body: [
+                  { op: "atom", atom: rKeys, chain: [
+                      { op: "member", id: "push" },
+                      { op: "call", args: [ rKeyTmp ] } ] }
+                ]
+            };
+            e.translate(rKeysOp);
+            w.write(";");
+            var listBody = n.body;
+            if (n.valueId) {
+              listBody = [
+                  { op: "=", left: n.valueId, right:
+                    { op: "atom", atom: r, chain: [ { op: "arrayMember",
+                      expr: n.keyId } ] } }
+              ].concat(listBody);
+            }
+            var listIterOp = {
+                op: "forList",
+                hasAwait: true,
+                ids: [ n.keyId ],
+                expr: rKeys,
+                body: listBody
+            };
+            e.translate(listIterOp);
+          }
+        },
      "forList": function(e, n, w) {
           var r = w.tmpVar(true);
           w.write("=");

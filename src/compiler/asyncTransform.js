@@ -79,8 +79,8 @@ function iterTree(path, node) {
     if (node.op === "if") {
       _transformIf(path, node);
     }
-    else if (node.op === "forList") {
-      _transformForList(path, node);
+    else if (node.op === "forList" || node.op === "forHash") {
+      _transformForStmt(path, node);
     }
     else if (node.op === "while") {
       _transformWhile(path, node);
@@ -171,7 +171,7 @@ function _transformIf(path, node) {
 }
 
 
-function _transformForList(path, node) {
+function _transformForStmt(path, node) {
   //Most of the work here is done in the translator module; we would do it
   //ourselves, except the need to name the await enclosure used to enact the
   //loop initially deterred that thought.  Another benefit of it being with

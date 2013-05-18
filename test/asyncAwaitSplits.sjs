@@ -97,20 +97,37 @@ describe "await splits", ->
     assert.equal 4, r[5]
 
 
-  it "Should work with for statements", async ->
+  it "Should work with for statements and lists", async ->
     m = sjs.eval """
         g = async (val) ->
           await 0
           return val + 5
         f = async ->
           r = 0
-          for val in [ 1, 2, 3, 4 ]
+          for val, i in [ 1, 2, 3, 4 ]
             await r += g val
+            r += i
             console.log "HERE #""" + """{ r }"
           return r
         """
     await r = m.f
-    assert.equal 30, r
+    assert.equal 36, r
+
+
+  it "Should work with for statements and hashes", async ->
+    m = sjs.eval """
+        g = async (val) ->
+          await 0
+          return val + 5
+        f = async ->
+          r = ""
+          for key, val of { a: 8, b: 9, c: 10 }
+            r += key
+            await r += g val
+          return r
+        """
+    await r = m.f
+    assert.equal "a13b14c15", r
 
 
   it "Should work with while statements", async ->
