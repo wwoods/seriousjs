@@ -18,12 +18,21 @@ lambda
 
 
 lambda_spec
-  = async:("async" _ ("noerror" _)?)? {
-      return {
-          async: (async ? true : false),
-          asyncNoError: (async && async[2] ? true : false)
-      };
+  = async:("async" _ async_spec_mods*)? {
+      r = {};
+      if (async) {
+        r.async = true;
+        for (var i = 0, m = async[2].length; i < m; i++) {
+          r[async[2][i]] = true;
+        }
+      }
+      return r;
     }
+
+
+async_spec_mods
+  = "noerror" _ { return "asyncNoError"; }
+  / "nocascade" _ { return "asyncNoCascade"; }
 
 
 lambda_args

@@ -65,7 +65,7 @@ describe "async functionality", ->
           + "'await' instead.  Line 3", e.message
 
 
-  it "Should trickle-back callback argument", (done) ->
+  it "Should cascade callback argument", (done) ->
     """By which we mean that if a method expects two arguments and does
     not get one of them, the callback argument should drift back to earlier
     arguments.
@@ -79,6 +79,14 @@ describe "async functionality", ->
       assert.equal null, error
       assert.equal "undefined46", result
       done()
+
+
+  it "Should allow specifying nocascade on callback", () ->
+    m = sjs.eval """
+        f = async nocascade (data) ->
+          return 56
+        """
+    m.f () -> assert.fail("Should not have called data as callback")
 
 
   it "Should support and wait for internal async", (done) ->
@@ -145,6 +153,19 @@ describe "async functionality", ->
     m.f (result) ->
       assert.equal 45, result
       done()
+
+
+  it "Should throw an error when no callback is specified rather than hiding "
+      + "it", ->
+        m = sjs.eval """
+            f = async ->
+              throw "error"
+            """
+        try
+          # deliberately call without any callback
+          m.f()
+        catch e
+          assert.equal "error", e
 
 
   it "Should propagate errors", (done) ->
@@ -487,6 +508,7 @@ describe "async functionality", ->
       assert.equal 1, value[0]
       assert.equal 2, value[1]
       done()
+
 
 
   it "Should raise exception for out of place error", (done) ->

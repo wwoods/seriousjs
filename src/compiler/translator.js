@@ -73,7 +73,7 @@ this.Translator = (function() {
           }
           w.endArgs();
           w.write(") {");
-          if (asyncCallback !== null) {
+          if (asyncCallback !== null && !n.spec.asyncNoCascade) {
             w.write("if(");
             w.write(asyncCallback);
             w.write("===undefined){");
