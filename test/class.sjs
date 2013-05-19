@@ -132,6 +132,23 @@ describe "Classes", ->
           @class.b: 8
         """
 
+  it "Should use @@method to bind scope to @", ->
+    m = sjs.eval """
+        class Test
+          constructor: (@value) ->
+            return
+
+          f: (g) ->
+            g(@@inner)
+
+          inner: () ->
+            return @value + 1
+        t = new Test(55)
+        """
+    outer = [ 0 ]
+    m.t.f (z) -> outer[0] = z()
+    assert.equal 56, outer[0]
+
   it "Should work with class variables", ->
     """Note that class variables actually operate on the prototype, since
     prototypes are inherited but the classes themselves are not.
@@ -175,6 +192,8 @@ describe "Classes", ->
         class innerA
           hey: 89
         a.innerA = innerA
+        console.log innerA
+        console.log a.innerA
         class b extends a.innerA
         m = new b()
         """

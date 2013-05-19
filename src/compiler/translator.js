@@ -322,8 +322,12 @@ this.Translator = (function() {
           //No longer need this variable...
           w.tmpVarRelease(myCallback);
         },
-     "atom": function(e, n, w) {
-          e.translate(n.atom);
+     "atom": function(e, n, w, options) {
+          var atomOpts = null;
+          if (n.chain.length === 0) {
+            atomOpts = options;
+          }
+          e.translate(n.atom, atomOpts);
           e.translate(n.chain, { separator: '' });
         },
      "await": function(e, n, w) {
@@ -398,6 +402,21 @@ this.Translator = (function() {
             w.write("();");
           }
         },
+     "boundMethod": function(e, n, w) {
+          var classC = w.getClosure({ isClassMethod: true });
+          if (!classC) {
+            throw new Error("@@ can only be used in a class' method; Line "
+                + n.line);
+          }
+
+          w.write("function() {return ");
+          w.write(classC.getNamedInstanceVariable());
+          w.write(".");
+          e.translate(n.id);
+          w.write(".apply(");
+          w.write(classC.getNamedInstanceVariable());
+          w.write(",arguments)}");
+        },
      "call": function(e, n, w) {
           w.write('(');
           e.translate(n.args, { separator: ',' });
@@ -406,7 +425,7 @@ this.Translator = (function() {
      "class": function(e, n, w) {
           e.translate(n.name, { isAssign: true });
           w.write(" = ");
-          var c = w.startClosure({ className: n.name.id });
+          var c = w.startClosure({ className: e.getNodeAsId(n.name) });
           w.write("(function(");
           w.startArgs();
           w.variable("_super", true);
@@ -530,7 +549,7 @@ this.Translator = (function() {
               if (i !== 0) {
                 w.write(",");
               }
-              w.write(n.keys[i].id + ':1');
+              w.write(e.getNodeAsId(n.keys[i]) + ':1');
             }
             w.write("},");
             e.translate(n.right);
@@ -551,11 +570,11 @@ this.Translator = (function() {
               nid = w.tmpVar();
             }
             else {
-              w.variable(n.keys[i].id, true);
               nid = n.keys[i].id;
+              w.variable(nid, true);
             }
             w.write("=");
-            w.write(r + "." + n.keys[i].id);
+            w.write(r + "." + e.getNodeAsId(n.keys[i]));
             if (n.keys[i].defaultVal) {
               w.write(",");
               w.variable(nid);
@@ -569,7 +588,7 @@ this.Translator = (function() {
             }
             if (n.keys[i].op === "memberId") {
               var obj = w.getInstanceVariable();
-              w.write("," + obj + "." + n.keys[i].id + "=" + nid);
+              w.write("," + obj + "." + e.getNodeAsId(n.keys[i]) + "=" + nid);
             }
           }
           w.write("," + r);
@@ -1082,13 +1101,12 @@ this.Translator = (function() {
           var c = w.getClosure();
           if (
               c.props.className
-              && n.left.op === 'id'
-              && n.left.id === 'constructor'
+              && e.getNodeAsId(n.left) === "constructor"
               && n.right.op === '->'
               ) {
             c.props.classConstructor = n.right;
             e.translate(n.right, { isConstructorFor: c.props.className,
-                methodName: n.left.id });
+                methodName: e.getNodeAsId(n.left) });
           }
           else {
             e.translate(n.left, { isAssign: true });
@@ -1096,10 +1114,10 @@ this.Translator = (function() {
             var rightOptions = {};
             var cc = w.getClosure({ isClass: true });
             if (cc
-                && (n.left.op === 'memberId' || n.left.op === 'id')
+                && e.getNodeAsId(n.left) !== null
                 && n.right.op === "->"
                 ) {
-              rightOptions.methodName = n.left.id;
+              rightOptions.methodName = e.getNodeAsId(n.left);
             }
             var useFakeClosure = (c === cc && n.right.op !== "->");
             if (useFakeClosure) {
@@ -1139,6 +1157,21 @@ this.Translator = (function() {
     this.writer = writer;
     this.options = options;
   }
+
+  Translator.prototype.getNodeAsId = function(node) {
+    //Returns either null or the name of the identifier represented by node if
+    //it is a simple ID (an atom without a chain)
+    //Can be id or memberId
+    if (node.op === "atom"
+        && (node.atom.op === "id" || node.atom.op === "memberId")
+        && node.chain.length === 0) {
+      return node.atom.id;
+    }
+    else if (node.op === "id" || node.op === "memberId") {
+      return node.id;
+    }
+    return null;
+  };
 
   Translator.prototype.translate = function(node, options, addReturnFirst) {
     if (!options) {

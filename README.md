@@ -156,6 +156,25 @@ Dict unmapping as lambda arguments:
     { a, b } -> a + b
     (a, b, {< add = true}) -> add ? a + b : a
 
+Classes and @-binding:
+
+    class Test
+      constructor: (@value = 5) ->
+        return
+
+      inner: () ->
+        console.log @value
+
+      f: (g) ->
+        g(@@inner)
+
+
+    t = Test(42)
+    # This will log 42, which is t.value.  Note that the binding of the
+    # function was preserved when it was referenced with @.
+    # Useful for e.g. callbacks bound to events
+    t.f (method) -> method()
+
 
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/wwoods/seriousjs/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
