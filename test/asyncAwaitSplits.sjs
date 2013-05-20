@@ -149,44 +149,6 @@ describe "await splits", ->
     assert.equal 12, r
 
 
-  it "Should work with while and break", async ->
-    m = sjs.eval """
-        f = async ->
-          r = 0
-          while r < 5
-            await 0
-            r += 1
-            await 0
-            break
-            await 0
-            r += 1
-          return r
-        """
-    await r = m.f
-    assert.equal 1, r
-
-
-  it "Should work with while statements and break / continue", async ->
-    m = sjs.eval """
-        f = async ->
-          r = 0
-          while r < 100
-            await 0
-            r += 1
-            if r < 2
-              continue
-            await 0
-            r *= 8
-            break
-            r += 99
-            await 0
-            r += 99
-          return r
-        """
-    await r = m.f
-    assert.equal 16, r
-
-
   it "Should work within a catch", async ->
     m = sjs.eval """
         g = async ->
