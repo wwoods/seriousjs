@@ -73,6 +73,19 @@ this.Translator = (function() {
           }
           w.endArgs();
           w.write(") {");
+          if (options.isBoundToClass) {
+            w.write("if(this!==");
+            w.write(nearClosure.props.className);
+            w.write("){");
+            w.write("return ");
+            w.write(nearClosure.props.className);
+            w.write(".");
+            w.write(options.methodName);
+            w.write(".apply(");
+            w.write(nearClosure.props.className);
+            w.write(",arguments);");
+            w.write("}");
+          }
           if (asyncCallback !== null && !n.spec.asyncNoCascade) {
             w.write("if(");
             w.write(asyncCallback);
@@ -940,7 +953,7 @@ this.Translator = (function() {
           }
           w.write(c.props.className + ".prototype");
         },
-     "memberId": function(e, n, w) {
+     "memberId": function(e, n, w, options) {
           w.goToNode(n);
           if (w.isInArgs()) {
             w.variable(n.id);
@@ -962,6 +975,17 @@ this.Translator = (function() {
             //We're in an unbound method, just use this
             w.write("this.");
             w.write(n.id);
+            return;
+          }
+          c = w.getClosure({ isClass: true });
+          if (c) {
+            //We're a class property
+            if (options.isAssign) {
+              //Also assign to prototype!
+              w.write(c.props.className + ".prototype." + n.id);
+              w.write("=");
+            }
+            w.write(c.props.className + "." + n.id);
             return;
           }
           throw new Error("Unexpected member identifier: line " + n.line);
@@ -1188,6 +1212,9 @@ this.Translator = (function() {
                 && n.right.op === "->"
                 ) {
               rightOptions.methodName = e.getNodeAsId(n.left);
+              if (e.isNodeMemberId(n.left)) {
+                rightOptions.isBoundToClass = true;
+              }
             }
             var useFakeClosure = (c === cc && n.right.op !== "->");
             if (useFakeClosure) {
@@ -1241,6 +1268,20 @@ this.Translator = (function() {
       return node.id;
     }
     return null;
+  };
+
+  Translator.prototype.isNodeMemberId = function(node) {
+    if (this.getNodeAsId(node) === null) {
+      throw new Error("isNodeMemberId is only valid with getNodeAsId");
+    }
+    var r = false;
+    if (node.op === "atom" && node.atom.op === "memberId") {
+      r = true;
+    }
+    else if (node.op === "memberId") {
+      r = true;
+    }
+    return r;
   };
 
   Translator.prototype.translate = function(node, options, addReturnFirst) {

@@ -114,11 +114,30 @@ describe "Classes", ->
         """
     assert.equal 42, m.unbound.call(value: 42)
 
-  it "Should disallow @ in class definitions", ->
-    assert.throws -> sjs.eval """
+  it "Should use @ in class definitions for class-level variables", ->
+    m = sjs.eval """
         class a
-          @b: 8
+          @b: {}
+        i = new a()
+        # Should affect class, and vice-versa
+        a.b['a'] = 'a'
+        i.b['b'] = 'b'
         """
+    assert.equal 'a', m.a.b['a']
+    assert.equal 'b', m.a.b['b']
+
+  it "Should use @ in class definitions for class functions", ->
+    m = sjs.eval """
+        class a
+          @value: 88
+          @method: () ->
+            return @value
+        i = new a()
+        i.value = 76
+        """
+    assert.equal 88, m.a.method()
+    # Should bind to class, meaning we'll get 88, not 76
+    assert.equal 88, m.i.method()
 
   it "Should disallow @class in class definitions", ->
     assert.throws -> sjs.eval """
