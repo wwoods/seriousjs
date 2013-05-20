@@ -356,6 +356,12 @@ this.Translator = (function() {
           //Add a count for us and the after chunk.
           cParent.asyncAddCall(w);
 
+          if (n.isLoop) {
+            //Loops always have a parent await block from the operations in
+            //asyncTransform.js.  So, to the parent loop, we'll assign isLoop.
+            cParent.props.isLoop = true;
+          }
+
           var c = w.startClosure({ isAsync: true, asyncParent: cParent,
               isAwait: true, catchAsync: n.catchAsync });
           var cName = c.getAsyncDataVar() + "_f";
@@ -382,6 +388,33 @@ this.Translator = (function() {
           w.write("if(__error){");
           cParent.asyncCheck(w, "__error");
           w.write(";return}");
+          //Are we a loop?
+          if (n.isLoop) {
+            w.write("if(");
+            w.write(cParent.getAsyncDataVar());
+            w.write(".");
+            w.write(w.ASYNC.LOOP_STATE);
+            w.write("===" + w.ASYNC.LOOP_STATE_BREAK);
+            w.write("){");
+            cParent.asyncCheck(w);
+            w.write(";return}");
+            //Clear continue state
+            w.write(cParent.getAsyncDataVar());
+            w.write("." + w.ASYNC.LOOP_STATE + "=0;");
+          }
+          else {
+            var cLoop = w.getClosure({ isAsyncLoop: true });
+            if (cLoop) {
+              w.write("if(");
+              w.write(cLoop.getAsyncDataVar());
+              w.write("." + w.ASYNC.LOOP_STATE);
+              w.write("){");
+              //Then it's either break or continue, either way jump to our
+              //parent as though we've seen an error.
+              cParent.asyncCheck(w);
+              w.write(";return}");
+            }
+          }
           w.write("try{");
           //Embedded return clause in e.g. catch or finally.  Use closure and
           //not async so that only the main control flow is blocked by a return.
@@ -416,6 +449,19 @@ this.Translator = (function() {
           w.write(".apply(");
           w.write(classC.getNamedInstanceVariable());
           w.write(",arguments)}");
+        },
+     "break": function(e, n, w) {
+          var c = w.getClosure({ isAsyncLoop: true });
+          if (!c) {
+            w.write("break");
+            return;
+          }
+
+          w.write("/* break */" + w.ASYNC.BUFFER);
+          w.write(c.getAsyncDataVar());
+          w.write("." + w.ASYNC.LOOP_STATE);
+          w.write("=" + w.ASYNC.LOOP_STATE_BREAK);
+          w.write(";return");
         },
      "call": function(e, n, w) {
           w.write('(');
@@ -511,6 +557,19 @@ this.Translator = (function() {
             w.write(lines[i]);
           }
           w.write("*/" + w.ASYNC.BUFFER);
+        },
+     "continue": function(e, n, w) {
+          var c = w.getClosure({ isAsyncLoop: true });
+          if (!c) {
+            w.write("continue");
+            return;
+          }
+
+          w.write("/* continue */" + w.ASYNC.BUFFER);
+          w.write(c.getAsyncDataVar());
+          w.write("." + w.ASYNC.LOOP_STATE);
+          w.write("=" + w.ASYNC.LOOP_STATE_CONTINUE);
+          w.write(";return");
         },
      "dict": function(e, n, w) {
           //Bracket must happen first, since return statements will become
@@ -751,6 +810,7 @@ this.Translator = (function() {
             var namedTarget = {
                 op: "await",
                 name: targetName,
+                isLoop: true,
                 body: (
                   [
                     { op: "=", left: n.ids[0],
@@ -1063,6 +1123,7 @@ this.Translator = (function() {
             var realLoop = {
                 op: "await",
                 name: loop,
+                isLoop: true,
                 body: n.body,
                 after: [ { op: "if", condition: n.expr,
                   then: [ { op: "atom", atom: loop, chain: [
@@ -1082,6 +1143,7 @@ this.Translator = (function() {
      "-": binary,
      "*": binary,
      "/": binary,
+     "%": binary,
      "<=": binary,
      ">=": binary,
      ">": binary,

@@ -52,6 +52,8 @@ statement_no_body
   / stmt:class_stmt { return stmt; }
   / stmt:throw_stmt { return stmt; }
   / stmt:async_stmt { return stmt; }
+  / "break" { return R({ op: "break" }); }
+  / "continue" { return R({ op: "continue" }); }
   / expr:expression { return R(expr); }
 
 

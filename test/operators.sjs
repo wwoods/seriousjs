@@ -43,3 +43,7 @@ describe "not operator", ->
 describe "typeof operator", ->
   it "Should bind correctly", ->
     assert.equal true, sjs.eval("z = typeof a == 'undefined'").z
+
+describe "modulus operator", ->
+  it "Should work", ->
+    assert.equal 3, sjs.eval("r = 7 % 4").r

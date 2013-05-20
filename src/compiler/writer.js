@@ -8,7 +8,11 @@ var ASYNC = {
     SELF_NAME: "s",
     THIS: "t",
     TRIGGERED: "f",
-    debug: false,
+    LOOP_STATE: "m",
+    // 0 is normal
+    LOOP_STATE_CONTINUE: 1,
+    LOOP_STATE_BREAK: 2,
+    debug: false
 };
 
 var allFeatures = {
@@ -468,6 +472,20 @@ this.Writer = (function() {
         r = this._closures[0];
       }
       return r;
+    }
+    else if (spec.isAsyncLoop) {
+      //Walk backward through closures until we find either a closure (return
+      //null) or isLoop: true and isAsync: true
+      for (var i = this._closures.length - 1; i >= 0; --i) {
+        var c = this._closures[i];
+        if (c.props.isClosure) {
+          return null;
+        }
+        else if (c.props.isAsync && c.props.isLoop) {
+          return c;
+        }
+      }
+      return null;
     }
     
     for (var i = this._closures.length - 1; i >= 0; --i) {
