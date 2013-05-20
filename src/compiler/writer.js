@@ -96,7 +96,16 @@ var allFeatures = {
       + " child.__super__ = parent.prototype;"
       + " return child;"
       + "}", 
-  hasProp: "__hasProp = {}.hasOwnProperty"
+  hasProp: "__hasProp = {}.hasOwnProperty",
+  uses: ""
+      + "__extendsUse = function(obj, mixin) {"
+      + " if(mixin.prototype){"
+      + "  mixin = mixin.prototype;"
+      + " }"
+      + " for(var key in mixin) {"
+      + "  obj.prototype[key] = mixin[key];"
+      + " }"
+      + "}"
   };
   
 var featureDependencies = {

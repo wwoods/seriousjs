@@ -484,6 +484,14 @@ this.Translator = (function() {
             e.translate(n.name);
             w.write(", _super);");
           }
+          for (var i = 0, m = n.uses.length; i < m; i++) {
+            w.usesFeature("uses");
+            w.write("__extendsUse(");
+            e.translate(n.name);
+            w.write(",");
+            e.translate(n.uses[i]);
+            w.write(");");
+          }
           e.translate(n.body);
           if (!c.props.classConstructor) {
             var fakeConstructor = {

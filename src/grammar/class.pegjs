@@ -1,12 +1,21 @@
 
 class_stmt
   = "class" _ id:Identifier ext:(_ "extends" _ atom_chain)?
+        uses:(_ "uses" _ atom_chain (ARG_SEP atom_chain)*)?
         body:class_body? {
       var parent = null;
       if (ext) {
         parent = ext[3];
       }
-      return R({ op: "class", name: id, parent: parent, body: body });
+      var useList = [];
+      if (uses) {
+        useList.push(uses[3]);
+        for (var i = 0, m = uses[4].length; i < m; i++) {
+          useList.push(uses[4][i][1]);
+        }
+      }
+      return R({ op: "class", name: id, parent: parent, body: body,
+          uses: useList });
     }
 
 

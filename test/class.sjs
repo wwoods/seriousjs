@@ -207,6 +207,40 @@ describe "Classes", ->
     assert.throws -> m.a()
     assert.throws -> m.b()
 
+  it "Should work with uses with objects with no prototype", ->
+    m = sjs.eval """
+        funcs =
+            test: -> 55
+        class a uses funcs
+        inst = new a()
+        """
+    assert.equal 55, m.inst.test()
+
+  it "Should work with uses with objects with a prototype", ->
+    m = sjs.eval """
+        class mixer
+          test: -> 55
+        class a uses mixer
+        inst = new a()
+        """
+    assert.equal 55, m.inst.test()
+
+  it "Should work with uses with multiple mixins", ->
+    m = sjs.eval """
+        class mix1
+          test: -> 1
+          test3: -> 0
+        class mix2
+          test2: -> 2
+          test3: -> 3
+        class a uses mix1, mix2
+        inst = new a()
+        """
+    assert.equal 1, m.inst.test()
+    assert.equal 2, m.inst.test2()
+    # mix2 should override since it was specified last
+    assert.equal 3, m.inst.test3()
+
   it "Should disallow = in body", ->
     assert.throws -> sjs.eval """
         class a
