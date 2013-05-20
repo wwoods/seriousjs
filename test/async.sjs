@@ -117,9 +117,14 @@ describe "async functionality", ->
         val = [ 0 ]
         f = async () ->
           val[0] += 1
+        g = () ->
+          async
+            val[0] += 1
+          async f
+        g()
         async f
         """
-    assert.equal 1, m.val
+    assert.equal 3, m.val
 
 
   it "Should disallow async with results at global level", () ->

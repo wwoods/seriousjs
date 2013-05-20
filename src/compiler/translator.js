@@ -33,7 +33,7 @@ this.Translator = (function() {
               isClosure: true,
               isAsync: n.spec && n.spec.async,
               isAsyncNoError: n.spec && n.spec.asyncNoError,
-              catchAsync: true
+              catchAsync: n.spec && n.spec.async
           });
           if (n.doc) {
             w.write("(function() {var __doc__ = ");
