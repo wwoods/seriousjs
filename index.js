@@ -194,7 +194,15 @@ this.compile = function(text, options) {
       self.testAddCompiledScript(script);
     };
   }
-  var script = sjsCompiler.compile(self.parser, text, options);
+  try {
+    var script = sjsCompiler.compile(self.parser, text, options);
+  }
+  catch (e) {
+    if (options.filename && e.message.indexOf(options.filename) < 0) {
+      e.message = options.filename + ": " + e.message;
+    }
+    throw e;
+  }
   return script;
 };
 

@@ -1345,7 +1345,15 @@ this.Translator = (function() {
       if (op === undefined) {
         throw new Error("Unrecognized op: " + node['op']);
       }
-      op(self, node, w, options);
+      try {
+        op(self, node, w, options);
+      }
+      catch (e) {
+        if (e.message.indexOf("On line ") !== 0 && node.line) {
+          e.message = "On line " + node.line + ": " + e.message;
+        }
+        throw e;
+      }
     }
     else if (typeof node === "number") {
       w.write(node);
