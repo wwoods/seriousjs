@@ -448,21 +448,6 @@ this.Translator = (function() {
             w.write("();");
           }
         },
-     "boundMethod": function(e, n, w) {
-          var classC = w.getClosure({ isClassMethod: true });
-          if (!classC) {
-            throw new Error("@@ can only be used in a class' method; Line "
-                + n.line);
-          }
-
-          w.write("function() {return ");
-          w.write(classC.getNamedInstanceVariable());
-          w.write(".");
-          e.translate(n.id);
-          w.write(".apply(");
-          w.write(classC.getNamedInstanceVariable());
-          w.write(",arguments)}");
-        },
      "break": function(e, n, w) {
           var c = w.getClosure({ isAsyncLoop: true });
           if (!c) {
