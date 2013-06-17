@@ -189,7 +189,7 @@ describe "Classes", ->
           @value = 5"""
       assert.fail "Didn't raise"
     catch e
-      assert.equal "Unexpected member identifier: line 2",
+      assert.equal "On line 2: Unexpected member identifier '@value'",
           e.message
 
   it "Should work with extends", ->

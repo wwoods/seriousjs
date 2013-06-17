@@ -5,7 +5,7 @@ require ../ as sjs
 describe "async functionality", ->
   # If async isn't working we won't catch stuff.  Don't let the tests run
   # forever.
-  @timeout(100)
+  @timeout(200)
 
   it "Should be applicable to lambdas", (done) ->
     m = sjs.eval """q = async -> 32"""
@@ -61,8 +61,8 @@ describe "async functionality", ->
           """
       assert.fail "Never threw"
     catch e
-      assert.equal "'try' may not be used in an async function; use "
-          + "'await' instead.  Line 3", e.message
+      assert.equal "On line 3: 'try' may not be used in an async function; use "
+          + "'await' instead", e.message
 
 
   it "Should cascade callback argument", (done) ->
@@ -197,16 +197,19 @@ describe "async functionality", ->
 
 
   it "Should support await with a break in ms", (done) ->
-    @timeout 50
     m = sjs.eval """
+        times = []
         q = async ->
+          times.push(Date.now())
           await 10
+          times.push(Date.now())
           await 15
         """
     n = Date.now()
     m.q(
         (error) ->
           assert.equal true, Date.now() - n >= 25
+          assert.equal true, m.times[1] - m.times[0] >= 10
           done()
 
 
@@ -223,7 +226,6 @@ describe "async functionality", ->
 
 
   it "Should work with a basic counter", (done) ->
-    @timeout 50
     m = sjs.eval """
         val = [ 0 ]
         progressDemo = async ->
@@ -245,7 +247,6 @@ describe "async functionality", ->
 
 
   it "Should work with await statements", (done) ->
-    @timeout 50
     m = sjs.eval """
         val = [ 0 ]
         g = async ->
@@ -584,7 +585,7 @@ describe "async functionality", ->
 
     await "method" is shorthand for await async.
     """
-    @timeout 750
+    @timeout 2000
     m = sjs.eval """
         myMethod = (a, b, callback) ->
           '''Plain async method without keywords to interface with'''

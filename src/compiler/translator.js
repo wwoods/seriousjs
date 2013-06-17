@@ -345,7 +345,7 @@ this.Translator = (function() {
         },
      "await": function(e, n, w) {
           if (n.after == null) {
-            throw new Error("Await never got after?  Line " + n.line);
+            throw new Error("Await never got after?");
           }
 
           if (n.body.length !== 1 || n.body[0].line !== n.line) {
@@ -988,7 +988,7 @@ this.Translator = (function() {
             w.write(c.props.className + "." + n.id);
             return;
           }
-          throw new Error("Unexpected member identifier: line " + n.line);
+          throw new Error("Unexpected member identifier '@" + n.id + "'");
         },
      "memberSelf": function(e, n, w) {
           w.goToNode(n);
@@ -1099,7 +1099,7 @@ this.Translator = (function() {
      "try": function(e, n, w) {
           if (w.getClosure().props.isAsync) {
             throw new Error("'try' may not be used in an async function; "
-                + "use 'await' instead.  Line " + n.line);
+                + "use 'await' instead");
           }
           w.write("try {");
           e.translate(n.stmt);
