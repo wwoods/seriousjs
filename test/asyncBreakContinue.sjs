@@ -3,7 +3,7 @@ require assert
 require ../ as sjs
 
 describe "Async loops", ->
-  it "Should work with while statements and break / continue", async ->
+  it "Should work with while statements and break / continue", async nocheck ->
     m = sjs.eval """
         f = async ->
           r = 0
@@ -24,7 +24,7 @@ describe "Async loops", ->
     assert.equal 16, r
 
 
-  it "Should work with while and break", async ->
+  it "Should work with while and break", async nocheck ->
     m = sjs.eval """
         f = async ->
           r = 0
@@ -41,7 +41,7 @@ describe "Async loops", ->
     assert.equal 1, r
 
 
-  it "Should work with nested loops", async ->
+  it "Should work with nested loops", async nocheck ->
     m = sjs.eval """
         f = async ->
           r = 0

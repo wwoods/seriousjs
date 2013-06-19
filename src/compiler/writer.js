@@ -9,9 +9,15 @@ var ASYNC = {
     THIS: "t",
     TRIGGERED: "f",
     LOOP_STATE: "m",
+
     // 0 is normal
     LOOP_STATE_CONTINUE: 1,
     LOOP_STATE_BREAK: 2,
+
+    //Stuff that's not stored in the struct
+    FUNCTION_CALL_STATE: "__acs",
+    FUNCTION_ISASYNC: "__ais",
+    FUNCTION_NOCHECK: "__anc",
     debug: false
 };
 
@@ -19,7 +25,14 @@ var allFeatures = {
   async: ""
       + "__asyncCheck=function(obj,error){"
       + (ASYNC.debug ? " console.log(obj.s + ' check - ' + obj.c);" : "")
-      + " if(obj." + ASYNC.TRIGGERED + "){return}"
+      + " if(obj." + ASYNC.TRIGGERED + " && error!==obj." + ASYNC.TRIGGERED + "){"
+      + (ASYNC.debug ? " console.log(obj.s + ' abort');" : "")
+      + (ASYNC.debug ? " console.log(obj.f + ' vs ' + error);" : "")
+      //Even if we've triggered already, if it's a new error, don't just
+      //disappear it.  Log it by throwing it.
+      + "  if(error){throw error}"
+      + "  return"
+      + " }"
       + " obj." + ASYNC.COUNT + "--;"
       + " if(error){"
       + "  __asyncTrigger(obj,error);"
@@ -28,11 +41,39 @@ var allFeatures = {
       + "  __asyncTrigger(obj,null,obj." + ASYNC.RETURN_VALUE + ");"
       + " }"
       + "},"
+      + "__asyncCheckAsync=function(func){"
+      + " if (!func." + ASYNC.FUNCTION_ISASYNC + ") {"
+      + "  throw new Error('"
+      +       "Runtime: called non-async function with async or await "
+      +       "keywords.  If you meant this, use the nocheck keyword after "
+      +       "async or await')"
+      + " }"
+      + " func." + ASYNC.FUNCTION_CALL_STATE + "=1;"
+      + "},"
+      + "__asyncCheckCall=function(func){"
+      + " if (func." + ASYNC.FUNCTION_CALL_STATE + "!==1){"
+      + "  delete func." + ASYNC.FUNCTION_CALL_STATE + ";"
+      + "  throw new Error('"
+      +   "Runtime: cannot call async method without async or await "
+      +   "keywords unless nocheck is specified')"
+      + " }"
+      + " delete func." + ASYNC.FUNCTION_CALL_STATE
+      + "},"
       + "__asyncTrigger=function(obj,error,result){"
       //Guard for ASYNC.TRIGGERED being false is in asyncCheck.
       + " obj." + ASYNC.TRIGGERED + "=true;"
+      + (ASYNC.debug ? " console.log(obj.s + ' trigger - ' + error || result);" : "")
       + " if(obj." + ASYNC.NOERROR + "||!obj." + ASYNC.RESULT_CALLBACK + "){"
-      + "  if(error){throw error}"
+      + "  if(error){"
+      //We set triggered to the error so that we can detect double-catch
+      //scenarios.  When there is no callback, the exception is re-raised.  If
+      //this happens inside of the "after" part of an await block, but that is
+      //happening in the same context as the original try block (in other words,
+      //after is called by the body), then we'll re-catch the error, but see
+      //that we've already been triggered.  This is a workaround for that.
+      + "   obj." + ASYNC.TRIGGERED + "=error;"
+      + "   throw error"
+      + "  }"
       + "  obj." + ASYNC.RESULT_CALLBACK + " && obj." + ASYNC.RESULT_CALLBACK
       +       ".call(obj." + ASYNC.THIS + ",result);"
       + " }"

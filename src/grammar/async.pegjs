@@ -20,7 +20,7 @@ async_expr
           op: "await",
           catchAsync: true,
           after: null,
-          body: [ R({ op: "asyncCall", call: {
+          body: [ R({ op: "asyncCall", spec: { asyncNoCheck: true }, call: {
             op: "asyncCallee", func: "setTimeout",
             args: [ { op: "id", id: "callback" }, time ] } }) ]
       });
@@ -55,16 +55,26 @@ async_stmt_inner
 
 
 async_call
-  = assign:async_assign_clause* call:inner_async_call catchStmt:async_catch?
+  = spec:async_call_spec* assign:async_assign_clause* call:inner_async_call catchStmt:async_catch?
       finallyStmt:async_finally? {
-      var r = R({ op: "asyncCall", assign: assign, call: call });
+      var r = R({ op: "asyncCall", assign: assign, call: call, spec: {} });
+      var rCall = r;
       if (catchStmt || finallyStmt) {
         //Don't add a closure here...  it has rammifications on variable scope.
         r = { op: "async", body: r,
             catchStmt: catchStmt, finallyStmt: finallyStmt };
       }
+
+      for (var i = 0, m = spec.length; i < m; i++) {
+        rCall.spec[spec[i]] = true;
+      }
+
       return r;
     }
+
+
+async_call_spec
+  = "nocheck" _ { return "asyncNoCheck"; }
 
 
 async_assign_clause

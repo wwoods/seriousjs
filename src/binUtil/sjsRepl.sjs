@@ -5,7 +5,7 @@ require ../../ as sjs
 
 options =
     prompt: 'sjs> '
-    eval: async (input, context, filename) ->
+    eval: async nocheck (input, context, filename) ->
       input = input.replace(/^\(([\s\S]*)\n\)$/m, '$1')
       if not input
         return

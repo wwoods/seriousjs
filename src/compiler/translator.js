@@ -35,11 +35,19 @@ this.Translator = (function() {
               isAsyncNoError: n.spec && n.spec.asyncNoError,
               catchAsync: n.spec && n.spec.async
           });
+          var hasInnerWrapper = false;
+          if (n.doc || n.spec.async) {
+            hasInnerWrapper = true;
+            w.write("(function() {");
+          }
           if (n.doc) {
-            w.write("(function() {var __doc__ = ");
+            w.write("var __doc__ = ");
             w.newline();
             e.translate(n.doc);
-            w.write(";    var __inner__ = ");
+            w.write(";");
+          }
+          if (hasInnerWrapper) {
+            w.write("    var __inner__ = ");
           }
           if (options.isConstructorFor) {
             w.write("function ");
@@ -85,6 +93,10 @@ this.Translator = (function() {
             w.write(nearClosure.props.className);
             w.write(",arguments);");
             w.write("}");
+          }
+          if (n.spec.async && !n.spec.asyncNoCheck) {
+            //Do the check
+            w.write("__asyncCheckCall(__inner__);");
           }
           if (asyncCallback !== null && !n.spec.asyncNoCascade) {
             w.write("if(");
@@ -149,8 +161,19 @@ this.Translator = (function() {
 
           w.write("}");
           if (n.doc) {
-            w.write("; __inner__.__doc__ = __inner__.help = __doc__; ");
-            w.write("return __inner__; })()");
+            w.write("; __inner__.__doc__ = __inner__.help = __doc__");
+          }
+          if (n.spec.async) {
+            w.write("; __inner__." + w.ASYNC.FUNCTION_ISASYNC + "=true");
+          }
+          if (n.spec.async && n.spec.asyncNoCheck) {
+            //Mark that it's an async function that doesn't check so that the
+            //async and await keywords will still work without the nocheck
+            //keyword.
+            w.write("; __inner__." + w.ASYNC.FUNCTION_NOCHECK + "=true");
+          }
+          if (hasInnerWrapper) {
+            w.write("; return __inner__; })()");
           }
         },
      "and": function(e, n, w) {
@@ -317,8 +340,24 @@ this.Translator = (function() {
             }
             w.write(")};");
           }
+          var funcToCall = n.call.func;
+          //Do the check
+          if (!n.spec.asyncNoCheck) {
+            if (n.call.func.op !== "id") {
+              funcToCall = w.tmpVar(true);
+              w.write("=");
+              e.translate(n.call.func);
+              w.write(",");
+            }
+            else {
+              funcToCall = n.call.func.id;
+            }
+            w.write("__asyncCheckAsync(");
+            w.write(funcToCall);
+            w.write("),");
+          }
           w.goToNode(n);
-          e.translate(n.call.func);
+          e.translate(funcToCall);
           w.write("(");
           for (var i = 0; i < argCount; i++) {
             if (i > 0) {
@@ -332,6 +371,10 @@ this.Translator = (function() {
             }
           }
           w.write(")");
+          if (!n.spec.asyncNoCheck) {
+            //No longer needed
+            w.tmpVarRelease(funcToCall);
+          }
           //No longer need this variable...
           w.tmpVarRelease(myCallback);
         },
@@ -501,7 +544,8 @@ this.Translator = (function() {
               value: {
                   op: '->',
                   parms: [],
-                  body: []
+                  body: [],
+                  spec: {}
                   },
             };
             if (n.parent) {
