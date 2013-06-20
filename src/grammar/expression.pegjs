@@ -103,6 +103,9 @@ unary_op
 
 base_atom
   = dict_literal
+  / "@@" id:Identifier {
+      return R({ op: "boundMethod", id: id });
+    }
   / IdentifierMaybeMember
   / string
   / list_literal
