@@ -5,6 +5,7 @@
 node_modules
 *.log
 /seriousjs*.*gz
+/templates/*/build.webapp
 
 # Used for testing the projectTemplates
 _requirejs

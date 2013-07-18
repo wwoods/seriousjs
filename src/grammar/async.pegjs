@@ -75,6 +75,7 @@ async_call
 
 async_call_spec
   = "nocheck" _ { return "asyncNoCheck"; }
+  / "noerror" _ { return "asyncNoError"; }
 
 
 async_assign_clause

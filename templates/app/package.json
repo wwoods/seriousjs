@@ -3,11 +3,14 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "seriousjs app.sjs"
+    "start": "node node_modules/nodemon/nodemon.js -x seriousjs index.sjs"
   },
   "dependencies": {
     "express": ">=3.2.0",
     "jade": "*",
     "stylus": "*"
+  },
+  "devDependencies": {
+    "nodemon": "*"
   }
 }

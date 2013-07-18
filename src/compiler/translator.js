@@ -278,7 +278,7 @@ this.Translator = (function() {
               }
             }
 
-            if (errorPos < 0) {
+            if (errorPos < 0 && !n.spec.asyncNoError) {
               //Defaults to first arg
               maxArgs += 1;
               errorPos = 0;
@@ -333,21 +333,28 @@ this.Translator = (function() {
                 w.write("}");
               }
             }
-            w.write("__asyncCheck(");
+            w.write(";__asyncCheck(");
             w.write(cAsyncParent.getAsyncDataVar());
             if (errorPos >= 0) {
               w.write("," + argNames[errorPos]);
             }
             w.write(")};");
           }
+          var funcContext = null;
           var funcToCall = n.call.func;
           //Do the check
-          if (!n.spec.asyncNoCheck) {
+          if (!n.spec.asyncNoCheck && !n.spec.asyncNoError) {
             if (n.call.func.op !== "id") {
-              funcToCall = w.tmpVar(true);
+              //Fun... so we need to preserve the context for when we call the
+              //function, which javascript doesn't do natively.  So we'll just
+              //ask for the "owner" of an atom, and then access our method on
+              //that.
+              var atom = w.tmpVar(true);
               w.write("=");
-              e.translate(n.call.func);
+              e.translate(n.call.func, { splitAtom: true });
               w.write(",");
+              funcToCall = atom + "[1]";
+              funcContext = atom + "[0]";
             }
             else {
               funcToCall = n.call.func.id;
@@ -358,7 +365,15 @@ this.Translator = (function() {
           }
           w.goToNode(n);
           e.translate(funcToCall);
-          w.write("(");
+          if (funcContext) {
+            w.write(".call(" + funcContext);
+            if (argCount > 0) {
+              w.write(", ");
+            }
+          }
+          else {
+            w.write("(");
+          }
           for (var i = 0; i < argCount; i++) {
             if (i > 0) {
               w.write(",");
@@ -380,11 +395,29 @@ this.Translator = (function() {
         },
      "atom": function(e, n, w, options) {
           var atomOpts = null;
-          if (n.chain.length === 0) {
-            atomOpts = options;
+          if (options.splitAtom) {
+            //Expecting to generating an array of [context, member] based
+            //on our chain.
+            w.write("(");
+            var ctx = w.tmpVar(true);
+            w.write("=");
+            e.translate(n.atom, atomOpts);
+            e.translate(n.chain.slice(0, n.chain.length - 1),
+                { separator: '' });
+            w.write(",[");
+            w.write(ctx);
+            w.write(",")
+            w.write(ctx);
+            e.translate(n.chain[n.chain.length - 1]);
+            w.write("])");
           }
-          e.translate(n.atom, atomOpts);
-          e.translate(n.chain, { separator: '' });
+          else {
+            if (n.chain.length === 0) {
+              atomOpts = options;
+            }
+            e.translate(n.atom, atomOpts);
+            e.translate(n.chain, { separator: '' });
+          }
         },
      "await": function(e, n, w) {
           if (n.after == null) {
@@ -903,7 +936,7 @@ this.Translator = (function() {
      "id": function(e, n, w, options) {
           w.goToNode(n);
           if (w.isInArgs()) {
-            w.variable(n.id);
+            w.variable(n.id, true);
             addArgDefault(e, n, w);
           }
           else if (options.isMember) {
@@ -1064,8 +1097,11 @@ this.Translator = (function() {
           w.write(n.literal);
         },
      "return": function(e, n, w) {
-          var c = w.getClosure({ isFunction: true });
-          if (c.props.isAsync) {
+          var c = w.getClosure({ isAsyncOrClosure: true });
+          if (!c) {
+            throw new Error("return must be in a method or async block");
+          }
+          else if (c.props.isAsync) {
             //Set the result on our closest closure, since "return" in an
             //async block (return from closure) means something different
             //from "return" in an await block (no closure, function return)

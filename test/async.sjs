@@ -134,6 +134,36 @@ describe "async functionality", ->
     m.g()
 
 
+  it "Should support noerror for no check and no error arg", ->
+    m = sjs.eval """
+        f = (callback) ->
+          callback(new Error("HI"))
+        g = (callback) ->
+          callback(88)
+
+        r = [ null, null ]
+        async
+          await noerror r[0] = f
+          await noerror r[1] = g
+        """
+    assert.equal "HI", m.r[0].message
+    assert.equal 88, m.r[1]
+
+
+  it "Should properly bind async methods", ->
+    m = sjs.eval """
+        class B
+          a: async (v) -> @value + v
+
+        b = new B()
+        b.value = 88
+        r = [ 0 ]
+        async
+          await r[0] = b.a(2)
+        """
+    assert.equal 90, m.r[0]
+
+
   it "Should not squelch multiple errors from async", ->
     """Ensure that if there are several errors thrown, the non-first ones
     get thrown again (rather than getting passed to the callback).
@@ -563,6 +593,28 @@ describe "async functionality", ->
         i = 99
         """
     assert.equal 5, m.f.b()
+
+
+  it "Should work with function args in async blocks", ->
+    """Regression failure where the function params were considered "used"
+    args, thus leading to an error."
+    """
+    m = sjs.eval """
+        async
+          f = (a, b) -> a + b
+          e = f(1, 2)
+        """
+    assert.equal 3, m.e
+
+
+  it "Should support return in an async block", ->
+    m = sjs.eval """
+        f = {}
+        async
+          return
+          f.b = 99
+        """
+    assert.equal undefined, m.f.b
 
 
   it "Should support async closure blocks", (done) ->

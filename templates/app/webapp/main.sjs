@@ -1,4 +1,8 @@
 
+#browser-shim jquery-1.9.1.min
+#browser-shim shared/underscore-min
+#browser-shim shared/backbone-min
+
 require css!plugin
 
 require ./sibling

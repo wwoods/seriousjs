@@ -33,6 +33,7 @@ if (require.extensions) {
   require.extensions['.sjs'] = function(module, filename) {
     var content = fs.readFileSync(filename, 'utf8');
     var script = self.compile(content, { filename: filename });
+    module.paths.push(path.join(__dirname, '..'))
     module._compile(script, filename);
   };
 }
@@ -176,7 +177,7 @@ function _getEmbeddedFile() {
 
   return _embeddedFile;
 }
-//Exposed for tests
+//Exposed for tests and requireJs file manipulations
 this._getEmbeddedFile = _getEmbeddedFile;
 
 var _parserSandbox = vm.Script.createContext();
@@ -254,20 +255,4 @@ this.evalFile = function(filename) {
 };
 
 
-this.setupRequireJs = function(app, express, webappPath, callback) {
-  /** Set up a requireJs environment that supports SeriousJS at path.  Creates
-    * an _requirejs subdirectory with all of the requirements.
-    *
-    * app - The express application to fill in the "/src" directory on.
-    * express - The express module; kept separate because of dependency issues
-    * webappPath - the target's "webapp" folder
-    * callback - Called when the build is finished and it is time to run the
-    *     server.  Note that this will NOT be called if the build fails, as
-    *     process.exit(1) is called.
-    **/
-
-  var rjsUtil = require('./src/binUtil/requirejsUtil');
-  var baseSource = path.join(__dirname, 'lib/requirejs');
-  rjsUtil.setupProject(app, express, _getEmbeddedFile(), baseSource,
-      webappPath, callback);
-};
+this.requireJs = function() { return require('./src/binUtil/requireJsUtil'); };
