@@ -1004,7 +1004,11 @@ this.Translator = (function() {
           }
           else {
             //Normal dict member
-            e.translate(n.key);
+            //We use isMember on the key in case it is an ID.  This tricks the
+            //compiler into not considering it as a variable used in a closure,
+            //which it's not.  It's technically a string due to the way
+            //javascript handles hash keys.
+            e.translate(n.key, { isMember: true });
             w.write(": ");
             e.translate(n.value);
           }

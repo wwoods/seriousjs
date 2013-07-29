@@ -11,7 +11,7 @@ keywords are broken.
 describe "async functionality", ->
   # If async isn't working we won't catch stuff.  Don't let the tests run
   # forever.
-  @timeout(200)
+  @timeout(1000)
 
   it "Should be applicable to lambdas", (done) ->
     m = sjs.eval """q = async nocheck -> 32"""
@@ -654,6 +654,16 @@ describe "async functionality", ->
     assert.equal 60, m.r[0]
     # and a shouldn't be defined, since the async block has its own closure.
     assert.equal true, undefined == m.a
+
+
+  it "Should properly not close dict keys", () ->
+    m = sjs.eval """
+        r = [ 0 ]
+        method = { value } -> value + 4
+        async
+          r[0] = method(value: 86)
+        """
+    assert.equal 90, m.r[0]
 
 
   it "Should work with tuple assignments", (done) ->

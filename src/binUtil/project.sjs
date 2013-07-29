@@ -6,8 +6,8 @@ require path
 
 copyAndFormat = (fileOrDir, target, {>project} = options) ->
   if fs.statSync(fileOrDir).isDirectory()
-    if path.basename(fileOrDir) in [ "node_modules", "_requirejs",
-        "build.webapp", "build.webapp.new" ]
+    if path.basename(fileOrDir) in [ "node_modules", "_requirejs" ]
+        or /^build\./.test(path.basename(fileOrDir))
       # Don't clone node_modules
       return
     fs.mkdirSync(target)
@@ -31,6 +31,7 @@ this.createFromTemplate = (template, name) ->
       project: name)
 
   # Run npm install so that they have dependencies installed
+  console.error("Installing dependencies...")
   child = child_process.spawn(
       "npm",
       [ "install", "." ],

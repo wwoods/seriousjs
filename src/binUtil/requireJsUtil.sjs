@@ -8,7 +8,28 @@ require ./util as sjsUtil
 _embeddedFile = seriousjs._getEmbeddedFile()
 _requireJsSource = path.join(__dirname, '../../lib/requirejs')
 
-setupExpress = async (app, express, webappPath) ->
+serveWebapp = (app, appPath, { shim = [], title = "My Webapp - SeriousJs" }) ->
+  """This method sets up a GET handler at the given appPath to serve up a basic
+  page that loads a RequireJS application.
+  """
+  scripts = []
+  for s in shim
+    scripts.push '<script type="text/javascript" '
+        + 'src="/src/shim/#{ s + ".js" }">'
+        + '</script>'
+  scripts.push """<script type="text/javascript"
+      data-main="/src/_requirejs/loader" src="/src/_requirejs/require.js">
+      </script>"""
+  htmlSrc = """<!DOCTYPE html><html>
+      <head><title>#{ title }</title>
+        <link rel="stylesheet" href="/src/app.css" />
+        #{ scripts.join('') }</head>
+      <body>Loading, please wait</body></html>"""
+  app.get appPath, (req, res) ->
+    res.send(htmlSrc)
+
+
+setupWebapp = async (app, express, webappPath) ->
   """This method is responsible for handling an application that uses the
   built-in support for RequireJS of SeriousJs.
 
@@ -41,7 +62,6 @@ setupExpress = async (app, express, webappPath) ->
   copy(_embeddedFile, true)
   copy('require.js')
   copy('css.js')
-  copy('shim.js')
   copy('sjs.js')
   copy('loader.js')
   copy('app.build.js')
@@ -53,10 +73,8 @@ setupExpress = async (app, express, webappPath) ->
     # Exit without calling callback or any setup.
     return false
 
-  # Link lib folders, which are never compiled
-  app.use('/src/lib', express.static(path.join(webappPath, 'lib')))
-  app.use('/src/shared/lib',
-      express.static(path.join(webappPath, '../shared/lib')))
+  # Link shim folder, which is never compiled
+  app.use('/src/shim', express.static(path.join(webappPath, 'shim')))
 
   # Link the app to /src and run callback to start the server
   if '--built' in process.argv

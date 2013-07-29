@@ -7,7 +7,7 @@ require ../ as sjs
 
 describe "Async catch/finally", ->
   # These should all be snappy..
-  @timeout 100
+  @timeout 1000
 
   it "Should support catch with async blocks", async nocheck ->
     m = sjs.eval """
