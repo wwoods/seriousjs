@@ -14,7 +14,7 @@ describe "bin/seriousjs and dependencies", ->
   modulesDir = path.join(__dirname, '../../node_modules')
   modulesDirBackup = modulesDir + '.bak'
   before (done) ->
-    this.timeout(10000)
+    this.timeout(20000)
 
     # Ensure seriousjs is compiled
     seriousjs._getEmbeddedFile()
@@ -57,7 +57,7 @@ describe "bin/seriousjs and dependencies", ->
           done()
 
   it "Should work with create-app", (done) ->
-    this.timeout(50000)
+    this.timeout(120000)
 
     if fs.existsSync(__dirname + "/testApp")
       rmDir(__dirname + "/testApp")
@@ -66,12 +66,12 @@ describe "bin/seriousjs and dependencies", ->
         "../../bin/seriousjs create-app testApp"
         cwd: __dirname
         (error, stdout, stderr) ->
-          assert.equal "", stderr
+          assert.equal "Installing dependencies...\n", stderr
           assert.equal "Project testApp created\n", stdout
 
           # Also ensure that --build works ok
           cp.exec(
-              "../../../bin/seriousjs app.sjs --build"
+              "../../../bin/seriousjs index.sjs --build"
               cwd: __dirname + '/testApp'
               (error, stdout, stderr) ->
                 console.log("== stdout ==\n#{ stdout }")

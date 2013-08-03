@@ -14,15 +14,18 @@ describe "Async catch/finally", ->
         f = async ->
           await 0
           throw "Error1"
+          console.log "POST THROW"
         g = async ->
           async
             async f
+            console.log "POST F"
           catch e
             throw "Error2"
         """
     await m.g
-    catch
-      return
+    catch e
+      if e == "Error2"
+        return
     throw new Error("Failed to catch")
 
   it "Should support finally blocks", async nocheck ->

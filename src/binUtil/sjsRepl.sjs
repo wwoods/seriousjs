@@ -10,19 +10,19 @@ options =
       if not input
         return
 
+      # Ensure it has access to require
+      if not context.require?
+        context.require = require
+
       if /^await [^\n]+$/.test(input)
         await r = _handleAwait(input, context, filename)
         return r
 
       if not /^require [^\n]+$/.test(input)
         input = "_=#{ input }"
-      else
-        # Ensure it has access to require
-        if not context.require?
-          context.require = require
 
       script = sjs.compile(input)
-      return vm.runInContext(script, context, filename)
+      return vm.runInContext(script.js, context, filename)
 
 
 start = () ->
@@ -45,7 +45,7 @@ _handleAwait = async (input, context, filename) ->
         return [ #{ allVars.join(",") } ]
       """
   script = sjs.compile(realInput)
-  r = vm.runInContext(script, context, filename)
+  r = vm.runInContext(script.js, context, filename)
   await varVals = context.__
   for v, i in allVars
     context[v] = varVals[i]

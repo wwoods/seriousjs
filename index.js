@@ -7,6 +7,8 @@ var self = this;
 var fs = require('fs');
 var mmodule = require('module');
 var path = require('path');
+var sourceMap = require('source-map');
+var sourceMapSupport = require('source-map-support');
 var util = require('util');
 var vm = require('vm');
 var sjsCompiler = require('./src/compiler/compiler.js');
@@ -28,13 +30,30 @@ if (typeof process !== 'undefined'
   };
 }
 
+//Hack for sourceMapSupport... put a copy of prepareStackTrace on the module
+//since there is some serious voodoo involved between the version of Error in
+//sourceMapSupport and the version used in our virtual machines.
+var oldErrorPrepare = Error.prepareStackTrace;
+sourceMapSupport._sjsMaps = {};
+sourceMapSupport.install({
+    retrieveSourceMap: function(source) {
+      if (source in sourceMapSupport._sjsMaps) {
+        return { url: source === "eval" ? "/eval" : source,
+            map: sourceMapSupport._sjsMaps[source] };
+      }
+      return null;
+    }
+});
+sourceMapSupport.prepareStackTrace = Error.prepareStackTrace;
+Error.prepareStackTrace = oldErrorPrepare;
+
 //Plug in to require
 if (require.extensions) {
   require.extensions['.sjs'] = function(module, filename) {
     var content = fs.readFileSync(filename, 'utf8');
-    var script = self.compile(content, { filename: filename });
+    var compiled = self.compile(content, { filename: filename });
     module.paths.push(path.join(__dirname, '..'))
-    module._compile(script, filename);
+    module._compile(compiled.js, filename);
   };
 }
 
@@ -184,9 +203,13 @@ var _parserSandbox = vm.Script.createContext();
 this.parser = vm.runInContext(parserSource, _parserSandbox, _parserFile);
 this.compile = function(text, options) {
   //Returns the legible javascript version of text.
-  if (!options) {
-    options = {};
+  var realOpts = { sourceMap: sourceMap };
+  if (options) {
+    for (var k in options) {
+      realOpts[k] = options[k];
+    }
   }
+  options = realOpts;
   if (!options.filename && permaOptions.showScriptAfterTest) {
     options.debugTreeCallback = function(tree) {
       self.testAddCompiledScript(util.inspect(tree, null, 30));
@@ -195,8 +218,9 @@ this.compile = function(text, options) {
       self.testAddCompiledScript(script);
     };
   }
+  var result;
   try {
-    var script = sjsCompiler.compile(self.parser, text, options);
+    result = sjsCompiler.compile(self.parser, text, options);
   }
   catch (e) {
     if (options.filename && e.message.indexOf(options.filename) < 0) {
@@ -204,7 +228,7 @@ this.compile = function(text, options) {
     }
     throw e;
   }
-  return script;
+  return result;
 };
 
 
@@ -223,6 +247,11 @@ this.eval = function(text, options) {
       //compiled with seriousjs, we probably want to use the same version.
       return self;
     }
+    else if (path === "source-map-support") {
+      //We inject this module into our compiled code, so we should not require
+      //client applications to also have it installed.  Just use our version.
+      return sourceMapSupport;
+    }
     return mmodule._load(path, mod, true);
   };
   for (var k in Object.getOwnPropertyNames(require)) {
@@ -240,7 +269,7 @@ this.eval = function(text, options) {
   mod.paths = req.paths;
   mod.filename = sandbox.__filename;
   var code = this.compile(text, options);
-  var r = vm.runInContext(code, sandbox, sandbox.__filename);
+  var r = vm.runInContext(code.js, sandbox, sandbox.__filename);
   if (options.isScript) {
     return r;
   }

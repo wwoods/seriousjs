@@ -14,15 +14,20 @@ serveWebapp = (app, appPath, { shim = [], title = "My Webapp - SeriousJs" }) ->
   """
   scripts = []
   for s in shim
-    scripts.push '<script type="text/javascript" '
-        + 'src="/src/shim/#{ s + ".js" }">'
-        + '</script>'
+    prefix = "/src/shim/"
+    if /^\//.test(s)
+      prefix = ""
+    if /\.css$/.test(s)
+      scripts.push '<link rel="stylesheet" href="#{ prefix }#{ s }" />'
+    else
+      scripts.push '<script type="text/javascript" '
+          + 'src="#{ prefix }#{ s + ".js" }">'
+          + '</script>'
   scripts.push """<script type="text/javascript"
       data-main="/src/_requirejs/loader" src="/src/_requirejs/require.js">
       </script>"""
   htmlSrc = """<!DOCTYPE html><html>
       <head><title>#{ title }</title>
-        <link rel="stylesheet" href="/src/app.css" />
         #{ scripts.join('') }</head>
       <body>Loading, please wait</body></html>"""
   app.get appPath, (req, res) ->

@@ -4,6 +4,8 @@ var translator = require('./translator.js');
 var writer = require('./writer.js');
 var asyncTransform = require('./asyncTransform.js');
 
+var _DEBUG_SOURCEMAP = false;
+
 this.cleanupTree = function(tree) {
   for (var n in tree) {
     var o = tree[n];
@@ -65,32 +67,72 @@ this.compile = function(parser, text, options) {
   var translatorObj = new translator.Translator(writerObj, options);
   var translatorTree = asyncTransform.transformTree(tree);
   translatorObj.translate(translatorTree);
-  var script = writerObj.getOutput();
+
+  var header = '', footer = '';
+  var smVar = "{{{__sjs_sourceMap__}}}";
+  var smName = options.filename || "eval";
+  if (options.sourceMap) {
+    //Source map support...
+    if (options.amdModule) {
+      //Browser
+      throw new Error("Not yet supported");
+    }
+    else {
+      //NodeJS
+      header += '"use strict";\n';
+      header += "//# sourceMappingURL=" + smName + ".map\n";
+      header += 'var __sjs_sms = require("source-map-support");';
+      header += '__sjs_sms._sjsMaps["' + smName + '"] = ' + smVar + ';';
+      _DEBUG_SOURCEMAP && (header += 'console.log("Stored ' + smName + '");');
+      header += 'Error.prepareStackTrace = __sjs_sms.prepareStackTrace;\n\n';
+    }
+  }
 
   if (options.amdModule) {
-    script = self._makeScriptAmd(requires, script);
+    var amdParts = self._makeScriptAmd(requires);
+    header += amdParts[0];
+    footer += amdParts[1];
+  }
+
+  var result = writerObj.getOutput(header, footer, options);
+  if (options.sourceMap) {
+    var realMap = new options.sourceMap.SourceMapGenerator({ file: smName });
+    for (var i = 0, m = result.map.length; i < m; i++) {
+      var r = result.map[i];
+      realMap.addMapping({
+          generated: { line: r[0], column: r[1] },
+          original: { line: r[2], column: r[3] },
+          source: smName
+      });
+    }
+    realMap.setSourceContent(smName, text);
+    result.map = realMap;
+
+    result.js = result.js.replace(smVar, result.map.toString());
   }
 
   if (options.debugCallback) {
-    options.debugCallback(script, tree);
+    options.debugCallback(result.js, tree);
   }
-  return script;
+  return result
 };
 
 
-this._makeScriptAmd = function(requires, script, options) {
+this._makeScriptAmd = function(requires) {
   /** Bootstrap a script with the given requires to AMD format.  Note that we
     really shouldn't insert any newlines before script, since that would screw
     up our mapping.
+
+    Returns a [ header, footer ] to wrap the code in.
     */
-  var output = [ "define([" ];
+  var header = [ "define([" ], footer = [];
   var varNames = [];
   var forPartAssigns = [];
   for (var i = 0, m = requires.length; i < m; i++) {
     var reqChain = requires[i].defs;
     for (var j = 0, k = reqChain.length; j < k; j++) {
       if (varNames.length > 0) {
-        output.push(",");
+        header.push(",");
       }
       var fromPart = reqChain[j].from;
       if (fromPart.indexOf('!') < 0) {
@@ -100,7 +142,7 @@ this._makeScriptAmd = function(requires, script, options) {
       else if (fromPart.indexOf("js!") === 0) {
         fromPart = fromPart.slice(3);
       }
-      output.push("'" + fromPart + "'");
+      header.push("'" + fromPart + "'");
       varNames.push(reqChain[j].as);
 
       var forParts = reqChain[j].forParts;
@@ -113,15 +155,15 @@ this._makeScriptAmd = function(requires, script, options) {
       }
     }
   }
-  output.push("],function(");
-  output.push(varNames.join(","));
-  output.push(") {var exports = {};(function(exports){");
+  header.push("],function(");
+  header.push(varNames.join(","));
+  header.push(') {"use strict";var exports = {};(function(exports){');
   if (forPartAssigns.length > 0) {
-    output.push("var ");
-    output.push(forPartAssigns.join(","));
-    output.push(";");
+    header.push("var ");
+    header.push(forPartAssigns.join(","));
+    header.push(";");
   }
-  output.push(script);
-  output.push("\n}).call(exports, exports);return exports});");
-  return output.join("");
+  footer.push("\n}).call(exports, exports);return exports});");
+
+  return [ header.join(""), footer.join("") ];
 };

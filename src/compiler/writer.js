@@ -164,6 +164,16 @@ function featureDump(feature, topClosure) {
   }
 }
 
+var SourcePos;
+this.SourcePos = SourcePos = (function() {
+  function SourcePos(line, column) {
+    this.line = line;
+    this.column = column;
+  }
+
+  return SourcePos;
+})();
+
 var Closure;
 this.Closure = Closure = (function() {
   function Closure(props) {
@@ -177,6 +187,25 @@ this.Closure = Closure = (function() {
     this._asyncCheckVar = null;
     this._asyncDataVar = null;
   }
+
+  var DelayedValue = (function() {
+    function DelayedValue(object, prop) {
+      //An item that may be written to the output stream in order to look up a
+      //value at Writer.getOutput() time instead of before.
+      this.obj = object;
+      this.prop = prop;
+    }
+
+    DelayedValue.prototype.toString = function() {
+      if (typeof this.obj[this.prop] !== "string") {
+        console.log(this.obj);
+        console.log(this.prop);
+      }
+      return this.obj[this.prop];
+    };
+
+    return DelayedValue;
+  })();
   
   Closure.prototype.getNamedInstanceVariable = function() {
     this.props.usesNamedThis = true;
@@ -224,7 +253,7 @@ this.Closure = Closure = (function() {
   Closure.prototype.setAsyncCallback = function(callbackName) {
     this.asyncCallback = callbackName;
     //Ensure our closure knows about the usage of this variable
-    if (callbackName !== null) {
+    if (callbackName !== null && !(callbackName instanceof DelayedValue)) {
       this.resolveAsyncRoot().setVarUsed(callbackName, true);
     }
   };
@@ -232,6 +261,10 @@ this.Closure = Closure = (function() {
   Closure.prototype._getAsyncCallback = function() {
     if (this.asyncCallback === undefined) {
       throw new Error("Never set asyncCallback!");
+    }
+    if (this._realCallback) {
+      //Delayed callback since we have a catch/finally block
+      return this._realCallback;
     }
     return this.asyncCallback;
   };
@@ -264,12 +297,16 @@ this.Closure = Closure = (function() {
     this._asyncDataVar = newVar;
   };
 
-  Closure.prototype.asyncAddCall = function(writer) {
+  Closure.prototype.asyncAddCall = function(writer, debugComment) {
     //There's another async request for us, so increment our counter.
     if (ASYNC.debug) {
       writer.write("console.log('");
       writer.write(this.getAsyncDataVar());
-      writer.write(" called - '+");
+      writer.write(" called ");
+      if (debugComment) {
+        writer.write(" (" + debugComment + ")");
+      }
+      writer.write(" - '+");
       writer.write(this.getAsyncDataVar());
       writer.write(".");
       writer.write(ASYNC.COUNT);
@@ -288,57 +325,76 @@ this.Closure = Closure = (function() {
     writer.write(")");
   };
 
-  Closure.prototype.asyncCloseTry = function(w, e, catchStmt,
-      finallyStmt) {
+  Closure.prototype.asyncCloseTry = function(w) {
     //NOTE - Does NOT end the closure!  That must be done by caller after this.
+    //Add the tail to a try statement.  If there is a catch/finally part to this
+    //closure, it must have already been added!
+    w.write("}catch(__error){");
+    w.newline(1);
+    //Add 1 to count since we'll also trigger in the finally block!
+    this.asyncAddCall(w, "error: ' + __error + '");
+    w.write(";");
+    this.asyncCheck(w, "__error");
+    w.newline(-1);
+    w.write("}finally{");
+    w.newline(1);
+    this.asyncCheck(w);
+    w.newline(-1);
+    w.write("}");
+
+    //Assign _realCallback to our actual follow-up callback, and our callback
+    //to the desired one based on catch / finally (if one exists)
+    if (this._catchFinallyCallback) {
+      this._realCallback = this._catchFinallyCallback;
+    }
+  };
+
+  Closure.prototype.asyncSetupCatchFinally = function(w, e, catchStmt,
+      finallyStmt) {
+    //Must be called within a closure and before the closure variable is
+    //defined, since catchStmt and finallyStmt's defined callbacks will be
+    //used as the result callback for this async closure.
+    if (this._asyncSetupCatchCalled) {
+      throw new Error("Cannot be called more than once");
+    }
+    this._asyncSetupCatchCalled = true;
+
+
     var catchCall = null;
     var catchFollower = null;
     var finallyCall = null;
     var finallyFollower = null;
+
+    //Mark that we have a catch or finally block, and should use it
+    this._catchFinallyCallback = new DelayedValue(this, 'asyncCallback');
     if (finallyStmt) {
       //We use getClosure().newTemp() to avoid setting the "used" flag which
       //would trigger a closure event
       finallyCall = w.getClosure().newTemp(false, true);
-      finallyFollower = this.asyncCallback;
-      this.asyncCallback = finallyCall;
+      finallyFollower = this._catchFinallyCallback;
+      this._catchFinallyCallback = finallyCall;
     }
     if (catchStmt) {
       //See finallyStmt note.
       catchCall = w.getClosure().newTemp(false, true);
-      catchFollower = this.asyncCallback;
-      this.asyncCallback = catchCall;
+      catchFollower = this._catchFinallyCallback;
+      this._catchFinallyCallback = catchCall;
     }
-    //Add the tail to a try statement.
-    w.write("}catch(");
-    w.startArgs();
-    w.variable("e", true);
-    w.endArgs();
-    w.write("){");
-    //Add 1 to count since we'll also trigger in the finally block!
-    this.asyncAddCall(w);
-    w.write(";");
-    this.asyncCheck(w, "e");
-    w.write("}finally{");
-    this.asyncCheck(w);
-    w.write("}");
 
     if (catchCall) {
       w.goToNode(catchStmt);
-      w.write("function ");
+      w.newline();
+      w.write("var ");
       w.write(catchCall);
-      w.write("(");
-      w.startArgs();
+      w.write("=function(__error){");
       var eVar = "__error";
+      var cBlock = w.newAsyncBlock(catchFollower);
+      //Assign error variable
       if (catchStmt.id) {
         eVar = catchStmt.id.id;
-        e.translate(catchStmt.id);
+        e.translate(catchStmt.id, { isAssign: true });
+        w.write("=__error;");
       }
-      else {
-        w.variable(eVar, true);
-      }
-      w.endArgs();
-      w.write("){");
-      var cBlock = w.newAsyncBlock(catchFollower);
       w.write("if(");
       w.write(eVar);
       w.write("){");
@@ -346,13 +402,14 @@ this.Closure = Closure = (function() {
       w.write("}");
       cBlock.asyncCloseTry(w, e);
       w.endClosure();
-      w.write("}");
+      w.write("};");
     }
     if (finallyCall) {
       w.goToNode(finallyStmt);
-      w.write("function ");
+      w.newline();
+      w.write("var ");
       w.write(finallyCall);
-      w.write("(__error){");
+      w.write("=function(__error){");
       var callback = w.tmpVar(true, true);
       //Be sure we write in the variable before assigning the return function
       //in the async closure!
@@ -365,7 +422,7 @@ this.Closure = Closure = (function() {
       e.translate(finallyStmt.body);
       cBlock.asyncCloseTry(w, e);
       w.endClosure();
-      w.write("}");
+      w.write("};");
     }
   };
 
@@ -433,7 +490,8 @@ this.Closure = Closure = (function() {
       r += this.getAsyncDataVar() + "={";
       //Start with 1 count for our thread
       r += ASYNC.COUNT + ":1";
-      r += "," + ASYNC.SELF_NAME + ":\"" + this.getAsyncDataVar() + "\"";
+      r += "," + ASYNC.SELF_NAME + ":\"" + this.getAsyncDataVar() + "_"
+          + this.props.line + "\"";
       r += "," + ASYNC.RESULT_CALLBACK + ":" + this._getAsyncCallback();
       r += "," + ASYNC.THIS + ":this";
       if (this.props.isAsyncNoError) {
@@ -458,9 +516,11 @@ this.Closure = Closure = (function() {
 
 this.Writer = (function() {
   function Writer() {
-    this._indent = -1; //incremented to 0 at startClosure
+    this._indent = 0;
     this._output = [];
     this._closures = [];
+    //NOT actual line number; used to debug e.g. async code.  This is always
+    //a constant (due to headers) off from the actual line number.
     this._line = 1;
     this._isInArgs = false;
     this._redirects = [];
@@ -472,30 +532,58 @@ this.Writer = (function() {
     this._output.push(c);
   }
   
-  Writer.prototype.getOutput = function() {
-    var output = [];
+  Writer.prototype.getOutput = function(header, footer, options) {
+    //[generated line, generated col, source line, source col]
+    //Columns are zero based
+    var map = [ [ 1, 1, 1, 0 ] ];
+    var output = [ header ];
+    var nlFinder = /\n/g;
+    var outLine = header.match(nlFinder);
+    if (outLine && outLine.length) {
+      outLine = 1 + outLine.length;
+    }
+    else {
+      outLine = 1;
+    }
+    var outCol = 1;
+    var outLength = header.length;
+    if (outLine > 1) {
+      outCol = header.length - header.lastIndexOf("\n");
+    }
     try {
       for (var i = 0, m = this._output.length; i < m; i++) {
-        output.push(this._output[i].toString());
+        var oi = this._output[i];
+        if (oi instanceof SourcePos) {
+          map.push([ outLine, outCol,
+              oi.line, oi.column || 0 ]);
+          continue;
+        }
+
+        var s = oi.toString();
+        outLength += s.length;
+        var nls = s.match(nlFinder);
+        if (nls && nls.length) {
+          outLine += nls.length;
+          outCol = s.length - s.lastIndexOf('\n');
+        }
+        else {
+          outCol += s.length;
+        }
+        output.push(s);
       }
+
+      output.push(footer);
     }
     catch (e) {
       console.log("Before error: " + output.join(""));
       throw e;
     }
-    return output.join("");
+
+    return { js: output.join(""), map: map };
   };
   
   Writer.prototype.addClosureNode = function(e, n) {
     getClosure().onEntryNodes.push([ e, n ]);
-  };
-  
-  Writer.prototype.indent = function() {
-    this._indent += 1;
-  };
-  
-  Writer.prototype.deindent = function() {
-    this._indent -= 1;
   };
   
   Writer.prototype.export = function(v) {
@@ -507,11 +595,9 @@ this.Writer = (function() {
   };
   
   Writer.prototype.startContinuation = function() {
-    this._indent += 2;
   };
   
   Writer.prototype.endContinuation = function() {
-    this._indent -= 2;
   };
   
   Writer.prototype.getClosure = function(spec) {
@@ -599,19 +685,20 @@ this.Writer = (function() {
   
   Writer.prototype.startClosure = function(props) {
     //Returns the created Closure object; hasn't pushed it to output yet
+    //Can also resume a closure if props is, itself, a Closure object.
+    if (props instanceof Closure) {
+      this._closures.push(props);
+      return props;
+    }
+
+    props.line = this._line;
     var c = new Closure(props);
     this._closures.push(c);
-    if (!props.noIndent) {
-      this._indent += 1;
-    }
     return c;
   };
   
   Writer.prototype.endClosure = function() {
     var c = this._closures.pop();
-    if (!c.noIndent) {
-      this._indent -= 1;
-    }
 
     //Any var === "used" on c should be propagated to the parent closure as
     //it is inherited.  This is how the "closure" keyword works.
@@ -629,11 +716,11 @@ this.Writer = (function() {
   
   Writer.prototype.startArgs = function() {
     this._isInArgs = true;
-    this._indent += 1;
+    this._indent += 2;
   };
   
   Writer.prototype.endArgs = function() {
-    this._indent -= 1;
+    this._indent -= 2;
     this._isInArgs = false;
   };
   
@@ -642,17 +729,14 @@ this.Writer = (function() {
   };
   
   Writer.prototype.goToLine = function(l) {
-    while (this._line < l) {
-      this.newline();
+    if (l == null) {
+      return;
     }
+    this.write(new SourcePos(l));
   };
   
   Writer.prototype.goToNode = function(node) {
     //Go to a specific node's position information
-    if (node.state) {
-      this._indent = node.state.indent;
-    }
-    
     if (node.line) {
       this.goToLine(node.line);
     }
@@ -666,6 +750,10 @@ this.Writer = (function() {
     var methodC = this.getClosure({ isClassMethod: true });
     if (methodC === topC) {
       return "this";
+    }
+    else if (methodC === null && topC !== null) {
+      throw new Error("Cannot use '@' in a nested method outside of a class "
+          + "method");
     }
     else {
       return methodC.getNamedInstanceVariable();
@@ -734,7 +822,10 @@ this.Writer = (function() {
     return r;
   };
   
-  Writer.prototype.newline = function() {
+  Writer.prototype.newline = function(indentDelta) {
+    if (indentDelta !== undefined) {
+      this._indent += indentDelta;
+    }
     this.write('\n' + this._getIndent());
   };
   

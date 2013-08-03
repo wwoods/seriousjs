@@ -13,12 +13,14 @@
   },
   "main": "./index.js",
   "dependencies": {
-    "commander": ">=0.0.0"
+    "commander": ">=0.0.0",
+    "uglify-js": ">=2.0.0",
+    "source-map": ">=0.1.27",
+    "source-map-support": "0.2.1"
   },
   "devDependencies": {
     "mocha": ">=1.8",
-    "requirejs": "2.1.2",
-    "uglify-js": ">=2.0.0"
+    "requirejs": "2.1.2"
   },
   "repository": {
     "type": "git",

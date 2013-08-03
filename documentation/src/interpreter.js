@@ -32,7 +32,7 @@ function setup() {
             showErrorTimer && clearTimeout(showErrorTimer);
 
             try {
-                jsSide.val(seriousjs.compile(lastVal));
+                jsSide.val(seriousjs.compile(lastVal).js);
             }
             catch (e) {
                 var text = "Error: " + e + "\n\n" + e.stack;

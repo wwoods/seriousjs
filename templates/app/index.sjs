@@ -1,5 +1,4 @@
-
- # Module dependencies
+# Module dependencies
 
 require express
 #require ./server/routes
@@ -20,6 +19,7 @@ app.use(express.methodOverride())
 app.use(app.router)
 
 async
+  # Link our webapp into /src
   await r = seriousjs.requireJs().setupWebapp(app, express,
       __dirname + '/webapp')
   if not r
@@ -29,9 +29,11 @@ async
   if 'development' == app.get('env')
     app.use(express.errorHandler())
 
+  # Expose a basic HTML page to serve the app at /src
   seriousjs.requireJs().serveWebapp(
       app, '/',
-      shim: [ 'jquery-1.9.1.min', 'underscore-min', 'backbone-min' ]
+      shim: [ '../index.css', 'jquery-1.9.1.min', 'underscore-min',
+        'backbone-min' ]
       title: '__project__'
 
   await nocheck http.createServer(app).listen app.get('port')

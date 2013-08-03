@@ -16,4 +16,4 @@ describe "seriousjs-embed.js", ->
 
   it "Should compile a basic statement", () ->
     assert.equal('var a;this.a=a = b + 5',
-        built[0].seriousjs.compile('a = b + 5')
+        built[0].seriousjs.compile('a = b + 5').js

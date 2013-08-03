@@ -19,10 +19,14 @@ describe "Stack Traces", ->
   getFile = (p) -> path.join(__dirname, "stackTraceScripts", p)
 
   it "Should work within evalFile", ->
-    checkStack "/instaThrow.sjs", -> sjs.evalFile getFile("instaThrow.sjs")
+    checkStack "/instaThrow.sjs:3", -> sjs.evalFile getFile("instaThrow.sjs")
 
   it "Should work within imports", ->
     checkStack(
-        [ "/requireInstaThrow.sjs", "/instaThrow.sjs" ]
+        [ "/requireInstaThrow.sjs:2", "/instaThrow.sjs:3" ]
         -> sjs.evalFile getFile("requireInstaThrow.sjs")
 
+  it "Should have right line number", ->
+    checkStack(
+        [ "at /eval:2" ]
+        -> sjs.eval """hey = 'there'\nfail2"""

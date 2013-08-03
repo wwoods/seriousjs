@@ -150,7 +150,16 @@ describe "async functionality", ->
     assert.equal 88, m.r[1]
 
 
-  it "Should properly bind async methods", ->
+  it "Should support defining a method as noerror to skip check", ->
+    m = sjs.eval """
+        f = async noerror (a, b) -> a + b
+        q = [ 0 ]
+        f 3, 6, (r) -> q[0] = r
+        """
+    assert.equal 9, m.q[0]
+
+
+  it "Should properly bind async methods to context", ->
     m = sjs.eval """
         class B
           a: async (v) -> @value + v
@@ -231,6 +240,29 @@ describe "async functionality", ->
           return 56
         """
     m.f () -> assert.fail("Should not have called data as callback")
+
+
+  it "Should work with tracebacks", (done) ->
+    m = sjs.eval """
+        first = async () ->
+          await 99
+          return 45
+        f = async nocheck () ->
+          "A function"
+          # A comment
+          await 0
+          # Do something else
+          await 1
+          inner = async () ->
+            "Hey thar!"
+            throw new Error("NOOOoooooo")
+          await inner
+          return "FailWhale"
+        """
+    m.f (error) -> 
+      assert.equal "NOOOoooooo", error and error.message or error
+      assert.equal true, error.stack.indexOf('/eval:13') >= 0
+      done()
 
 
   it "Should support and wait for internal async", (done) ->
@@ -361,9 +393,12 @@ describe "async functionality", ->
         times = []
         q = async nocheck ->
           times.push(Date.now())
+          console.log("A1")
           await 10
           times.push(Date.now())
+          console.log("A2")
           await 15
+          console.log("A3")
         """
     n = Date.now()
     m.q(
@@ -600,11 +635,12 @@ describe "async functionality", ->
     args, thus leading to an error."
     """
     m = sjs.eval """
+        e = []
         async
           f = (a, b) -> a + b
-          e = f(1, 2)
+          e[0] = f(1, 2)
         """
-    assert.equal 3, m.e
+    assert.equal 3, m.e[0]
 
 
   it "Should support return in an async block", ->

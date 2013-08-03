@@ -11,23 +11,23 @@ string
 
 string_not_double_quote_triple
   = string_interpol
-  / !'"""' !"#{" ch:. { return ch; }
+  / !'"""' !"#{" ch:string_ch { return ch; }
   
 string_not_single_quote_triple
   = string_interpol
-  / !"'''" !"#{" ch:. { return ch; }
+  / !"'''" !"#{" ch:string_ch { return ch; }
   
 string_not_double_quote
   = string_interpol
   / "\\\\"
   / '\\"'
-  / !["\n] !"#{" ch:. { return ch; }
+  / !["\n] !"#{" ch:string_ch { return ch; }
 
 string_not_single_quote
   = string_interpol
   / "\\\\"
   / "\\'"
-  / !['\n] !"#{" ch:. { return ch; }
+  / !['\n] !"#{" ch:string_ch { return ch; }
   
 string_interpol
   = "#{" _ expr:expression _ "}" {
@@ -36,4 +36,9 @@ string_interpol
 
 string_for_require
   = ![ \t\r\n,] ch:. { return ch; }
+
+
+string_ch
+  = "\\" ch:. { return "\\" + ch; }
+  / .
   

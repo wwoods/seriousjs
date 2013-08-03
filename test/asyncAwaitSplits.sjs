@@ -66,7 +66,7 @@ describe "await splits", ->
     m = sjs.eval """
         g = async (t) ->
           console.log "g() before await: #""" + """{ 30 - t * 4 }"
-          await (30 - t * 4)
+          await (300 - t * 40)
           console.log "g() after await"
         f = async ->
           r = []
@@ -83,10 +83,10 @@ describe "await splits", ->
           await
             for v in [ 4, 5, 6 ]
               async
-                console.log("CALLING g(v)")
+                console.log("CALLING g(\#{ v })")
                 await g(v)
                 r.push(v)
-                console.log("EXITING")
+                console.log("EXITING \#{ v }")
               await 0
           return r
         """
@@ -185,16 +185,49 @@ describe "await splits", ->
 
   it "Should preserve 'this' context across await splits", (done) ->
     m = sjs.eval """
-      f = async nocheck ->
-        r = @value
-        console.log 'a'
-        console.log this
-        await 0
-        console.log 'b'
-        console.log this
-        return r + @value
-      """
+        f = async nocheck ->
+          r = @value
+          console.log 'a'
+          console.log this
+          await 0
+          console.log 'b'
+          console.log this
+          return r + @value
+        """
     m.f.call value: 4, (error, result) ->
       assert.equal null, error and error.message or error
       assert.equal 8, result
       done()
+
+
+  it "Should keep context with memberId expressions", async nocheck ->
+    m = sjs.eval """
+        class B
+          a: 40
+          b: async -> @a
+          c: async ->
+            await r = @b
+            return r
+        b = new B()"""
+    await r = m.b.c
+    assert.equal 40, r
+
+
+  it "Should preserve 'this' context across if splits", async nocheck ->
+    m = sjs.eval """
+        class B
+          a: 56
+          g: async -> 44
+          f: async ->
+            console.log "@0: \#{ @g }"
+            if false
+              return 0
+            else
+              console.log "@1: \#{ @g }"
+              await j = @g
+              console.log "@2: \#{ @g }"
+              return j + @a
+        b = new B()"""
+    await r = m.b.f
+    assert.equal 100, r
+

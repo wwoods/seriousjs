@@ -74,13 +74,14 @@ this.Translator = (function() {
               if (n.parms.length > 0) {
                 w.write(",");
               }
-              asyncCallback = w.tmpVar();
+              asyncCallback = w.tmpVar(true);
               asyncCallbackIndex = n.parms.length;
             }
             c.setAsyncCallback(asyncCallback);
           }
           w.endArgs();
           w.write(") {");
+          w.newline(1);
           if (options.isBoundToClass) {
             w.write("if(this!==");
             w.write(nearClosure.props.className);
@@ -94,7 +95,7 @@ this.Translator = (function() {
             w.write(",arguments);");
             w.write("}");
           }
-          if (n.spec.async && !n.spec.asyncNoCheck) {
+          if (n.spec.async && !n.spec.asyncNoCheck && !n.spec.asyncNoError) {
             //Do the check
             w.write("__asyncCheckCall(__inner__);");
           }
@@ -151,7 +152,9 @@ this.Translator = (function() {
 
             w.write("}");
           }
+          w.newline(1);
           e.translate(n.body, { isReturnClosure: !options.isConstructorFor });
+          w.newline(-1);
           if (c.props.isAsync) {
             //Whole method must be in a try..catch..finally.  It's imperative
             //that we call our result.
@@ -201,26 +204,35 @@ this.Translator = (function() {
             c.props.asyncParent.setAsyncDataVar(c.getAsyncDataVar());
           }
 
+          //Before setting up catch and finally, which allocate vars, we need
+          //to make note of any inherited vars we'll be using
+          if (cAsyncParent) {
+            c.props.asyncParent.setVarUsed(cAsyncParent.getAsyncDataVar(),
+                true);
+            var parentCallback = cAsyncParent.getAsyncCheckAsVar();
+            c.setVarUsed(parentCallback);
+            c.setAsyncCallback(parentCallback);
+          }
+
+          //Set up catch and finally.
+          c.asyncSetupCatchFinally(w, e, n.catchStmt, n.finallyStmt);
+
           w.goToNode(n);
           w.write("/* async */" + w.ASYNC.BUFFER);
           w.write(c);
 
           if (cAsyncParent) {
             cAsyncParent.asyncAddCall(w);
-            c.props.asyncParent.setVarUsed(cAsyncParent.getAsyncDataVar(),
-                true);
             w.write(";");
-            var parentCallback = cAsyncParent.getAsyncCheckAsVar();
-            c.setVarUsed(parentCallback);
-            c.setAsyncCallback(parentCallback);
           }
           else {
             c.setAsyncCallback(null);
           }
           w.write("try{");
+          w.newline(1);
           e.translate(n.body);
-          w.write(w.ASYNC.BUFFER);
-          c.asyncCloseTry(w, e, n.catchStmt, n.finallyStmt);
+          w.newline(-1);
+          c.asyncCloseTry(w);
           w.endClosure();
         },
      "asyncCall": function(e, n, w) {
@@ -426,7 +438,7 @@ this.Translator = (function() {
 
           if (n.body.length !== 1 || n.body[0].line !== n.line) {
             w.goToNode(n);
-            w.write("/* await */" + w.ASYNC.BUFFER);
+            w.write("/* await from " + n.line + " */" + w.ASYNC.BUFFER);
           }
 
           //We accomplish await blocks by creating a new async closure that's
@@ -440,6 +452,7 @@ this.Translator = (function() {
           if (n.name) {
             w.write(n.name);
             w.write("=function(){");
+            w.newline(1);
           }
 
           //Add a count for us and the after chunk.
@@ -455,25 +468,15 @@ this.Translator = (function() {
               isAwait: true, catchAsync: n.catchAsync });
           var cName = c.getAsyncDataVar() + "_f";
           c.setAsyncCallback(cName);
-          //Our await block's wrapper
-          w.write(",(function() {");
-          w.write(c);
-          w.write("try{");
-          e.translate(n.body);
-          w.write(w.ASYNC.BUFFER);
-          c.asyncCloseTry(w, e, n.catchStmt, n.finallyStmt);
-          w.write("}).call(this);");
-          w.endClosure();
-          //Don't end closure till after cAfter, so that we keep track of
-          //inherited and assigned variables properly.
 
-          //Now fill in the things to call after we're done, which is in itself
-          //another async closure.  However, this one doesn't need an actual
-          //closure, since it shouldn't catch anything.  It's "after" the
-          //await statement.
-          w.write("function ");
-          w.write(cName);
-          w.write("(__error){");
+          //Build our callback method first since we're in strict mode; this has
+          //to happen outside of our c closure though, since it calls outside of
+          //c.
+          w.endClosure();
+
+          w.write(";var " + cName + "=");
+          w.write("function(__error){");
+          w.newline(1);
           w.write("if(__error){");
           cParent.asyncCheck(w, "__error");
           w.write(";return}");
@@ -504,6 +507,7 @@ this.Translator = (function() {
               w.write(";return}");
             }
           }
+          w.newline();
           w.write("try{");
           //Embedded return clause in e.g. catch or finally.  Use closure and
           //not async so that only the main control flow is blocked by a return.
@@ -513,12 +517,38 @@ this.Translator = (function() {
             w.write(cFunction.getAsyncDataVar());
             w.write("){return};");
           }
+          w.newline(1);
           e.translate(n.after);
+          w.newline(-1);
           w.write(w.ASYNC.BUFFER);
           cParent.asyncCloseTry(w);
-          w.write("}");
+
+          //Close our await block
+          w.newline(-1);
+          w.write("};");
+
+          //Now we're writing our first part (strict mode is somewhat
+          //unfortunate that it forces the ordering of function definitions...
+          w.startClosure(c);
+
+          //First part's await block's wrapper
+          w.write("(function() {");
+          c.asyncSetupCatchFinally(w, e, n.catchStmt, n.finallyStmt);
+          w.newline(1);
+
+          w.write(c);
+          w.write("try{");
+          w.newline(1);
+          e.translate(n.body);
+          w.newline(-1);
+          w.write(w.ASYNC.BUFFER);
+          c.asyncCloseTry(w);
+          w.newline(-1);
+          w.write("}).call(this);");
+          w.endClosure();
 
           if (n.name) {
+            w.newline(-1);
             w.write("};");
             w.write(n.name);
             w.write("();");
@@ -724,7 +754,7 @@ this.Translator = (function() {
             w.write(",");
             var nid;
             if (n.keys[i].op === "memberId") {
-              nid = w.tmpVar();
+              nid = w.tmpVar(true);
             }
             else {
               nid = n.keys[i].id;
@@ -780,7 +810,7 @@ this.Translator = (function() {
           }
           else {
             w.write("(");
-            var ref = w.tmpVar();
+            var ref = w.tmpVar(true);
             w.write("=");
             e.translate(n.atom);
             w.write(",typeof ");
@@ -962,16 +992,16 @@ this.Translator = (function() {
           w.write("if (");
           e.translate(n.condition);
           w.write(") {");
-          w.indent();
+          w.newline(1);
           e.translate(n.then);
-          w.deindent();
+          w.newline(-1);
           w.write("}");
           if (n.else) {
             w.goToNode(n.else);
             w.write("else {");
-            w.indent();
+            w.newline(1);
             e.translate(n.else);
-            w.deindent();
+            w.newline(-1);
             w.write("}");
           }
         },
@@ -1044,32 +1074,52 @@ this.Translator = (function() {
             });
             return;
           }
+          var thisVar = null;
           var c = w.getClosure({ isClassMethod: true });
           if (c) {
-            var v = w.getInstanceVariable();
-            w.write(v + ".");
-            w.write(n.id);
-            return;
+            thisVar = w.getInstanceVariable();
           }
-          c = w.getClosure({ isFunction: true });
-          if (c) {
-            //We're in an unbound method, just use this
-            w.write("this.");
-            w.write(n.id);
-            return;
-          }
-          c = w.getClosure({ isClass: true });
-          if (c) {
-            //We're a class property
-            if (options.isAssign) {
-              //Also assign to prototype!
-              w.write(c.props.className + ".prototype." + n.id);
-              w.write("=");
+          else {
+            c = w.getClosure({ isFunction: true });
+            if (c) {
+              //We're in an unbound method, just use this
+              thisVar = "this";
             }
-            w.write(c.props.className + "." + n.id);
-            return;
+            else {
+              c = w.getClosure({ isClass: true });
+              if (c) {
+                //We're a class property
+                if (options.isAssign) {
+                  //Also assign to prototype!
+                  if (options.splitAtom) {
+                    throw new Error("Should be impossible to splitAtom and "
+                        + "isAssign");
+                  }
+                  w.write(c.props.className + ".prototype." + n.id);
+                  w.write("=");
+                }
+                thisVar = c.props.className;
+              }
+            }
           }
-          throw new Error("Unexpected member identifier '@" + n.id + "'");
+          if (thisVar === null) {
+            throw new Error("Unexpected member identifier '@" + n.id + "'");
+          }
+
+          if (options.splitAtom) {
+            w.write("[");
+            w.write(thisVar);
+            w.write(",");
+            w.write(thisVar);
+            w.write(".");
+            w.write(n.id);
+            w.write("]");
+          }
+          else {
+            w.write(thisVar);
+            w.write(".");
+            w.write(n.id);
+          }
         },
      "memberSelf": function(e, n, w) {
           w.goToNode(n);
@@ -1398,6 +1448,9 @@ this.Translator = (function() {
         }
         if (i < m - 1) {
           w.write(separator);
+          if (separator === ";") {
+            w.newline();
+          }
         }
       }
     }
