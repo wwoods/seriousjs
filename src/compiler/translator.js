@@ -35,6 +35,7 @@ this.Translator = (function() {
               isAsyncNoError: n.spec && n.spec.asyncNoError,
               catchAsync: n.spec && n.spec.async
           });
+          c.setVarUsed("arguments", true);
           var hasInnerWrapper = false;
           if (n.doc || n.spec.async) {
             hasInnerWrapper = true;

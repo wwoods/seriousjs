@@ -56,6 +56,8 @@ if (require.extensions) {
     var content = fs.readFileSync(filename, 'utf8');
     var compiled = self.compile(content, { filename: filename });
     module.paths.push(path.join(__dirname, '..'));
+    //Ensure the module is using our require statement
+    module.require = _getSjsRequire(module);
     module._compile(compiled.js, filename);
   };
 }
@@ -144,6 +146,28 @@ this._buildEmbedded = function() {
   var uglifyJs = require('uglify-js');
   realContent = uglifyJs.minify(realContent, { fromString: true }).code;
   fs.writeFileSync(_embeddedFile, realContent, 'utf8');
+};
+
+var _getSjsRequire = function(mod) {
+  //Get a require() function for the given module.
+  var req = function(path) {
+    if (path === "seriousjs") {
+      //Cheap hack, but it works.  If we're importing seriousjs from a module
+      //compiled with seriousjs, we probably want to use the same version.
+      return self;
+    }
+    else if (path === "source-map-support") {
+      //We inject this module into our compiled code, so we should not require
+      //client applications to also have it installed.  Just use our version.
+      return sourceMapSupport;
+    }
+    return mmodule._load(path, mod, true);
+  };
+  for (var k in Object.getOwnPropertyNames(require)) {
+    req[k] = require[k];
+  }
+  req.paths = mod.paths;
+  return req;
 };
 
 var _isNewerThan = function(mtime, target) {
@@ -244,22 +268,8 @@ this.eval = function(text, options) {
   sandbox.__filename = options.filename || 'eval';
   sandbox.__dirname = path.dirname(sandbox.__filename);
   sandbox.module = mod = new mmodule(path.basename(sandbox.__filename));
-  sandbox.require = req = function(path) {
-    if (path === "seriousjs") {
-      //Cheap hack, but it works.  If we're importing seriousjs from a module
-      //compiled with seriousjs, we probably want to use the same version.
-      return self;
-    }
-    else if (path === "source-map-support") {
-      //We inject this module into our compiled code, so we should not require
-      //client applications to also have it installed.  Just use our version.
-      return sourceMapSupport;
-    }
-    return mmodule._load(path, mod, true);
-  };
-  for (var k in Object.getOwnPropertyNames(require)) {
-    req[k] = require[k];
-  }
+  mod.paths = mmodule._nodeModulePaths(process.cwd());
+  sandbox.require = _getSjsRequire(mod);
   //Copy over other globals
   sandbox.console = console;
   sandbox.global = global;
@@ -268,8 +278,6 @@ this.eval = function(text, options) {
   sandbox.clearTimeout = clearTimeout;
   sandbox.setInterval = setInterval;
   sandbox.clearInterval = clearInterval;
-  req.paths = mmodule._nodeModulePaths(process.cwd())
-  mod.paths = req.paths;
   mod.filename = sandbox.__filename;
   var code = this.compile(text, options);
   var r = vm.runInContext(code.js, sandbox, sandbox.__filename);

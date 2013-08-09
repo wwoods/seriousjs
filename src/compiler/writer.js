@@ -108,7 +108,7 @@ var allFeatures = {
       + " if (a !== b) {"
       + "  for(var k in spec) {"
       + "   if(!(k in dict)) {"
-      + "    throw new Error('Missing key: ' + k);" 
+      + "    throw new Error('Missing key: ' + k);"
       + "   }"
       + "  }"
       + " }"
@@ -136,7 +136,7 @@ var allFeatures = {
       + " child.prototype = new ctor();"
       + " child.__super__ = parent.prototype;"
       + " return child;"
-      + "}", 
+      + "}",
   hasProp: "__hasProp = {}.hasOwnProperty",
   uses: ""
       + "__extendsUse = function(obj, mixin) {"
@@ -148,11 +148,11 @@ var allFeatures = {
       + " }"
       + "}"
   };
-  
+
 var featureDependencies = {
   extends: [ "hasProp" ],
   };
-  
+
 function featureDump(feature, topClosure) {
   //Dump the features necessary to support feature into topClosure
   topClosure.features[feature] = true;
@@ -197,21 +197,17 @@ this.Closure = Closure = (function() {
     }
 
     DelayedValue.prototype.toString = function() {
-      if (typeof this.obj[this.prop] !== "string") {
-        console.log(this.obj);
-        console.log(this.prop);
-      }
       return this.obj[this.prop];
     };
 
     return DelayedValue;
   })();
-  
+
   Closure.prototype.getNamedInstanceVariable = function() {
     this.props.usesNamedThis = true;
     return "__this";
   };
-  
+
   Closure.prototype.newTemp = function(isLocalVar, forceNewVar) {
     //isLocalVar is normally set by the Writer, but if we're allocating our own,
     //we need it.
@@ -451,7 +447,7 @@ this.Closure = Closure = (function() {
       this.vars[id] = (notForClosures ? "static" : "used");
     }
   };
-  
+
   Closure.prototype.toString = function() {
     var r = '';
     var emitted = {};
@@ -510,7 +506,7 @@ this.Closure = Closure = (function() {
     }
     return r;
   };
-  
+
   return Closure;
 })();
 
@@ -527,11 +523,11 @@ this.Writer = (function() {
 
     //Copy over enumeration
     this.ASYNC = ASYNC;
-    
+
     var c = this.startClosure({ isModule: true });
     this._output.push(c);
   }
-  
+
   Writer.prototype.getOutput = function(header, footer, options) {
     //[generated line, generated col, source line, source col]
     //Columns are zero based
@@ -581,25 +577,25 @@ this.Writer = (function() {
 
     return { js: output.join(""), map: map };
   };
-  
+
   Writer.prototype.addClosureNode = function(e, n) {
     getClosure().onEntryNodes.push([ e, n ]);
   };
-  
+
   Writer.prototype.export = function(v) {
     var c = this._closures[this._closures.length - 1];
     if (c.exports === null) {
       c.exports = {};
     }
-    c.exports[v] = true; 
+    c.exports[v] = true;
   };
-  
+
   Writer.prototype.startContinuation = function() {
   };
-  
+
   Writer.prototype.endContinuation = function() {
   };
-  
+
   Writer.prototype.getClosure = function(spec) {
     if (!spec) {
       var r = this.getClosure({ isRealClosure: true });
@@ -623,7 +619,7 @@ this.Writer = (function() {
       }
       return null;
     }
-    
+
     for (var i = this._closures.length - 1; i >= 0; --i) {
       var c = this._closures[i];
       if (this._closureMatch(c, spec)) {
@@ -632,7 +628,7 @@ this.Writer = (function() {
     }
     return null;
   };
-  
+
   Writer.prototype._closureMatch = function(c, spec) {
     if (spec.isRealClosure) {
       //class or function; things that actually delimit variable scope.
@@ -682,7 +678,7 @@ this.Writer = (function() {
     }
     return true;
   };
-  
+
   Writer.prototype.startClosure = function(props) {
     //Returns the created Closure object; hasn't pushed it to output yet
     //Can also resume a closure if props is, itself, a Closure object.
@@ -696,7 +692,7 @@ this.Writer = (function() {
     this._closures.push(c);
     return c;
   };
-  
+
   Writer.prototype.endClosure = function() {
     var c = this._closures.pop();
 
@@ -709,32 +705,32 @@ this.Writer = (function() {
       }
     }
   };
-  
+
   Writer.prototype.afterClosure = function(fn) {
     this.getClosure().afterStart.push(fn);
   };
-  
+
   Writer.prototype.startArgs = function() {
     this._isInArgs = true;
     this._indent += 2;
   };
-  
+
   Writer.prototype.endArgs = function() {
     this._indent -= 2;
     this._isInArgs = false;
   };
-  
+
   Writer.prototype.isInArgs = function() {
     return this._isInArgs;
   };
-  
+
   Writer.prototype.goToLine = function(l) {
     if (l == null) {
       return;
     }
     this.write(new SourcePos(l));
   };
-  
+
   Writer.prototype.goToNode = function(node) {
     //Go to a specific node's position information
     if (node.line) {
@@ -744,7 +740,7 @@ this.Writer = (function() {
       this.goToLine(node.state.line);
     }
   };
-  
+
   Writer.prototype.getInstanceVariable = function() {
     var topC = this.getClosure();
     var methodC = this.getClosure({ isClassMethod: true });
@@ -768,7 +764,7 @@ this.Writer = (function() {
     this.write("try{");
     return c;
   };
-  
+
   Writer.prototype.tmpVar = function(isAssign, noWrite) {
     //noWrite implies that it must never have been allocated in the first place
     var c = this.getClosure();
@@ -776,17 +772,17 @@ this.Writer = (function() {
     this.variable(id, isAssign, noWrite);
     return id;
   };
-  
+
   Writer.prototype.tmpVarRelease = function(id) {
     var c = this.getClosure();
     c.tmpVars[id] = 0;
   };
-  
+
   Writer.prototype.usesFeature = function(f) {
     var c = this._closures[0];
     featureDump(f, c);
   };
-  
+
   Writer.prototype.variable = function(id, isAssign, noWrite) {
     var c = this.getClosure();
     if (isAssign) {
@@ -813,7 +809,7 @@ this.Writer = (function() {
       this.write(id);
     }
   };
-  
+
   Writer.prototype._getIndent = function() {
     var r = '';
     for (var i = 0; i < this._indent; i++) {
@@ -821,20 +817,20 @@ this.Writer = (function() {
     }
     return r;
   };
-  
+
   Writer.prototype.newline = function(indentDelta) {
     if (indentDelta !== undefined) {
       this._indent += indentDelta;
     }
     this.write('\n' + this._getIndent());
   };
-  
+
   Writer.prototype.write = function(w) {
     if (w instanceof Closure) {
       this._output.push(w);
       for (var i = 0, m = w.afterStart.length; i < m; i++) {
         w.afterStart[i]();
-      } 
+      }
       this._output.push(';');
     }
     else {
@@ -846,6 +842,6 @@ this.Writer = (function() {
       }
     }
   }
-  
+
   return Writer;
 })();
