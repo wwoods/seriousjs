@@ -3,8 +3,11 @@ var self = this;
 var translator = require('./translator.js');
 var writer = require('./writer.js');
 var asyncTransform = require('./asyncTransform.js');
+var base64 = require('./base64.js');
 
 var _DEBUG_SOURCEMAP = false;
+
+this.cachedSourceMaps = {};
 
 this.cleanupTree = function(tree) {
   for (var n in tree) {
@@ -80,11 +83,9 @@ this.compile = function(parser, text, options) {
     else {
       //NodeJS
       header += '"use strict";\n';
-      header += "//# sourceMappingURL=" + smName + ".map\n";
-      header += 'var __sjs_sms = require("source-map-support");';
-      header += '__sjs_sms._sjsMaps["' + smName + '"] = ' + smVar + ';';
-      _DEBUG_SOURCEMAP && (header += 'console.log("Stored ' + smName + '");');
-      header += 'Error.prepareStackTrace = __sjs_sms.prepareStackTrace;\n\n';
+      header += "//# sourceMappingURL=data:application/json;base64," + smVar + "\n";
+      header += "var __sjs_sms = require('source-map-support');";
+      header += 'Error.prepareStackTrace = __sjs_sms.prepareStackTrace;\n';
     }
   }
 
@@ -106,9 +107,17 @@ this.compile = function(parser, text, options) {
       });
     }
     realMap.setSourceContent(smName, text);
-    result.map = realMap;
+    var stringMap = realMap.toString();
+    result.map = stringMap;
 
-    result.js = result.js.replace(smVar, result.map.toString());
+    if (!options.amdModule) {
+      //NodeJS source-map-support module requires us to have access to our
+      //source maps via our own methods for eval.
+      self.cachedSourceMaps[smName] = JSON.parse(stringMap);
+      _DEBUG_SOURCEMAP && console.log("Stored " + smName);
+    }
+    var b64 = base64.encode(stringMap);
+    result.js = result.js.replace(smVar, b64);
   }
 
   if (options.debugCallback) {

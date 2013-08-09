@@ -152,9 +152,8 @@ this.Translator = (function() {
 
             w.write("}");
           }
-          w.newline(1);
+          w.newline();
           e.translate(n.body, { isReturnClosure: !options.isConstructorFor });
-          w.newline(-1);
           if (c.props.isAsync) {
             //Whole method must be in a try..catch..finally.  It's imperative
             //that we call our result.
@@ -162,6 +161,7 @@ this.Translator = (function() {
           }
           w.endClosure();
 
+          w.newline(-1);
           w.write("}");
           if (n.doc) {
             w.write("; __inner__.__doc__ = __inner__.help = __doc__");

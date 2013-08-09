@@ -16,7 +16,7 @@ var sjsCompiler = require('./src/compiler/compiler.js');
 //Options for all builds... used typically for testing
 var permaOptions = this.permaOptions = {};
 
-if (typeof process !== 'undefined' 
+if (typeof process !== 'undefined'
     && process.mainModule
     && process.mainModule.filename.toLowerCase().indexOf("mocha/bin") >= 0) {
   //We're in mocha
@@ -34,12 +34,15 @@ if (typeof process !== 'undefined'
 //since there is some serious voodoo involved between the version of Error in
 //sourceMapSupport and the version used in our virtual machines.
 var oldErrorPrepare = Error.prepareStackTrace;
-sourceMapSupport._sjsMaps = {};
 sourceMapSupport.install({
     retrieveSourceMap: function(source) {
-      if (source in sourceMapSupport._sjsMaps) {
-        return { url: source === "eval" ? "/eval" : source,
-            map: sourceMapSupport._sjsMaps[source] };
+      var map = sjsCompiler.cachedSourceMaps[source];
+      if (map) {
+        var url = source;
+        if (url === "eval") {
+          url = "/" + url;
+        }
+        return { url: url, map: map };
       }
       return null;
     }
@@ -52,7 +55,7 @@ if (require.extensions) {
   require.extensions['.sjs'] = function(module, filename) {
     var content = fs.readFileSync(filename, 'utf8');
     var compiled = self.compile(content, { filename: filename });
-    module.paths.push(path.join(__dirname, '..'))
+    module.paths.push(path.join(__dirname, '..'));
     module._compile(compiled.js, filename);
   };
 }
@@ -61,7 +64,7 @@ var _parserFile = __dirname + '/src/grammar/_parser.js';
 var _buildParser = function() {
   //Construct grammar
   var pegJs = require('./lib/peg-0.7.0').PEG;
-  var source = fs.readFileSync(__dirname + '/src/grammar/seriousjs.pegjs', 
+  var source = fs.readFileSync(__dirname + '/src/grammar/seriousjs.pegjs',
       'utf8');
   var osource = source;
   var re = /##include ([^\s]+)/g;
@@ -74,7 +77,7 @@ var _buildParser = function() {
       hasReplaced = true;
       var allText = m[0];
       var fname = m[1];
-      var replacement = fs.readFileSync(__dirname + '/src/grammar/' + fname, 
+      var replacement = fs.readFileSync(__dirname + '/src/grammar/' + fname,
           'utf8');
       source = source.replace(allText, replacement);
     }
