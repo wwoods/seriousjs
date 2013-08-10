@@ -1215,7 +1215,16 @@ this.Translator = (function() {
           w.write(cls.props.className);
           w.write(".__super__.");
           w.write(c.props.methodName);
-          w.write(".apply(this, arguments);");
+          w.write(".apply(this, ");
+          if (n.args == null) {
+            w.write("arguments");
+          }
+          else {
+            w.write("[");
+            e.translate(n.args, { separator: ", " });
+            w.write("]");
+          }
+          w.write(");");
         },
      "ternary": function(e, n, w) {
           w.write("(");

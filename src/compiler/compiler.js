@@ -74,16 +74,17 @@ this.compile = function(parser, text, options) {
   var header = '', footer = '';
   var smVar = "{{{__sjs_sourceMap__}}}";
   var smName = options.filename || "eval";
+  header += '"use strict";\n';
   if (options.sourceMap) {
     //Source map support...
+    header += "//# sourceMappingURL=data:application/json;base64," + smVar + "\n";
     if (options.amdModule) {
       //Browser
-      throw new Error("Not yet supported");
     }
     else {
       //NodeJS
-      header += '"use strict";\n';
-      header += "//# sourceMappingURL=data:application/json;base64," + smVar + "\n";
+      //Error.prepareStackTrace gets reset in child modules sometimes, so it's
+      //best to re-set it to the one we need.
       header += "var __sjs_sms = require('source-map-support');";
       header += 'Error.prepareStackTrace = __sjs_sms.prepareStackTrace;\n';
     }

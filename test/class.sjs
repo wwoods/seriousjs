@@ -63,6 +63,31 @@ describe "Classes", ->
     assert.equal 8, m.q.v
     assert.equal 9, m.j.v
 
+  it "Should allow super as an expression", ->
+    m = sjs.eval """
+        class a
+          f: (a) -> a + 8
+        class b extends a
+          f: (a) ->
+            @original = a
+            r = super
+            return r
+        i = new b()
+        """
+    assert.equal 16, m.i.f(8)
+    assert.equal 8, m.i.original
+
+  it "Should allow overriding super's args", ->
+    m = sjs.eval """
+        class a
+          f: (a) -> a + 8
+        class b extends a
+          f: (a) ->
+            return super(a + 2)
+        i = new b()
+        """
+    assert.equal 18, m.i.f(8)
+
   it "Should assign functions correctly", ->
     m = sjs.eval """
         class a

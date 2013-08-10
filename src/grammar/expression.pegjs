@@ -87,8 +87,15 @@ existence_expr
       return r;
     }
 
+super_expr
+  = "super" "(" args:arguments_delimited ")"? {
+      return R({ op: "super", args: args });
+    }
+  / "super" { return R({ op: "super", args: null }); }
+
 atom_chain
-  = un:unary_op* base:base_atom chain:atom_mod* {
+  = super_expr
+  / un:unary_op* base:base_atom chain:atom_mod* {
       var r = R({ op: "atom", atom: base, chain: chain });
       for (var i = un.length - 1; i >= 0; --i) {
         r = { op: un[i], right: r };

@@ -50,3 +50,6 @@ describe "Assignment", ->
     assert.throws -> sjs.eval "{>a} = {b:56}"
     assert.equal 56, (sjs.eval "{>a, b} = {a:24, b:56, c:42}").b
     assert.throws -> sjs.eval "{>a, b} = {a:24, c:42}"
+
+  it "Should work with dicts from variables", ->
+    assert.equal 52, (sjs.eval "a = 52\nv = { a }").v.a
