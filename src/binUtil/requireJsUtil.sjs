@@ -24,7 +24,7 @@ serveWebapp = (app, appPath, { shim = [], title = "My Webapp - SeriousJs" }) ->
           + 'src="#{ prefix }#{ s + ".js" }">'
           + '</script>'
   scripts.push """<script type="text/javascript"
-      data-main="/src/_requirejs/loader" src="/src/_requirejs/require.js">
+      data-main="/src/.requirejs/loader" src="/src/.requirejs/require.js">
       </script>"""
   htmlSrc = """<!DOCTYPE html><html>
       <head><title>#{ title }</title>
@@ -44,7 +44,7 @@ setupWebapp = async (app, express, webappPath) ->
   Calls callback with true if app should continue executing (not just a build),
   false if it should terminate.
   """
-  target = path.resolve(path.join(webappPath, '_requirejs'))
+  target = path.resolve(path.join(webappPath, '.requirejs'))
   if not fs.existsSync(target)
     fs.mkdirSync(target)
 
@@ -96,7 +96,7 @@ setupWebapp = async (app, express, webappPath) ->
 
 
 _buildApp = async (target) ->
-  appBuildJs = path.join(target, '_requirejs/app.build.js')
+  appBuildJs = path.join(target, '.requirejs/app.build.js')
   rJs = path.join(__dirname, '../../lib/requirejs/r.js')
   rJsProc = child_process.spawn(
       'node',
@@ -117,10 +117,10 @@ _buildApp = async (target) ->
     sjsUtil.rmDir(path.join(target, '../build.webapp'))
     fs.renameSync(path.join(target, '../build.webapp.new'),
         path.join(target, '../build.webapp'))
-    # Delete every file in the new build directory except _requirejs/*
+    # Delete every file in the new build directory except .requirejs/*
     sjsUtil.rmDirFiles(path.join(target, '../build.webapp'),
         /\.(js|sjs)$/,
-        /_requirejs\/loader\.js|_requirejs\/require\.js$/)
+        /\.requirejs\/loader\.js|\.requirejs\/require\.js$/)
   else
     throw new Error("Build failed:\n== stdout ==\n#{ allStdout.join("") }\n"
         + "== stderr ==\n#{ allStderr.join("") }")
