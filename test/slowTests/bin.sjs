@@ -14,7 +14,7 @@ describe "bin/seriousjs and dependencies", ->
   modulesDir = path.join(__dirname, '../../node_modules')
   modulesDirBackup = modulesDir + '.bak'
   before (done) ->
-    this.timeout(20000)
+    this.timeout(60000)
 
     # Ensure seriousjs is compiled
     seriousjs._getEmbeddedFile()
