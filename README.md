@@ -42,12 +42,6 @@ projects, there were some other things that bugged me constantly:
   don't feel that it's appropriate to have so many ways of saying "false" and
   "true".  Feel free to correct me on that one.
 
-* The generated code's line numbers don't match up with the source.  This makes
-  debugging pretty difficult sometimes.  I understand that the code is less
-  cluttered that way, but it seems to me that making the debug output of
-  the language's interpreters match the input is more important than
-  transient code being readable.
-
 While those aren't huge, they got me thinking.  What are some other ways that
 Coffee-Script could be improved?  Well, how about:
 
@@ -61,8 +55,6 @@ Coffee-Script could be improved?  Well, how about:
 * Doc strings!  One of the best things about Python that really helped it
   be a great language was doc strings.  An interactive language needs
   interactive help.  So why not start encouraging them?
-
-* Operator overloading (not implemented yet)
 
 Anyway, that's the jist of it.  I'm not expecting people to jump ship on this
 one - it started as an educational project but the focus is on production
