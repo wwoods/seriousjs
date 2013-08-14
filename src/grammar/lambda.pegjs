@@ -33,7 +33,7 @@ lambda_spec
 async_spec_mods
   = "noerror" _ { return "asyncNoError"; }
   / "nocascade" _ { return "asyncNoCascade"; }
-  / "nocheck" _ { return "asyncNoCheck"; }
+  / "extern" _ { return "asyncExtern"; }
 
 
 lambda_args

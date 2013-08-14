@@ -9,7 +9,7 @@ describe "Async catch/finally", ->
   # These should all be snappy..
   @timeout 1000
 
-  it "Should support catch with async blocks", async nocheck ->
+  it "Should support catch with async blocks", async extern ->
     m = sjs.eval """
         f = async ->
           await 0
@@ -28,7 +28,7 @@ describe "Async catch/finally", ->
         return
     throw new Error("Failed to catch")
 
-  it "Should support finally blocks", async nocheck ->
+  it "Should support finally blocks", async extern ->
     m = sjs.eval """
         f = async ->
           await 0
@@ -45,7 +45,7 @@ describe "Async catch/finally", ->
       return "ok"
     assert.equal 22, r
 
-  it "Should re-raise exceptions from finally", async nocheck ->
+  it "Should re-raise exceptions from finally", async extern ->
     m = sjs.eval """
         m = [ 0 ]
         f = async ->
@@ -65,7 +65,7 @@ describe "Async catch/finally", ->
       return
     assert.fail "No exception seen"
 
-  it "Should execute finally with a catch block", async nocheck ->
+  it "Should execute finally with a catch block", async extern ->
     m = sjs.eval """
         f = async ->
           await 0
@@ -80,7 +80,7 @@ describe "Async catch/finally", ->
     await r = m.g
     assert.equal 46, r
 
-  it "Should execute finally with an error from catch block", async nocheck ->
+  it "Should execute finally with an error from catch block", async extern ->
     m = sjs.eval """
         f = async ->
           await 0
@@ -99,7 +99,7 @@ describe "Async catch/finally", ->
     catch e
       assert.equal "GOTCHA", e
 
-  it "Should work with double layer", async nocheck ->
+  it "Should work with double layer", async extern ->
     m = sjs.eval """
         f = async ->
           await 0

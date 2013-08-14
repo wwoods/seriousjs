@@ -8,7 +8,7 @@ describe "await splits", ->
   it "Should work with a meta test", (done) ->
     m = sjs.eval """
         require seriousjs as sjs
-        it = async nocheck ->
+        it = async extern ->
           mm = sjs.eval '''
               f = async ->
                 await 0
@@ -27,7 +27,7 @@ describe "await splits", ->
       done()
 
 
-  it "Should work with tests", async nocheck ->
+  it "Should work with tests", async extern ->
     m = sjs.eval """
         f = async ->
           await 0
@@ -37,7 +37,7 @@ describe "await splits", ->
     assert.equal "result", r
 
 
-  it "Should work with if statements", async nocheck ->
+  it "Should work with if statements", async extern ->
     m = sjs.eval """
         g = async ->
           await 0
@@ -62,7 +62,7 @@ describe "await splits", ->
     assert.equal 54, r
 
 
-  it "Async blocks should bind to the right await level", async nocheck ->
+  it "Async blocks should bind to the right await level", async extern ->
     m = sjs.eval """
         g = async (t) ->
           console.log "g() before await: #""" + """{ 30 - t * 4 }"
@@ -99,7 +99,7 @@ describe "await splits", ->
     assert.equal 4, r[5]
 
 
-  it "Should work with for statements and lists", async nocheck ->
+  it "Should work with for statements and lists", async extern ->
     m = sjs.eval """
         g = async (val) ->
           await 0
@@ -116,7 +116,7 @@ describe "await splits", ->
     assert.equal 36, r
 
 
-  it "Should work with for statements and hashes", async nocheck ->
+  it "Should work with for statements and hashes", async extern ->
     m = sjs.eval """
         g = async (val) ->
           await 0
@@ -132,7 +132,7 @@ describe "await splits", ->
     assert.equal "a13b14c15", r
 
 
-  it "Should work with while statements", async nocheck ->
+  it "Should work with while statements", async extern ->
     m = sjs.eval """
         g = async (val) ->
           await 0
@@ -149,7 +149,7 @@ describe "await splits", ->
     assert.equal 12, r
 
 
-  it "Should work within a catch", async nocheck ->
+  it "Should work within a catch", async extern ->
     m = sjs.eval """
         g = async ->
           throw new Error()
@@ -167,7 +167,7 @@ describe "await splits", ->
     assert.equal 42, r
 
 
-  it "Should work within a finally", async nocheck ->
+  it "Should work within a finally", async extern ->
     m = sjs.eval """
         m = async ->
           await 0
@@ -185,7 +185,7 @@ describe "await splits", ->
 
   it "Should preserve 'this' context across await splits", (done) ->
     m = sjs.eval """
-        f = async nocheck ->
+        f = async extern ->
           r = @value
           console.log 'a'
           console.log this
@@ -200,7 +200,7 @@ describe "await splits", ->
       done()
 
 
-  it "Should keep context with memberId expressions", async nocheck ->
+  it "Should keep context with memberId expressions", async extern ->
     m = sjs.eval """
         class B
           a: 40
@@ -213,7 +213,7 @@ describe "await splits", ->
     assert.equal 40, r
 
 
-  it "Should preserve 'this' context across if splits", async nocheck ->
+  it "Should preserve 'this' context across if splits", async extern ->
     m = sjs.eval """
         class B
           a: 56

@@ -36,5 +36,5 @@ async
         'backbone-min' ]
       title: '__project__'
 
-  await nocheck http.createServer(app).listen app.get('port')
-  console.log('Express server listening on port ' + app.get('port'))
+  await extern http.createServer(app).listen(app.get('port'))
+  console.log("Express server listening on port #{ app.get('port') }")

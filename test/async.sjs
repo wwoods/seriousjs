@@ -14,7 +14,7 @@ describe "async functionality", ->
   @timeout(1000)
 
   it "Should be applicable to lambdas", (done) ->
-    m = sjs.eval """q = async nocheck -> 32"""
+    m = sjs.eval """q = async extern -> 32"""
     m.q (error, r) ->
       assert.equal 32, r
       done()
@@ -26,19 +26,19 @@ describe "async functionality", ->
     # support)
     m = sjs.eval """
         assert = { throws: () -> "ok" }
-        assert.throws async nocheck -> await m.g
+        assert.throws async extern -> await m.g
         """
 
 
   it "Should be applicable to lambdas with callback specified", (done) ->
-    m = sjs.eval """q = async nocheck (callback) -> 33"""
+    m = sjs.eval """q = async extern (callback) -> 33"""
     m.q (error, r) ->
       assert.equal 33, r
       done()
 
 
   it "Should be applicable to lambdas with first parm as callback", (done) ->
-    m = sjs.eval """q = async nocheck (callback, b, c) -> b * 10 + c"""
+    m = sjs.eval """q = async extern (callback, b, c) -> b * 10 + c"""
     m.q(
         (error, r) ->
           assert.equal 12, r
@@ -55,7 +55,7 @@ describe "async functionality", ->
           # Should throw
           f()
 
-        h = async nocheck ->
+        h = async extern ->
           return 56
         z = ->
           # Should not throw
@@ -66,7 +66,7 @@ describe "async functionality", ->
       assert.fail "Did not throw"
     catch e
       assert.equal "Runtime: cannot call async method without async or await "
-          + "keywords unless nocheck is specified", e.message
+          + "keywords unless extern is specified", e.message
     m.z (e, v) ->
       assert.equal 56, v
 
@@ -80,14 +80,14 @@ describe "async functionality", ->
           async f
         h = ->
           # Should not throw
-          async nocheck f
+          async extern f
         """
     try
       m.g()
       assert.fail "Did not throw"
     catch e
       expected = "Runtime: called non-async function with async or await "
-          + "keywords.  If you meant this, use the nocheck keyword after "
+          + "keywords.  If you meant this, use the extern keyword after "
           + "async or await"
       assert.equal expected, e.message
     m.h (e, v) ->
@@ -106,7 +106,7 @@ describe "async functionality", ->
         h = ->
           # Should not throw
           async
-            await nocheck f
+            await extern f
         """
     try
       m.g()
@@ -114,19 +114,19 @@ describe "async functionality", ->
     catch e
       console.log e
       assert.equal "Runtime: called non-async function with async or await "
-          + "keywords.  If you meant this, use the nocheck keyword after "
+          + "keywords.  If you meant this, use the extern keyword after "
           + "async or await", e.message
     m.h (e, v) ->
       assert.equal 56, v
 
 
-  it "Should allow calling a nocheck async function without the nocheck kw", ->
+  it "Should allow calling a extern async function without the extern kw", ->
     m = sjs.eval """
-        f = async nocheck ->
+        f = async extern ->
           return 56
-        h = async nocheck ->
+        h = async extern ->
           async f
-        g = async nocheck ->
+        g = async extern ->
           await f
         """
     # Neither of these should result in errors
@@ -178,7 +178,7 @@ describe "async functionality", ->
     get thrown again (rather than getting passed to the callback).
     """
     m = sjs.eval """
-        q = async nocheck ->
+        q = async extern ->
           n = 0
           await
             while n < 100
@@ -196,7 +196,7 @@ describe "async functionality", ->
 
   it "Should work with a blank return", (done) ->
     m = sjs.eval """
-        f = async nocheck ->
+        f = async extern ->
           return
         """
     m.f()
@@ -224,7 +224,7 @@ describe "async functionality", ->
     arguments.
     """
     m = sjs.eval """
-        f = async nocheck (data) ->
+        f = async extern (data) ->
           return typeof data + "46"
         """
     # Call it without the data argument
@@ -236,7 +236,7 @@ describe "async functionality", ->
 
   it "Should allow specifying nocascade on callback", () ->
     m = sjs.eval """
-        f = async nocheck nocascade (data) ->
+        f = async extern nocascade (data) ->
           return 56
         """
     m.f () -> assert.fail("Should not have called data as callback")
@@ -247,7 +247,7 @@ describe "async functionality", ->
         first = async () ->
           await 99
           return 45
-        f = async nocheck () ->
+        f = async extern () ->
           "A function"
           # A comment
           await 0
@@ -274,11 +274,11 @@ describe "async functionality", ->
                 g[0] += 1
                 callback()
               0
-        q = async nocheck ->
+        q = async extern ->
           n = 0
           await
             while n < 100
-              async nocheck m
+              async extern m
               n += 1
           return g[0]"""
     m.q(
@@ -320,9 +320,9 @@ describe "async functionality", ->
 
   it "Should support noerror for result", (done) ->
     m = sjs.eval """
-        f = async nocheck noerror ->
+        f = async extern noerror ->
           return 45
-        g = async nocheck noerror ->
+        g = async extern noerror ->
           throw "FAILURE!"
         """
     try
@@ -339,7 +339,7 @@ describe "async functionality", ->
   it "Should throw an error when no callback is specified rather than hiding "
       + "it", ->
         m = sjs.eval """
-            f = async nocheck ->
+            f = async extern ->
               throw "error"
             """
         try
@@ -367,7 +367,7 @@ describe "async functionality", ->
 
   it "Should propagate errors", (done) ->
     m = sjs.eval """
-        q = async nocheck ->
+        q = async extern ->
           throw new Error("ERROR!!!")
         """
     m.q(
@@ -378,7 +378,7 @@ describe "async functionality", ->
 
   it "Should throw the error if there is no callback", () ->
     m = sjs.eval """
-        q = async nocheck ->
+        q = async extern ->
           throw "ERROR"
         """
     try
@@ -391,7 +391,7 @@ describe "async functionality", ->
   it "Should support await with a break in ms", (done) ->
     m = sjs.eval """
         times = []
-        q = async nocheck ->
+        q = async extern ->
           times.push(Date.now())
           console.log("A1")
           await 10
@@ -410,7 +410,7 @@ describe "async functionality", ->
 
   it "Should support await with a break in s", (done) ->
     m = sjs.eval """
-        q = async nocheck ->
+        q = async extern ->
           await 0.01s
         """
     n = Date.now()
@@ -423,7 +423,7 @@ describe "async functionality", ->
   it "Should work with a basic counter", (done) ->
     m = sjs.eval """
         val = [ 0 ]
-        progressDemo = async nocheck ->
+        progressDemo = async extern ->
           val[0] = 1
           await 0
           val[0] = 2
@@ -447,7 +447,7 @@ describe "async functionality", ->
         g = async ->
           await 5
           val[0] += 1
-        q = async nocheck ->
+        q = async extern ->
           await g
           await g
         """
@@ -462,8 +462,8 @@ describe "async functionality", ->
     m = sjs.eval """
         f = (callback, a, b) ->
           callback(null, a + b)
-        g = async nocheck ->
-          await nocheck ar = f callback, 4, 8
+        g = async extern ->
+          await extern ar = f callback, 4, 8
           return ar
         """
     m.g (error, r) ->
@@ -479,7 +479,7 @@ describe "async functionality", ->
           await 0
           return 12
 
-        g = async nocheck ->
+        g = async extern ->
           await val[0] = inner
         """
     m.g (error) ->
@@ -493,7 +493,7 @@ describe "async functionality", ->
         inner = async ->
           await 0
           return { a: 8, b: 9
-        g = async nocheck ->
+        g = async extern ->
           await { a, b } = inner
           return a - b
         """
@@ -509,7 +509,7 @@ describe "async functionality", ->
           await 0
           return 12
 
-        g = async nocheck ->
+        g = async extern ->
           await
             async a = inner
             async b = inner
@@ -526,7 +526,7 @@ describe "async functionality", ->
         g = async ->
           await 0
           val[0] += 1
-        q = async nocheck ->
+        q = async extern ->
           await
             async g
             await
@@ -542,7 +542,7 @@ describe "async functionality", ->
 
   it "Should forward exceptions from before await", (done) ->
     m = sjs.eval """
-        q = async nocheck ->
+        q = async extern ->
           throw "Error Before"
           await 0
           return 32 + 66
@@ -554,7 +554,7 @@ describe "async functionality", ->
 
   it "Should forward exceptions from after await", (done) ->
     m = sjs.eval """
-        q = async nocheck ->
+        q = async extern ->
           33 + 88
           await 0
           throw "Error After"
@@ -568,7 +568,7 @@ describe "async functionality", ->
     m = sjs.eval """
         other = async ->
           throw "Error in"
-        q = async nocheck ->
+        q = async extern ->
           async other
         """
     m.q (error) ->
@@ -580,7 +580,7 @@ describe "async functionality", ->
     m = sjs.eval """
         other = async ->
           throw "Error in await"
-        q = async nocheck ->
+        q = async extern ->
           await other
         """
     m.q (error) ->
@@ -590,7 +590,7 @@ describe "async functionality", ->
 
   it "Should forward exceptions from really nested awaits", (done) ->
     m = sjs.eval """
-        q = async nocheck ->
+        q = async extern ->
           await
             await
               await
@@ -604,7 +604,7 @@ describe "async functionality", ->
 
   it "Should support async blocks", (done) ->
     m = sjs.eval """
-        q = async nocheck ->
+        q = async extern ->
           r = [ 0 ]
           await
             for i in [ 1, 2, 3, 4, 5 ]
@@ -656,7 +656,7 @@ describe "async functionality", ->
   it "Should support async closure blocks", (done) ->
     m = sjs.eval """
         r = []
-        q = async nocheck ->
+        q = async extern ->
           for i in [ 1, 2, 3, 4, 5 ]
             async
               # Delay each one so that the variable i is propagated; we are
@@ -706,8 +706,8 @@ describe "async functionality", ->
     m = sjs.eval """
         f = (callback) ->
           callback(null, 1, 2)
-        g = async nocheck ->
-          await nocheck a, b = f
+        g = async extern ->
+          await extern a, b = f
           return [ a, b ]
         """
     m.g (error, value) ->
@@ -721,8 +721,8 @@ describe "async functionality", ->
     m = sjs.eval """
         f = (callback) ->
           callback(null, { a: 1, b: 3 }, 2)
-        g = async nocheck ->
-          await nocheck { a, b }, c = f
+        g = async extern ->
+          await extern { a, b }, c = f
           return [ a, b, c ]
         """
     m.g (error, value) ->
@@ -737,8 +737,8 @@ describe "async functionality", ->
     m = sjs.eval """
         f = (callback) ->
           callback(1, null, 2)
-        g = async nocheck ->
-          await nocheck a, error, b = f
+        g = async extern ->
+          await extern a, error, b = f
           return [ a, b ]
         """
     m.g (error, value) ->
@@ -753,8 +753,8 @@ describe "async functionality", ->
     m = sjs.eval """
         f = (callback) ->
           callback(1, "error!", 2)
-        g = async nocheck ->
-          await nocheck a, error, b = f
+        g = async extern ->
+          await extern a, error, b = f
           return [ a, b ]
         """
     m.g (error, value) ->
@@ -767,7 +767,7 @@ describe "async functionality", ->
         g = async ->
           await 0
           throw "ERRORED"
-        f = async nocheck ->
+        f = async extern ->
           await g
           catch e
             return "HANDLED!"
@@ -784,7 +784,7 @@ describe "async functionality", ->
         g = async ->
           await 0
           return 33
-        f = async nocheck ->
+        f = async extern ->
           await
             async r = g
             catch e
@@ -851,7 +851,7 @@ describe "async functionality", ->
         # actually handle it should be marching backwards through arguments if
         # callback is null and there are arguments with defaults, until we find
         # a function.
-        doAsyncWork = async nocheck () ->
+        doAsyncWork = async extern () ->
           results = []
           await
             timeSeries = [ 0 ]
@@ -859,13 +859,13 @@ describe "async functionality", ->
               timeSeries[0] += 1
               return timeSeries[0]
             results.push "Async start: #""" + """{ nextTime() }"
-            await nocheck blah, halo = myMethod 1, 2
+            await extern blah, halo = myMethod 1, 2
             results.push "Blah, halo: #""" + """{ blah }, #""" + """{ halo }"
             await
               # If there is an await block above an async call, they will be
               # tied together, and async's results will be available to the
               # await block's parent scope.
-              async nocheck a1, a2 = myMethod 3, 4
+              async extern a1, a2 = myMethod 3, 4
               r = []
               for v in [1, 2, 3, 4, 5, 6, 7, 8]
                 async
@@ -874,7 +874,7 @@ describe "async functionality", ->
                     results.push "Waiting 45"
                     await 45
                   results.push "Making call for #""" + """{ v } at #""" + """{ nextTime() }"
-                  await nocheck a, b = myMethod v, 2
+                  await extern a, b = myMethod v, 2
                   r.push("#""" + """{ v }: #""" + """{ a }")
                 catch e
                   results.push("Failed #""" + """{ v }: #""" + """{ e }")
@@ -893,12 +893,12 @@ describe "async functionality", ->
             # do more stuff
             results.push "Outer await finally"
 
-          await nocheck v1, error, v2 = asyncWeirdError()
+          await extern v1, error, v2 = asyncWeirdError()
           catch e
             results.push("Weird error caught: #""" + """{ e }")
 
           # And callbacks without errors.. poorly
-          await nocheck v1, v2, error = asyncSansError()
+          await extern v1, v2, error = asyncSansError()
           results.push "Got #""" + """{ v1 + ', ' + v2 }"
 
           return results

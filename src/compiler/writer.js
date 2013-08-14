@@ -17,7 +17,7 @@ var ASYNC = {
     //Stuff that's not stored in the struct
     FUNCTION_CALL_STATE: "__acs",
     FUNCTION_ISASYNC: "__ais",
-    FUNCTION_NOCHECK: "__anc",
+    FUNCTION_EXTERN: "__aex",
     debug: false
 };
 
@@ -45,7 +45,7 @@ var allFeatures = {
       + " if (!func." + ASYNC.FUNCTION_ISASYNC + ") {"
       + "  throw new Error('"
       +       "Runtime: called non-async function with async or await "
-      +       "keywords.  If you meant this, use the nocheck keyword after "
+      +       "keywords.  If you meant this, use the extern keyword after "
       +       "async or await')"
       + " }"
       + " func." + ASYNC.FUNCTION_CALL_STATE + "=1;"
@@ -55,7 +55,7 @@ var allFeatures = {
       + "  delete func." + ASYNC.FUNCTION_CALL_STATE + ";"
       + "  throw new Error('"
       +   "Runtime: cannot call async method without async or await "
-      +   "keywords unless nocheck is specified')"
+      +   "keywords unless extern is specified')"
       + " }"
       + " delete func." + ASYNC.FUNCTION_CALL_STATE
       + "},"

@@ -20,7 +20,7 @@ async_expr
           op: "await",
           catchAsync: true,
           after: null,
-          body: [ R({ op: "asyncCall", spec: { asyncNoCheck: true }, call: {
+          body: [ R({ op: "asyncCall", spec: { asyncExtern: true }, call: {
             op: "asyncCallee", func: "setTimeout",
             args: [ { op: "id", id: "callback" }, time ] } }) ]
       });
@@ -74,7 +74,7 @@ async_call
 
 
 async_call_spec
-  = "nocheck" _ { return "asyncNoCheck"; }
+  = "extern" _ { return "asyncExtern"; }
   / "noerror" _ { return "asyncNoError"; }
 
 

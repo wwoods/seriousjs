@@ -96,7 +96,7 @@ this.Translator = (function() {
             w.write(",arguments);");
             w.write("}");
           }
-          if (n.spec.async && !n.spec.asyncNoCheck && !n.spec.asyncNoError) {
+          if (n.spec.async && !n.spec.asyncExtern && !n.spec.asyncNoError) {
             //Do the check
             w.write("__asyncCheckCall(__inner__);");
           }
@@ -170,11 +170,11 @@ this.Translator = (function() {
           if (n.spec.async) {
             w.write("; __inner__." + w.ASYNC.FUNCTION_ISASYNC + "=true");
           }
-          if (n.spec.async && n.spec.asyncNoCheck) {
+          if (n.spec.async && n.spec.asyncExtern) {
             //Mark that it's an async function that doesn't check so that the
-            //async and await keywords will still work without the nocheck
+            //async and await keywords will still work without the extern
             //keyword.
-            w.write("; __inner__." + w.ASYNC.FUNCTION_NOCHECK + "=true");
+            w.write("; __inner__." + w.ASYNC.FUNCTION_EXTERN + "=true");
           }
           if (hasInnerWrapper) {
             w.write("; return __inner__; })()");
@@ -356,7 +356,7 @@ this.Translator = (function() {
           var funcContext = null;
           var funcToCall = n.call.func;
           //Do the check
-          if (!n.spec.asyncNoCheck && !n.spec.asyncNoError) {
+          if (!n.spec.asyncExtern && !n.spec.asyncNoError) {
             if (n.call.func.op !== "id") {
               //Fun... so we need to preserve the context for when we call the
               //function, which javascript doesn't do natively.  So we'll just
@@ -399,7 +399,7 @@ this.Translator = (function() {
             }
           }
           w.write(")");
-          if (!n.spec.asyncNoCheck) {
+          if (!n.spec.asyncExtern) {
             //No longer needed
             w.tmpVarRelease(funcToCall);
           }
@@ -447,7 +447,7 @@ this.Translator = (function() {
           var cParent = w.getClosure({ isAsync: true });
           if (cParent === null) {
             throw new Error("Await may only be used within async method or "
-                + "block; line n.line");
+                + "block; line " + n.line);
           }
 
           if (n.name) {

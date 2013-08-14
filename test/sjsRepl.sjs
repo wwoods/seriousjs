@@ -7,13 +7,13 @@ require ../src/binUtil/sjsRepl
 _eval = sjsRepl.options.eval
 
 describe "sjsRepl", ->
-  it "Should work with 2+2", async nocheck ->
+  it "Should work with 2+2", async extern ->
     ctx = vm.createContext()
     await _eval "2+2", ctx
     assert.equal 4, ctx._
 
 
-  it "Should support await", async nocheck ->
+  it "Should support await", async extern ->
     ctx = vm.createContext()
     ctx.f = async () ->
       await 0
@@ -23,7 +23,7 @@ describe "sjsRepl", ->
     assert.equal 55, ctx.r
 
 
-  it "Should support require", async nocheck ->
+  it "Should support require", async extern ->
     ctx = vm.createContext()
     await _eval "require assert", ctx
     assert.equal assert, ctx.assert
