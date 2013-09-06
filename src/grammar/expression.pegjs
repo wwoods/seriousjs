@@ -13,6 +13,18 @@ expression
   / async_expr
   / ternary_expr
 
+range_expression
+  = "[" _ left:expression? _ ":" _ right:expression?
+      _ skip:(":" _ expression _)? "]"? {
+      if (skip) {
+        skip = skip[2];
+      }
+      else {
+        skip = { op: "number", num: 1 };
+      }
+      return R({ op: "rangeExpr", left: left, right: right, skip: skip });
+    }
+
 ternary_expr
   = head:logic_expr tail:(_ "then" _ expression _ "else" _ expression)? {
       var r = head;
@@ -114,6 +126,7 @@ base_atom
       return R({ op: "boundMethod", id: id });
     }
   / IdentifierMaybeMember
+  / js:jsKeyword { return R({ op: "jsKeyword", js: js }); }
   / string
   / list_literal
   / regex_literal
@@ -134,6 +147,13 @@ base_atom
       & { return ended || innards[2]; } {
       return R({ op: "()", expr: innards[1] });
     }
+
+jsKeyword
+  = "true"
+  / "this"
+  / "false"
+  / "null"
+  / "undefined"
 
 paren_expr
   = assign_stmt

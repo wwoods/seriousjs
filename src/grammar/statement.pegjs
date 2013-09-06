@@ -81,11 +81,16 @@ for_op
   / "of"
 
 for_stmt
-  = "for" _ id:Identifier counterId:("," _ Identifier)? _ op:for_op _ expr:expression body:statement_body {
+  = "for" _ id:Identifier counterId:("," _ Identifier)? _ tail:for_stmt_tail body:statement_body {
+      var op = tail.op;
+      var expr = tail.expr;
       if (op === "in") {
         var ids = [ id ];
         if (counterId) {
           ids.push(counterId[2]);
+        }
+        if (expr.op === "rangeExpr") {
+          return R({ op: "forRange", ids: ids, expr: expr, body: body });
         }
         return R({ op: "forList", ids: ids, expr: expr, body: body });
       }
@@ -93,6 +98,14 @@ for_stmt
         return R({ op: "forHash", keyId: id, valueId: counterId && counterId[2],
             expr: expr, body: body });
       }
+    }
+
+for_stmt_tail
+  = "in" _ expr:range_expression {
+      return { op: "in", expr: expr };
+    }
+  / op:for_op _ expr:expression {
+      return { op: op, expr: expr };
     }
 
 while_stmt

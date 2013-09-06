@@ -79,7 +79,8 @@ function iterTree(path, node) {
     if (node.op === "if") {
       _transformIf(path, node);
     }
-    else if (node.op === "forList" || node.op === "forHash") {
+    else if (node.op === "forList" || node.op === "forHash"
+        || node.op === "forRange") {
       _transformForStmt(path, node);
     }
     else if (node.op === "while") {

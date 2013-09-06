@@ -624,10 +624,13 @@ describe "async functionality", ->
         i = 5
         f = {}
         async
-          f.b = -> i
+          f.b = -> [ i, true, false, null, undefined ]
         i = 99
         """
-    assert.equal 5, m.f.b()
+    result = m.f.b()
+    for part, i in [ 5, true, false, null, undefined ]
+      if part != result[i]
+        assert.fail("Part #{ i } doesn't match: #{ result[i] }")
 
 
   it "Should work with function args in async blocks", ->

@@ -839,6 +839,7 @@ this.Translator = (function() {
             w.write(" in ");
             w.write(r);
             w.write("){");
+            w.newline(1);
             if (n.valueId) {
               e.translate(n.valueId, { isAssign:true });
               w.write(" = ");
@@ -848,6 +849,7 @@ this.Translator = (function() {
               w.write("];");
             }
             e.translate(n.body);
+            w.newline(-1);
             w.write("}");
           }
           else {
@@ -919,6 +921,7 @@ this.Translator = (function() {
             w.write(";");
             e.translate(iter);
             w.write("++){");
+            w.newline(1);
             e.translate(n.ids[0], { isAssign: true });
             w.write("=");
             w.variable(r);
@@ -926,6 +929,7 @@ this.Translator = (function() {
             e.translate(iter);
             w.write("];");
             e.translate(n.body);
+            w.newline(-1);
             w.write("}");
           }
           else {
@@ -963,6 +967,115 @@ this.Translator = (function() {
           }
           w.tmpVarRelease(iterLen);
           w.tmpVarRelease(r);
+        },
+     "forRange": function(e, n, w) {
+          var tmps = [];
+          var range = n.expr;
+          if (n.ids.length > 1) {
+            throw new Error("Only one iteration variable supported for 'for' "
+                + "statements with range arguments");
+          }
+          var skip = range.skip;
+          var compareType = "either";
+          if (skip.op !== "number") {
+            var skipTmp = w.tmpVar(true);
+            tmps.push(skipTmp);
+            w.write("=");
+            e.translate(skip);
+            if (!n.hasAwait) {
+              w.write(";");
+            }
+            else {
+              w.write(",");
+            }
+            skip = skipTmp;
+          }
+          else {
+            skip = skip.num;
+            if (skip < 0) {
+              compareType = ">";
+            }
+            else {
+              compareType = "<";
+            }
+          }
+
+          var iter = n.ids[0];
+          var rangeMax = w.tmpVar(true, true);
+          tmps.push(rangeMax);
+
+          //Figure out our comparison step
+          var compareTree = null;
+          if (compareType === "either") {
+            compareTree = { op: "ternary",
+                'if': { op: "<", left: skip, right: 0 },
+                'then': { op: ">", left: iter, right: rangeMax },
+                'else': { op: "<", left: iter, right: rangeMax } };
+          }
+          else {
+            compareTree = { op: compareType, left: iter, right: rangeMax };
+          }
+
+          //And our increment step
+          var skipTree = { op: "+=", left: iter, right: skip };
+
+          var realMin = range.left;
+          if (!realMin) {
+            realMin = 0;
+          }
+
+          if (!n.hasAwait) {
+            w.write("for (");
+            e.translate(iter, { isAssign: true });
+            w.write("=");
+            e.translate(realMin);
+            w.write(",");
+            w.write(rangeMax);
+            w.write("=");
+            e.translate(range.right);
+            w.write(";");
+            e.translate(compareTree);
+            w.write(";");
+            e.translate(skipTree);
+            w.write("){");
+            w.newline(1);
+            e.translate(n.body);
+            w.newline(-1);
+            w.write("}");
+          }
+          else {
+            //Fairly tame async version
+            e.translate(iter, { isAssign: true });
+            w.write("=");
+            e.translate(realMin);
+            w.write(",");
+            w.write(rangeMax);
+            w.write("=");
+            e.translate(range.right);
+            w.write(";if(");
+            e.translate(compareTree);
+            w.write("){");
+            var targetName = w.tmpVar(true, true);
+            var namedTarget = {
+                op: "await",
+                name: targetName,
+                isLoop: true,
+                body: n.body,
+                after: [
+                  skipTree,
+                    { op: "if",
+                      condition: compareTree,
+                      then: [ { op: "atom", atom: targetName, unary: [],
+                        chain: [ { op: "call", args: [] } ] } ] }
+                ]
+            };
+            e.translate(namedTarget);
+            w.write("}");
+          }
+
+          for (var i = 0, m = tmps.length; i < m; i++) {
+            w.tmpVarRelease(tmps[i]);
+          }
         },
      "id": function(e, n, w, options) {
           w.goToNode(n);
@@ -1026,6 +1139,9 @@ this.Translator = (function() {
           w.write(" instanceof ");
           e.translate(n.right);
           w.write(")");
+        },
+     "jsKeyword": function(e, n, w) {
+          w.write(n.js);
         },
      "keyValue": function(e, n, w) {
           var c = w.getClosure();
@@ -1291,7 +1407,9 @@ this.Translator = (function() {
             w.write("while (");
             e.translate(n.expr);
             w.write(") {");
+            w.newline(1);
             e.translate(n.body);
+            w.newline(-1)
             w.write("}");
           }
           else {

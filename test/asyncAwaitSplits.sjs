@@ -132,6 +132,22 @@ describe "await splits", ->
     assert.equal "a13b14c15", r
 
 
+  it "Should work with for statements and ranges", async extern ->
+    m = sjs.eval """
+        f = async ->
+          r = ""
+          a = 8
+          c = 20
+          for val in [ a:50:c ]
+            console.log("SAW \#{val}")
+            r += val
+            await 0
+          return r
+        """
+    await r = m.f()
+    assert.equal "82848", r
+
+
   it "Should work with while statements", async extern ->
     m = sjs.eval """
         g = async (val) ->
