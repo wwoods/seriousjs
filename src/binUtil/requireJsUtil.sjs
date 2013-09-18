@@ -8,27 +8,27 @@ require ./util as sjsUtil
 _embeddedFile = seriousjs._getEmbeddedFile()
 _requireJsSource = path.join(__dirname, '../../lib/requirejs')
 
-serveWebapp = (app, appPath, { shim = [], title = "My Webapp - SeriousJs" }) ->
+serveWebapp = (app, appPath, { headers = [], shim = [], title = "My Webapp - SeriousJs" }) ->
   """This method sets up a GET handler at the given appPath to serve up a basic
   page that loads a RequireJS application.
   """
-  scripts = []
+  headers = headers[:]
   for s in shim
     prefix = "/src/shim/"
     if /^\//.test(s)
       prefix = ""
     if /\.css$/.test(s)
-      scripts.push '<link rel="stylesheet" href="#{ prefix }#{ s }" />'
+      headers.push '<link rel="stylesheet" href="#{ prefix }#{ s }" />'
     else
-      scripts.push '<script type="text/javascript" '
+      headers.push '<script type="text/javascript" '
           + 'src="#{ prefix }#{ s + ".js" }">'
           + '</script>'
-  scripts.push """<script type="text/javascript"
+  headers.push """<script type="text/javascript"
       data-main="/src/.requirejs/loader" src="/src/.requirejs/require.js">
       </script>"""
   htmlSrc = """<!DOCTYPE html><html>
       <head><title>#{ title }</title>
-        #{ scripts.join('') }</head>
+        #{ headers.join('') }</head>
       <body>Loading, please wait</body></html>"""
   app.get appPath, (req, res) ->
     res.send(htmlSrc)

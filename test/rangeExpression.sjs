@@ -43,3 +43,28 @@ describe "Range expression", ->
         for v in [ 0:-10:-1 ]
           outV += v""").outV
     assert.equal -45, v
+
+
+  it "Should work with array copies", ->
+    v = (sjs.eval """
+        a = [ 1, 2, 3 ]
+        b = a[:]
+        a.pop()
+        """).b
+    assert.deepEqual [ 1, 2, 3 ], v
+
+
+  it "Should work with array slices", ->
+    v = (sjs.eval """
+        a = [ 1, 2, 3 ]
+        b = a[:2].concat(a[1:]).concat(a[-1:])
+        """).b
+    assert.deepEqual [ 1, 2, 2, 3, 3 ], v
+
+
+  it "Should raise exception on array slices with skip", ->
+    assert.throws ->
+      sjs.eval """
+          a = [ 1, 2, 3 ]
+          b = a[-2::-1]
+          """

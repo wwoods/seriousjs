@@ -37,9 +37,9 @@ async_spec_mods
 
 
 lambda_args
-  //Note - we might have leading and trailing whitespace.
-  = d:lambda_dict_arg _ {
-      return [ d ];
+  //Note - we might have trailing whitespace in any of these
+  = d:dict_assignable _ {
+      return [ R({ op: "dictAssignArgs", assign: d }) ];
     }
   / "(" _ ARG_SEP? args:lambda_args_list?
         ARG_SEP? _ ")" _ {
@@ -58,28 +58,25 @@ lambda_args_list
 
 
 lambda_arg
-  = lambda_dict_arg
-  / member:"@"? id:Identifier defaultVal:(_ "=" _ expression)? {
-      if (member) {
-        id.op = "memberId";
-      }
+  = assignTo:lambda_arg_assignable
+        defaultVal:(_ "=" _ expression)? {
       if (defaultVal) {
-        id.defaultVal = defaultVal[3];
+        assignTo.defaultVal = defaultVal[3];
       }
-      return id;
+      return assignTo;
     }
 
 
-lambda_dict_arg
-  = d:dict_assignable e:(_ "=" _ "@"? Identifier)? {
-      var id = null;
-      if (e) {
-        id = e[4];
-        if (e[3]) {
-          id.op = "memberId";
-        }
+lambda_arg_assignable
+  = id:IdentifierMaybeMember unmapVal:(_ ":" _ dict_assignable)? {
+      var r = id;
+      if (unmapVal) {
+        r = R({ op: "dictAssignArgs", assign: unmapVal[3], id: id });
       }
-      return R({ op: "dictAssignArgs", assign: d, id: id });
+      return r;
+    }
+  / d:dict_assignable {
+      return R({ op: "dictAssignArgs", assign: d });
     }
 
 

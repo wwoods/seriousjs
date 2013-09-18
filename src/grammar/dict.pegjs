@@ -1,6 +1,6 @@
 
 dict_literal
-  = "{" args:dict_arguments_delimited "}"? {
+  = "{" args:dict_arguments_delimited ("}" / ASSERT_ON_ENDLINE) {
       return { "op": "dict", "elements": args };
     }
   / ASSERT_ON_NEWLINE args:dict_arguments_list?

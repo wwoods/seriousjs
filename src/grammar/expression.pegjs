@@ -14,10 +14,20 @@ expression
   / ternary_expr
 
 range_expression
-  = "[" _ left:expression? _ ":" _ right:expression?
-      _ skip:(":" _ expression _)? "]"? {
+  = "[" _ rangeExpr:range_expression_inner (_ "]" / ASSERT_ON_ENDLINE) {
+      return rangeExpr;
+    }
+
+range_expression_inner
+  = left:(expression _)? ":" right:(_ expression)? skip:(_ ":" _ expression)? {
+      if (left) {
+        left = left[0];
+      }
+      if (right) {
+        right = right[1];
+      }
       if (skip) {
-        skip = skip[2];
+        skip = skip[3];
       }
       else {
         skip = { op: "number", num: 1 };
@@ -183,7 +193,7 @@ base_assignable_atom
     }
 
 list_literal
-  = "[" args:arguments_delimited "]"? {
+  = "[" args:arguments_delimited ("]" / ASSERT_ON_ENDLINE) {
       return { "op": "list", "elements": args };
     }
 
@@ -193,13 +203,13 @@ list_literal
 
 atom_mod
   //Method calls cannot have space before them.
-  = "(" args:arguments_delimited ")"? {
+  = "(" args:arguments_delimited (")" / ASSERT_ON_ENDLINE) {
       return R({ op: "call", args: args });
     }
   / _ mod:atom_mod_expr { return mod; }
 
 atom_mod_expr
-  = "[" expr:expression "]" {
+  = "[" _ expr:(range_expression_inner / expression) (_ "]" / ASSERT_ON_ENDLINE) {
       return { "op": "arrayMember", "expr": expr };
     }
   / "." id:Identifier {

@@ -186,9 +186,23 @@ this.Translator = (function() {
           e.translate(n.right);
         },
      "arrayMember": function(e, n, w) {
-          w.write("[");
-          e.translate(n.expr);
-          w.write("]");
+          if (n.expr.op === "rangeExpr") {
+            if (n.expr.skip.op !== "number" || n.expr.skip.num !== 1) {
+              throw new Error("Cannot use range skip for array ops");
+            }
+            w.write(".slice(");
+            e.translate(n.expr.left || 0);
+            if (n.expr.right) {
+              w.write(",");
+              e.translate(n.expr.right);
+            }
+            w.write(")");
+          }
+          else {
+            w.write("[");
+            e.translate(n.expr);
+            w.write("]");
+          }
         },
      "async": function(e, n, w) {
           w.usesFeature("async");
@@ -752,18 +766,19 @@ this.Translator = (function() {
             w.write("," + r + "=(" + r + "!=undefined?" + r + ":{})");
           }
           for (var i = 0, m = n.keys.length; i < m; i++) {
+            var key = n.keys[i];
             w.write(",");
             var nid;
-            if (n.keys[i].op === "memberId") {
+            if (key.op === "memberId") {
               nid = w.tmpVar(true);
             }
             else {
-              nid = n.keys[i].id;
+              nid = key.id;
               w.variable(nid, true);
             }
             w.write("=");
-            w.write(r + "." + e.getNodeAsId(n.keys[i]));
-            if (n.keys[i].defaultVal) {
+            w.write(r + "." + e.getNodeAsId(key));
+            if (key.defaultVal) {
               w.write(",");
               w.variable(nid);
               w.write("=(");
@@ -771,12 +786,12 @@ this.Translator = (function() {
               w.write("!==undefined?");
               w.variable(nid);
               w.write(":");
-              e.translate(n.keys[i].defaultVal);
+              e.translate(key.defaultVal);
               w.write(")");
             }
-            if (n.keys[i].op === "memberId") {
+            if (key.op === "memberId") {
               var obj = w.getInstanceVariable();
-              w.write("," + obj + "." + e.getNodeAsId(n.keys[i]) + "=" + nid);
+              w.write("," + obj + "." + e.getNodeAsId(key) + "=" + nid);
             }
           }
           w.write("," + r);

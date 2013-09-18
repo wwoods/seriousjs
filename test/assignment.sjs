@@ -53,3 +53,10 @@ describe "Assignment", ->
 
   it "Should work with dicts from variables", ->
     assert.equal 52, (sjs.eval "a = 52\nv = { a }").v.a
+
+  it "Should work with compound dict matching", ->
+    r = sjs.eval "z = {a: {b, c}} = { a: { b: 4, c: 8 } }"
+    assert.deepEqual { a: { b: 4, c: 8 } }, r.z
+    assert.equal 4, r.b
+    assert.equal 8, r.c
+    assert.deepEqual { b: 4, c: 8 }, r.a

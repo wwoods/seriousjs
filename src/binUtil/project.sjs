@@ -20,7 +20,7 @@ copyAndFormat = (fileOrDir, target, {>project} = options) ->
   fs.writeFileSync(target, newContents)
 
 
-this.createFromTemplate = (template, name) ->
+createFromTemplate = (template, name) ->
   base = path.resolve(name)
   name = path.basename(name)
   if fs.existsSync(base)

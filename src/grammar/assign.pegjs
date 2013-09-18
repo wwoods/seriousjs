@@ -36,7 +36,11 @@ dict_assignable_mod
   / ">" //Mandatory members (matches superset)
 
 dict_assignable_part
-  = id:IdentifierMaybeMember defaultVal:(_ "=" _ expression)? {
+  = id:IdentifierMaybeMember unmapVal:(_ ":" _ dict_assignable)?
+        defaultVal:(_ "=" _ expression)? {
+      if (unmapVal) {
+        id.unmapVal = unmapVal[3];
+      }
       if (defaultVal) {
         id.defaultVal = defaultVal[3];
       }
