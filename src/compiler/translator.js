@@ -747,11 +747,24 @@ this.Translator = (function() {
             }
             w.usesFeature(f);
             w.write("__" + f + "({");
+            var isFirst = true;
             for (var i = 0, m = n.keys.length; i < m; i++) {
-              if (i !== 0) {
+              if (f === "dictCheckRequired" && n.keys[i].defaultVal) {
+                //If a value is required, but has a default, then it's not
+                //really required.
+                continue;
+              }
+              if (!isFirst) {
                 w.write(",");
               }
-              w.write(e.getNodeAsId(n.keys[i]) + ':1');
+              isFirst = false;
+              w.write(e.getNodeAsId(n.keys[i]) + ':');
+              if (n.keys[i].defaultVal) {
+                w.write("0");
+              }
+              else {
+                w.write("1");
+              }
             }
             w.write("},");
             e.translate(n.right);
@@ -793,6 +806,12 @@ this.Translator = (function() {
               var obj = w.getInstanceVariable();
               w.write("," + obj + "." + e.getNodeAsId(key) + "=" + nid);
             }
+            if (key.unmapVal) {
+              //Nested dict unmapping
+              key.unmapVal.right = nid;
+              w.write(",");
+              e.translate(key.unmapVal);
+            }
           }
           w.write("," + r);
           w.write(")");
@@ -802,11 +821,15 @@ this.Translator = (function() {
           // A dict assignment from arguments...
           if (n.id) {
             e.translate(n.id);
-            n.assign.right = n.id;
           }
           else {
             var r = w.tmpVar();
-            n.assign.right = { op: "id", id: r };
+            n.id = { op: "id", id: r };
+          }
+          n.assign.right = n.id;
+          if (n.defaultVal) {
+            n.id.defaultVal = n.defaultVal;
+            addArgDefault(e, n.id, w);
           }
           //Since they're args, allow null or undefined to map to an empty
           //object.

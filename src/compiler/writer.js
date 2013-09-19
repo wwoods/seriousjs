@@ -86,6 +86,9 @@ var allFeatures = {
       + "}",
   dictCheckAvailable: ""
       + "__dictCheckAvailable=function(spec,dict){"
+      + " if(dict == null) {"
+      + "  throw new Error('Not a dict: ' + dict);"
+      + " }"
       + " for(var k in dict){"
       + "  if(!(k in spec)) {"
       + "   throw new Error('Unexpected key: ' + k);"
@@ -96,6 +99,9 @@ var allFeatures = {
   dictCheckExact: ""
       + "__dictCheckExact=function(spec,dict){"
       + " var a=0,b=0;"
+      + " if(dict == null) {"
+      + "  throw new Error('Not a dict: ' + dict);"
+      + " }"
       + " for(var k in dict) {"
       + "  if(!(k in spec)) {"
       + "   throw new Error('Unexpected key: ' + k);"
@@ -107,7 +113,9 @@ var allFeatures = {
       + " }"
       + " if (a !== b) {"
       + "  for(var k in spec) {"
-      + "   if(!(k in dict)) {"
+      //Note here - spec value of 1 means no default.  0 means it has a default,
+      //and thus it WILL be exact.
+      + "   if(!(k in dict) && spec[k] === 1) {"
       + "    throw new Error('Missing key: ' + k);"
       + "   }"
       + "  }"
@@ -115,6 +123,9 @@ var allFeatures = {
       + " return dict;"
       + "}",
   dictCheckRequired: "__dictCheckRequired=function(spec,dict){"
+      + " if(dict == null) {"
+      + "  throw new Error('Not a dict: ' + dict);"
+      + " }"
       + " for(var k in spec) {"
       + "  if(!(k in dict)) {"
       + "   throw new Error('Missing key: ' + k);"

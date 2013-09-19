@@ -57,12 +57,12 @@ describe "Lambdas", ->
 
   it "Should support compound nested dicts", ->
     m = sjs.eval("a = (a, b: {> test: {= bPart, aPart = 7}} = { test: { bPart: 7 } }) -> bPart * aPart + a").a
-    assert.equal 15, m.a(1)
-    assert.equal 18, m.a(4)
-    assert.equal 20, m.a(0, { test: { bPart: 13
-    assert.equal 14, m.a(0, { test: { bPart: 13, aPart: 1
-    assert.throws -> m.a(0, { testt: { bPart: 1, aPart: 1
-    assert.throws -> m.a(0, { test: { bPart: 1, cPart: 1
+    assert.equal 50, m(1)
+    assert.equal 53, m(4)
+    assert.equal 91, m(0, { test: { bPart: 13
+    assert.equal 13, m(0, { test: { bPart: 13, aPart: 1
+    assert.throws -> m(0, { testt: { bPart: 1, aPart: 1
+    assert.throws -> m(0, { test: { bPart: 1, cPart: 1
 
   it "Should support doc strings", ->
     m = sjs.eval("""
