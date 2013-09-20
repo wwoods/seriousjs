@@ -60,3 +60,9 @@ describe "Assignment", ->
     assert.equal 4, r.b
     assert.equal 8, r.c
     assert.deepEqual { b: 4, c: 8 }, r.a
+
+  it "Should assign defaults back to object, even if undefined", ->
+    r = sjs.eval "f = (options: { a = 3, b = 4 }) -> options"
+    assert.deepEqual { a: 3, b: 4 }, r.f()
+    assert.deepEqual { a: 3, b: 4 }, r.f({})
+

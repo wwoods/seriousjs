@@ -815,6 +815,21 @@ this.Translator = (function() {
           w.write("(");
           var r = w.tmpVar(true);
           w.write("=");
+          //Remember that for the standard argument case, this will be a
+          //reference to the passed dict.  We do modify it in place if
+          //rightAssignDefaults is true.
+          e.translate(n.right);
+          if (n.allowUndefined) {
+            //Used for args, map the object to an empty object if it's null
+            //or undefined
+            w.write(",");
+            w.write(r);
+            if (n.reassignRightDefaults) {
+              w.write("=");
+              e.translate(n.right);
+            }
+            w.write("=(" + r + "!=undefined?" + r + ":{})");
+          }
           if (n.mod) {
             var f;
             if (n.mod === ">") {
@@ -830,6 +845,9 @@ this.Translator = (function() {
               throw new Error("Unrecognized dictAssignMod: " + n.mod);
             }
             w.usesFeature(f);
+            w.write(",");
+            w.write(r);
+            w.write("=");
             w.write("__" + f + "({");
             var isFirst = true;
             for (var i = 0, m = n.keys.length; i < m; i++) {
@@ -851,16 +869,8 @@ this.Translator = (function() {
               }
             }
             w.write("},");
-            e.translate(n.right);
+            w.write(r);
             w.write(")");
-          }
-          else {
-            e.translate(n.right);
-          }
-          if (n.allowUndefined) {
-            //Used for args, map the object to an empty object if it's null
-            //or undefined
-            w.write("," + r + "=(" + r + "!=undefined?" + r + ":{})");
           }
 
           for (var i = 0, m = n.keys.length; i < m; i++) {
@@ -886,7 +896,7 @@ this.Translator = (function() {
               w.write(":");
               if (n.reassignRightDefaults) {
                 w.write("(");
-                e.translate(n.right);
+                e.translate(r);
                 w.write(".");
                 w.write(e.getNodeAsId(key));
                 w.write("=");
