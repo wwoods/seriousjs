@@ -301,3 +301,18 @@ describe "Classes", ->
         """
     assert.equal 6, m.inst.innerDict.b
 
+
+  it "Should work with 'this' inside class callback", ->
+    m = sjs.eval """
+        class Test
+          init: () ->
+            @innerClass = {}
+            @innerClass.callback = ->
+              this.value = 8
+        test = new Test()
+        """
+    obj = {}
+    m.test.init()
+    m.test.innerClass.callback.call(obj)
+    assert.equal 8, obj.value
+

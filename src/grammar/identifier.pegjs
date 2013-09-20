@@ -8,6 +8,7 @@ IdentifierMaybeMember
   / "@" id:Identifier { return R({ op: "memberId", id: id.id }); }
   / "@" { return R({ op: "memberSelf" }); }
   / Identifier
+  / "this" { return R({ op: "id", id: "this" }); }
 
 IdentifierName
   = start:IdentifierStart parts:IdentifierPart* {
