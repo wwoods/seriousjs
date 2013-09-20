@@ -117,17 +117,16 @@ inner_async_call
 
 
 async_catch
-  = cont:CONTINUATION_POP inner:(NEWLINE_SAME "catch" (_ Identifier)? statement_body)?
+  = cont:CONTINUATION_POP inner:(NEWLINE_SAME try_stmt_catch)?
         & { continuationPush(cont); return inner; } {
-      var eId = inner[2] && inner[2][1];
-      return R({ op: "catch", id: eId, body: inner[3] });
+      return inner[1];
     }
 
 
 async_finally
-  = cont:CONTINUATION_POP inner:(NEWLINE_SAME "finally" statement_body)?
+  = cont:CONTINUATION_POP inner:(NEWLINE_SAME try_stmt_finally)?
         & { continuationPush(cont); return inner; } {
-      return R({ op: "finally", body: inner[2] });
+      return inner[1];
     }
 
 

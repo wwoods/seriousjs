@@ -122,8 +122,14 @@ try_stmt
     }
 
 try_stmt_catch
-  = "catch" id:(_ Identifier)? body:statement_body {
-      return R({ op: "catch", id: id && id[1], body: body });
+  = head:try_stmt_catch_inner tail:(NEWLINE_SAME try_stmt_catch_inner)* {
+      return R({ op: "catch", parts: getArray(head, tail, 1) });
+    }
+
+try_stmt_catch_inner
+  = "catch" id:(_ Identifier)? cond:(_ "if" _ expression)? body:statement_body {
+      return R({ op: "catchCondition", id: id && id[1], cond: cond && cond[3],
+          body: body });
     }
 
 try_stmt_finally

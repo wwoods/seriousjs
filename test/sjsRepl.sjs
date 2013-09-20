@@ -23,6 +23,14 @@ describe "sjsRepl", ->
     assert.equal 55, ctx.r
 
 
+  it "Should work with await and spec", async extern ->
+    ctx = vm.createContext()
+    ctx.f = (callback) ->
+      callback(54)
+    await result = _eval "await extern noerror r = f", ctx
+    assert.equal 54, ctx.r
+
+
   it "Should support require", async extern ->
     ctx = vm.createContext()
     await _eval "require assert", ctx

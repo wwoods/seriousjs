@@ -64,6 +64,10 @@ describe "Lambdas", ->
     assert.throws -> m(0, { testt: { bPart: 1, aPart: 1
     assert.throws -> m(0, { test: { bPart: 1, cPart: 1
 
+  it "Should do correct assignment of defaults to outer var for dict unmaps", ->
+    m = sjs.eval("a = (a: { b, c = 3 }) -> a").a
+    assert.deepEqual { b: 5, c: 3 }, m(b: 5)
+
   it "Should support doc strings", ->
     m = sjs.eval("""
         a = (a, b) ->

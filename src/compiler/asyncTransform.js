@@ -86,7 +86,8 @@ function iterTree(path, node) {
     else if (node.op === "while") {
       _transformWhile(path, node);
     }
-    else if (node.op === "catch" || node.op === "finally") {
+    else if (node.op === "catch" || node.op === "catchCondition"
+        || node.op === "finally") {
       //Already transformed
     }
     else {

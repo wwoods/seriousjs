@@ -149,7 +149,7 @@ this._buildEmbedded = function() {
 };
 
 var _getSjsRequire = function(mod) {
-  //Get a require() function for the given module.
+  //Get a require() function for the given module.  Also used in sjsRepl.sjs.
   var req = function(path) {
     if (path === "seriousjs") {
       //Cheap hack, but it works.  If we're importing seriousjs from a module
@@ -264,21 +264,34 @@ this.eval = function(text, options) {
   if (!options) {
     options = {};
   }
-  var sandbox = vm.Script.createContext(), mod, req;
-  sandbox.__filename = options.filename || 'eval';
-  sandbox.__dirname = path.dirname(sandbox.__filename);
-  sandbox.module = mod = new mmodule(path.basename(sandbox.__filename));
-  mod.paths = mmodule._nodeModulePaths(process.cwd());
-  sandbox.require = _getSjsRequire(mod);
-  //Copy over other globals
-  sandbox.console = console;
-  sandbox.global = global;
-  sandbox.process = process;
-  sandbox.setTimeout = setTimeout;
-  sandbox.clearTimeout = clearTimeout;
-  sandbox.setInterval = setInterval;
-  sandbox.clearInterval = clearInterval;
-  mod.filename = sandbox.__filename;
+  var sandbox, mod, req;
+  var initSandbox = true;
+  if (options.sandbox) {
+    sandbox = options.sandbox;
+    if (sandbox.hasOwnProperty('require')) {
+      //Already initialized sandbox
+      initSandbox = false;
+    }
+  }
+  else {
+    sandbox = vm.Script.createContext();
+  }
+  if (initSandbox) {
+    sandbox.__filename = options.filename || 'eval';
+    sandbox.__dirname = path.dirname(sandbox.__filename);
+    sandbox.module = mod = new mmodule(path.basename(sandbox.__filename));
+    mod.paths = mmodule._nodeModulePaths(process.cwd());
+    sandbox.require = _getSjsRequire(mod);
+    //Copy over other globals
+    sandbox.console = console;
+    sandbox.global = global;
+    sandbox.process = process;
+    sandbox.setTimeout = setTimeout;
+    sandbox.clearTimeout = clearTimeout;
+    sandbox.setInterval = setInterval;
+    sandbox.clearInterval = clearInterval;
+    mod.filename = sandbox.__filename;
+  }
   var code = this.compile(text, options);
   var r = vm.runInContext(code.js, sandbox, sandbox.__filename);
   if (options.isScript) {

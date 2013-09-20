@@ -24,6 +24,7 @@ describe "Async catch/finally", ->
         """
     await m.g
     catch e
+      console.log "GOT SOMMIN: #{ e }"
       if e == "Error2"
         return
     throw new Error("Failed to catch")

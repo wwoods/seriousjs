@@ -394,18 +394,15 @@ this.Closure = Closure = (function() {
       w.write("var ");
       w.write(catchCall);
       w.write("=function(__error){");
+      w.getClosure().setVarUsed("__error", true);
       var eVar = "__error";
       var cBlock = w.newAsyncBlock(catchFollower);
       //Assign error variable
-      if (catchStmt.id) {
-        eVar = catchStmt.id.id;
-        e.translate(catchStmt.id, { isAssign: true });
-        w.write("=__error;");
-      }
+      catchStmt.internalId = "__error";
       w.write("if(");
       w.write(eVar);
       w.write("){");
-      e.translate(catchStmt.body);
+      e.translate(catchStmt);
       w.write("}");
       cBlock.asyncCloseTry(w, e);
       w.endClosure();
@@ -417,6 +414,7 @@ this.Closure = Closure = (function() {
       w.write("var ");
       w.write(finallyCall);
       w.write("=function(__error){");
+      w.getClosure().setVarUsed("__error", true);
       var callback = w.tmpVar(true, true);
       //Be sure we write in the variable before assigning the return function
       //in the async closure!
@@ -453,7 +451,7 @@ this.Closure = Closure = (function() {
   Closure.prototype.setVarUsed = function(id, notForClosures) {
     //notForClosures is useful when, for instance, you have a variable that
     //won't be changing and you shouldn't use in a closure (like a function
-    //declaration).
+    //declaration).  Catch blocks use this.
     if (!(id in this.vars) && !(id in this.funcArgs)) {
       this.vars[id] = (notForClosures ? "static" : "used");
     }
@@ -531,6 +529,7 @@ this.Writer = (function() {
     this._line = 1;
     this._isInArgs = false;
     this._redirects = [];
+    this._renames = {};
 
     //Copy over enumeration
     this.ASYNC = ASYNC;
@@ -794,7 +793,27 @@ this.Writer = (function() {
     featureDump(f, c);
   };
 
+  Writer.prototype.setVariableRename = function(oldId, newId) {
+    //Any instances of oldId after this call will be newId until
+    //unsetVariableName is called.
+    if (typeof oldId === "object") {
+      if (typeof oldId.id !== "string") {
+        throw new Error("Bad compiler - " + oldId);
+      }
+      oldId = oldId.id;
+    }
+    this._renames[oldId] = newId;
+  };
+
+  Writer.prototype.unsetVariableRename = function(oldId) {
+    delete this._renames[oldId];
+  };
+
   Writer.prototype.variable = function(id, isAssign, noWrite) {
+    if (this._renames.hasOwnProperty(id)) {
+      id = this._renames[id];
+    }
+
     var c = this.getClosure();
     if (isAssign) {
       if (!this._isInArgs) {

@@ -106,23 +106,38 @@ this.Translator = (function() {
             w.write("===undefined){");
             var hasWrittenAsyncSub = false;
             for (var i = asyncCallbackIndex - 1; i >= 0; i--) {
-              if (n.parms[i].op !== "id") {
-                continue;
+              var parmId = null;
+              if (n.parms[i].op === "id") {
+                parmId = n.parms[i];
               }
+              else if (n.parms[i].op === "dictAssignArgs") {
+                if (!n.parms[i].id) {
+                  throw new Error("Bad expectation; args not assigned");
+                }
+                parmId = n.parms[i].id;
+              }
+              else {
+                throw new Error("Unknown param type for async: "
+                    + n.parms[i].op);
+              }
+
               if (hasWrittenAsyncSub) {
                 w.write("else ");
               }
               hasWrittenAsyncSub = true;
               w.write("if(typeof ");
-              w.write(n.parms[i].id);
+              e.translate(parmId);
+              w.write('!=="undefined"){');
+              w.write("if(typeof ");
+              e.translate(parmId);
               w.write('==="function"){');
               w.write(asyncCallback);
               w.write("=");
-              w.write(n.parms[i].id);
+              e.translate(parmId);
               w.write(";");
-              w.write(n.parms[i].id);
+              e.translate(parmId, { isAssign: true });
               w.write("=undefined");
-              w.write("}");
+              w.write("}}");
             }
             w.write("}");
           }
@@ -280,6 +295,18 @@ this.Translator = (function() {
             cAsyncParent.asyncAddCall(w);
             w.write(",");
             myCallback = w.tmpVar(true);
+            var classMethodClosure = w.getClosure({ isClassMethod: true });
+            if (classMethodClosure && n.assign) {
+              //We must preserve our context on callback, in case assignment
+              //used "this" or "@"
+              w.write("=function(){");
+              var hasContext = myCallback + "_b";
+              w.variable(hasContext, true);
+              w.write(".apply(");
+              w.write(classMethodClosure.getNamedInstanceVariable());
+              w.write(",arguments)},");
+              w.write(hasContext);
+            }
             w.write("=function(");
             w.startArgs();
             var maxArgs = 0;
@@ -489,8 +516,8 @@ this.Translator = (function() {
           //c.
           w.endClosure();
 
-          w.write(";var " + cName + "=");
-          w.write("function(__error){");
+          w.write(";var " + cName);
+          w.write("=function(__error){");
           w.newline(1);
           w.write("if(__error){");
           cParent.asyncCheck(w, "__error");
@@ -601,6 +628,62 @@ this.Translator = (function() {
           w.write('(');
           e.translate(n.args, { separator: ',' });
           w.write(')');
+        },
+     "catch": function(e, n, w) {
+          //Note that we're already in the catch block here, and we have
+          //n.internalId to work with
+          if (!n.internalId) {
+            throw new Error("internalId was not set on catch");
+          }
+          var hadUnconditional = false;
+          for (var i = 0, m = n.parts.length; i < m; i++) {
+            var part = n.parts[i];
+            if (part.cond) {
+              if (i !== 0) {
+                w.write("else ");
+              }
+              w.write("if (");
+              if (part.id) {
+                w.setVariableRename(part.id, n.internalId);
+              }
+              e.translate(part.cond);
+              if (part.id) {
+                w.unsetVariableRename(part.id);
+              }
+              w.write(") {");
+              w.newline(1);
+            }
+            else if (i !== m - 1) {
+              throw new Error("Unconditional catch must be last");
+            }
+            else {
+              hadUnconditional = true;
+              if (i !== 0) {
+                w.write("else {");
+                w.newline(1);
+              }
+            }
+
+            if (part.id) {
+              e.translate(part.id, { isAssign: true });
+              w.write("=");
+              w.variable(n.internalId);
+              w.write(";");
+              w.newline();
+            }
+            e.translate(part.body);
+
+            if (part.cond || i !== 0) {
+              w.newline(-1);
+              w.write("}");
+            }
+          }
+
+          if (!hadUnconditional) {
+            w.write("else { throw ");
+            w.variable(n.internalId);
+            w.write(" }");
+          }
         },
      "class": function(e, n, w) {
           e.translate(n.name, { isAssign: true });
@@ -728,6 +811,7 @@ this.Translator = (function() {
         },
      "dictAssign": function(e, n, w) {
           //n has keys, mod, and right.
+
           w.write("(");
           var r = w.tmpVar(true);
           w.write("=");
@@ -778,6 +862,7 @@ this.Translator = (function() {
             //or undefined
             w.write("," + r + "=(" + r + "!=undefined?" + r + ":{})");
           }
+
           for (var i = 0, m = n.keys.length; i < m; i++) {
             var key = n.keys[i];
             w.write(",");
@@ -799,7 +884,18 @@ this.Translator = (function() {
               w.write("!==undefined?");
               w.variable(nid);
               w.write(":");
-              e.translate(key.defaultVal);
+              if (n.reassignRightDefaults) {
+                w.write("(");
+                e.translate(n.right);
+                w.write(".");
+                w.write(e.getNodeAsId(key));
+                w.write("=");
+                e.translate(key.defaultVal);
+                w.write(")");
+              }
+              else {
+                e.translate(key.defaultVal);
+              }
               w.write(")");
             }
             if (key.op === "memberId") {
@@ -821,6 +917,7 @@ this.Translator = (function() {
           // A dict assignment from arguments...
           if (n.id) {
             e.translate(n.id);
+            n.assign.reassignRightDefaults = true;
           }
           else {
             var r = w.tmpVar();
@@ -1404,21 +1501,20 @@ this.Translator = (function() {
           w.write("}");
           if (n.catchStmt) {
             w.goToNode(n.catchStmt);
-            w.write("catch (");
-            if (n.catchStmt.id) {
-              e.translate(n.catchStmt.id);
-            }
-            else {
-              w.write("__error");
-              }
-            w.write(") {");
-            e.translate(n.catchStmt.body);
+            w.write("catch (__error) {");
+            w.getClosure().setVarUsed("__error", true);
+            w.newline(1);
+            n.catchStmt.internalId = "__error";
+            e.translate(n.catchStmt);
+            w.newline(-1);
             w.write("}");
           }
           if (n.finallyStmt) {
             w.goToNode(n.finallyStmt);
             w.write("finally {");
+            w.newline(1);
             e.translate(n.finallyStmt.body);
+            w.newline(-1);
             w.write("}");
           }
         },

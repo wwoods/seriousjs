@@ -234,6 +234,29 @@ describe "async functionality", ->
       done()
 
 
+  it "Should not cascade beyond first undefined", ->
+    m = sjs.eval """
+        f = async extern (data1, data2) ->
+          data1(data2)
+        """
+    v = [ 0 ]
+    m.f(
+        (val) -> v[0] = val
+        55
+    assert.equal 55, v[0]
+
+
+  it "Should properly cascade when combined with dict unmappings", (done) ->
+    m = sjs.eval """
+        f = async extern (object: { a, b }) ->
+          return object
+        """
+    m.f (error, resut) ->
+      assert.equal null, error
+      assert.equal "undefined", typeof object
+      done()
+
+
   it "Should allow specifying nocascade on callback", () ->
     m = sjs.eval """
         f = async extern nocascade (data) ->
@@ -485,6 +508,37 @@ describe "async functionality", ->
     m.g (error) ->
       assert.equal null, error
       assert.equal 12, m.val[0]
+      done()
+
+
+  it "Should maintain context in await assignments", (done) ->
+    m = sjs.eval """
+        g = (callback) ->
+          callback(null, 56)
+        class Me
+          f: async extern ->
+            await extern @value = g
+        me = new Me()
+        """
+    m.me.f (error) ->
+      assert.equal 56, m.me.value
+      done()
+
+
+  it "Should maintain context object for extern calls", (done) ->
+    m = sjs.eval """
+        class Test
+          f: async extern ->
+            await extern r = this.g()
+            return r
+          g: (callback) ->
+            @value = 88
+            callback(null, 33)
+        test = new Test()
+        """
+    m.test.f (error, result) ->
+      assert.equal 88, m.test.value
+      assert.equal 33, result
       done()
 
 
