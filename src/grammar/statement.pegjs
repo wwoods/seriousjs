@@ -127,10 +127,14 @@ try_stmt_catch
     }
 
 try_stmt_catch_inner
-  = "catch" id:(_ Identifier)? cond:(_ "if" _ expression)? body:statement_body {
+  = "catch" id:(_ Identifier)? cond:(_ "if" _ expression)? body:try_stmt_catch_body {
       return R({ op: "catchCondition", id: id && id[1], cond: cond && cond[3],
           body: body });
     }
+
+try_stmt_catch_body
+  = statement_body
+  / ASSERT_ON_ENDLINE
 
 try_stmt_finally
   = "finally" body:statement_body {

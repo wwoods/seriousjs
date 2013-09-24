@@ -30,6 +30,12 @@ describe "try statement", ->
             q = "" + e
           """
 
+  it "Should work with no body for catch", ->
+    sjs.eval """
+        try
+          throw new Error("testMsg")
+        catch e"""
+
   it "Should work with multiple catch statements", ->
     assert.equal 83, (sjs.eval """
         try

@@ -664,14 +664,16 @@ this.Translator = (function() {
               }
             }
 
-            if (part.id) {
-              e.translate(part.id, { isAssign: true });
-              w.write("=");
-              w.variable(n.internalId);
-              w.write(";");
-              w.newline();
+            if (part.body) {
+              if (part.id) {
+                e.translate(part.id, { isAssign: true });
+                w.write("=");
+                w.variable(n.internalId);
+                w.write(";");
+                w.newline();
+              }
+              e.translate(part.body);
             }
-            e.translate(part.body);
 
             if (part.cond || i !== 0) {
               w.newline(-1);
