@@ -40,6 +40,12 @@
     var nextPos = input.indexOf('\n', lineStartPos);
     var lineStr = input.substring(lineStartPos, nextPos);
 
+    //Is this an empty line?
+    if (lineStr.match(/^[ \t\n\r]*$/)) {
+      lineStartPos = nextPos + 1;
+      continue;
+    }
+
     var lineIndentChars = '';
     var i = 0;
     while (i < lineStr.length) {
@@ -125,6 +131,7 @@
     lineStartPos = nextPos + 1;
   }
 
+  log("Saw steps: " + steps[2] + ", " + steps[4]);
   if (charCounts['\t'] > charCounts[' ']) {
     indentChar = '\t';
     indentWidth = 1;

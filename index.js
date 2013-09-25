@@ -227,6 +227,7 @@ function _getEmbeddedFile() {
 this._getEmbeddedFile = _getEmbeddedFile;
 
 var _parserSandbox = vm.Script.createContext();
+_parserSandbox.console = console;
 this.parser = vm.runInContext(parserSource, _parserSandbox, _parserFile);
 this.compile = function(text, options) {
   //Returns the legible javascript version of text.
