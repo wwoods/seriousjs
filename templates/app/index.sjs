@@ -1,8 +1,8 @@
 # Module dependencies
 
+require ./server/main as server
+
 require express
-#require ./server/routes
-#require ./server/routes/user
 require http
 require path
 require seriousjs
@@ -19,11 +19,15 @@ app.use(express.methodOverride())
 app.use(app.router)
 
 async
-  # Link our webapp into /src
+  # Link our webapp into /src, optionally building an optimized version
   await r = seriousjs.requireJs().setupWebapp(app, express,
       __dirname + '/webapp')
   if not r
+    # This was a build only situation, don't actually start the server.
     return
+
+  # Initialize application
+  await sjsAppOptions = server.init(app)
 
   # development only
   if 'development' == app.get('env')
@@ -32,9 +36,8 @@ async
   # Expose a basic HTML page to serve the app at /src
   seriousjs.requireJs().serveWebapp(
       app, '/',
-      shim: [ '../index.css', 'jquery-1.9.1.min', 'underscore-min',
-        'backbone-min' ]
-      title: '__project__'
+      shim: sjsAppOptions.scripts
+      title: sjsAppOptions.title
 
   await extern http.createServer(app).listen(app.get('port'))
   console.log("Express server listening on port #{ app.get('port') }")

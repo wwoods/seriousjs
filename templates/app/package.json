@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "node node_modules/nodemon/nodemon.js -x seriousjs index.sjs"
+    "start": "node node_modules/nodemon/nodemon.js -x seriousjs --watch server --watch shared --watch index.sjs index.sjs"
   },
   "dependencies": {
     "express": ">=3.2.0",

@@ -4,7 +4,7 @@ require console
 require fs
 require path
 
-copyAndFormat = (fileOrDir, target, {>project} = options) ->
+copyAndFormat = (fileOrDir, target, options: {>project}) ->
   if fs.statSync(fileOrDir).isDirectory()
     if path.basename(fileOrDir) in [ "node_modules", "_requirejs" ]
         or /^build\./.test(path.basename(fileOrDir))

@@ -37,10 +37,20 @@ projects, there were some other things that bugged me constantly:
   function bindings?  "@" should mean "the closest class object", and "this"
   should mean the context with which the current method was called.
 
-* Why are there so many darn aliases for true/false?  It's because it's a
+* Why are there so many aliases for true/false?  It's because it's a
   scripting language.  I get that.  But for large, maintainable code bases, I
   don't feel that it's appropriate to have so many ways of saying "false" and
   "true".  Feel free to correct me on that one.
+
+* Guess what this code does:
+
+        $('<div>')
+            .bind 'click', -> alert("Click!")
+            .appendTo('body')
+
+  If you guessed "It sure doesn't append that div to the body!" you were
+  correct.  Coffee-Script associates the .appendTo with the return value from
+  calling alert(), quite contrary to what the indentation implies.
 
 While those aren't huge, they got me thinking.  What are some other ways that
 Coffee-Script could be improved?  Well, how about:
