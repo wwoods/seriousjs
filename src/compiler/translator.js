@@ -1588,6 +1588,8 @@ this.Translator = (function() {
      ">=": binary,
      ">": binary,
      "<": binary,
+     "<<": binary,
+     ">>": binary,
      "==": function(e, n, w) {
           e.translate(n.left);
           w.write(" === ");
@@ -1655,7 +1657,8 @@ this.Translator = (function() {
     if: true,
     return: true,
     try: true,
-    throw: true
+    throw: true,
+    while: true
   };
 
   function Translator(writer, options) {

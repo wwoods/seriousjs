@@ -70,7 +70,7 @@ COMMENT "comment"
         } "###" {
       return R({ op: "comment", comment: comment[0] });
     }
-  / "#" comment:[^\n]+ {
+  / "#" comment:[^\n]* {
       return R({ op: "comment", comment: comment.join("") });
     }
 
@@ -166,7 +166,7 @@ INDENT
 
 
 CONTINUATION_START
-  = CHECK_NEWLINE ASSERT_ON_NEWLINE
+  = ASSERT_ON_NEWLINE
       & { return indentBlockStart(2, { isContinuation: true }); }
 
 

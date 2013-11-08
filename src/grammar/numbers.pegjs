@@ -1,3 +1,7 @@
+NumberLiteral
+  = HexIntegerLiteral
+  / DecimalLiteral
+
 DecimalLiteral
   = before:DecimalIntegerLiteral
     "."

@@ -21,6 +21,15 @@ describe "Assignment", ->
     assert.equal 56, m.a.d
     assert.equal 12, m.a.e.f
     assert.equal 13, m.a.e.g
+  it "Should work with hex", ->
+    m = sjs.eval """
+        a = 0x10
+        b = 0xf
+        c = 0xff
+        """
+    assert.equal 16, m.a
+    assert.equal 15, m.b
+    assert.equal 255, m.c
   it "Should work with multi-line dicts and strings", ->
     m = sjs.eval """
         a =

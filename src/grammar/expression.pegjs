@@ -75,12 +75,21 @@ compare_expr
     }
 
 instance_expr
-  = head:add_expr tail:(_ "instanceof" _ add_expr)? {
+  = head:shift_expr tail:(_ "instanceof" _ shift_expr)? {
       var r = head;
       if (tail) {
         r = { op: "instanceof", left: r, right: tail[3] };
       }
       return R(r);
+    }
+
+shift_op
+  = "<<"
+  / ">>"
+
+shift_expr
+  = head:add_expr tail:(_ shift_op _ add_expr)* {
+      return getBinary(head, tail, 1, 3);
     }
 
 add_op
@@ -140,7 +149,7 @@ base_atom
   / string
   / list_literal
   / regex_literal
-  / num:DecimalLiteral { return R({ op: "number", num: num}); }
+  / num:NumberLiteral { return R({ op: "number", num: num}); }
   // We put parens in a continuation so that multi-line parens look like the
   // following:
   // (a

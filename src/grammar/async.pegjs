@@ -131,7 +131,7 @@ async_finally
 
 
 await_time
-  = time:DecimalLiteral interval:await_interval? {
+  = time:NumberLiteral interval:await_interval? {
       interval = interval || 1.0;
       return R({ op: "number", num: parseFloat(time) * interval });
     }

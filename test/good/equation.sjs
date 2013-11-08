@@ -11,3 +11,5 @@ false or true
 a == b
 a != b
 
+2 << 3
+4 >> 3

@@ -63,6 +63,13 @@ describe "Classes", ->
     assert.equal 8, m.q.v
     assert.equal 9, m.j.v
 
+  it "Should support class docstrings", ->
+    m = sjs.eval """
+        class a
+          '''This is a test class'''
+        """
+    assert.equal "This is a test class", m.a.help
+
   it "Should allow super as an expression", ->
     m = sjs.eval """
         class a
@@ -316,3 +323,14 @@ describe "Classes", ->
     m.test.innerClass.callback.call(obj)
     assert.equal 8, obj.value
 
+
+  it "Should compile with this corner case", ->
+    """When this doesn't work, the number gets "called" with the method...
+    """
+    m = sjs.eval """
+        class Object
+          @dict: 
+              inner: 8  #j
+          method: ->
+            return 6
+        """
