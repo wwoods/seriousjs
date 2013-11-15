@@ -14,16 +14,22 @@ class_stmt
           useList.push(uses[4][i][1]);
         }
       }
-      return R({ op: "class", name: id, parent: parent, body: body,
-          uses: useList });
+      body = body || { statements: [] };
+      return R({ op: "class", name: id, parent: parent, body: body.statements,
+          uses: useList, docString: body.docString });
     }
 
 
 class_body
-  = INDENT_BLOCK_START inner:class_statement_list? BLOCK_END
-        & { return inner; } {
-      return inner;
+  = INDENT_BLOCK_START docString:class_docstring? inner:class_statement_list? BLOCK_END
+        & { return docString || inner; } {
+      return { docString: docString, statements: inner };
     }
+
+
+class_docstring
+  = ASSERT_ON_NEWLINE str:string NEWLINE_SAME? { return str; }
+
 
 class_statement_list
   = ASSERT_ON_NEWLINE

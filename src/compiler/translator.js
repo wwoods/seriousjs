@@ -593,7 +593,7 @@ this.Translator = (function() {
             w.newline(-1);
             w.write("};");
             w.write(n.name);
-            w.write("();");
+            w.write(".call(this);");
           }
         },
      "boundMethod": function(e, n, w) {
@@ -731,6 +731,13 @@ this.Translator = (function() {
             }
             w.write(";");
             e.translate(fakeConstructor);
+          }
+          if (n.docString) {
+            e.translate(n.name);
+            w.write(".__doc__=");
+            e.translate(n.name);
+            w.write(".help=");
+            e.translate(n.docString);
           }
           w.write(";return ");
           e.translate(n.name);
@@ -1103,7 +1110,9 @@ this.Translator = (function() {
                     { op: "if",
                       condition: { op: "<", left: iter, right: iterLen },
                       then: [ { op: "atom", atom: targetName, unary: [],
-                        chain: [ { op: "call", args: [] } ] } ] }
+                        chain: [
+                          { op: "member", id: "call" },
+                          { op: "call", args: [ "this" ] } ] } ] }
                 ]
             };
             e.translate(namedTarget);
@@ -1213,7 +1222,9 @@ this.Translator = (function() {
                     { op: "if",
                       condition: compareTree,
                       then: [ { op: "atom", atom: targetName, unary: [],
-                        chain: [ { op: "call", args: [] } ] } ] }
+                        chain: [
+                          { op: "member", id: "call" },
+                          { op: "call", args: [ "this" ] } ] } ] }
                 ]
             };
             e.translate(namedTarget);
@@ -1567,7 +1578,8 @@ this.Translator = (function() {
                 body: n.body,
                 after: [ { op: "if", condition: n.expr,
                   then: [ { op: "atom", atom: loop, chain: [
-                    { op: "call", args: [] } ] } ] }]
+                    { op: "member", id: "call" },
+                    { op: "call", args: [ "this" ] } ] } ] }]
             };
             var ifClause = { op: "if", condition: n.expr,
               then: [ realLoop ] };
@@ -1734,6 +1746,11 @@ this.Translator = (function() {
     else if (typeof node === "object" && node.tree) {
       var treeOptions = { isModule: true };
       self.comments = node.comments;
+      if (node.help) {
+        w.write("this.__doc__=this.help=");
+        self.translate(node.help, options);
+        w.write(";");
+      }
       self.translate(node.tree, treeOptions);
     }
     else if (typeof node === "object") {

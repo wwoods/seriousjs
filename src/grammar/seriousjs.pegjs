@@ -148,7 +148,7 @@
 }
 
 script
-  = BLOCK_START headers:header_list? script:statement_list? BLOCK_END
+  = BLOCK_START docString:(string NEWLINE_SAME)? headers:header_list? script:statement_list? BLOCK_END
     {
       var r = [];
       if (headers) {
@@ -159,7 +159,7 @@ script
       for (var i = 0, m = script.length; i < m; i++) {
         r.push(script[i]);
       }
-      return { tree: r, comments: allComments };
+      return { tree: r, help: docString && docString[0], comments: allComments };
     }
 
 ##include async.pegjs

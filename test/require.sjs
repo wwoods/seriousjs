@@ -1,5 +1,6 @@
 
 require assert
+require url
 require ../ as sjs
 
 describe "require statement", ->
@@ -25,3 +26,15 @@ describe "require statement", ->
             require url as lru for resolve, parse
             m = resolve('/hey/there', 'you') + lru.resolve('/nobody', 'world')
             """).m
+
+  it "Should work after a module docstring", ->
+    m = sjs.eval("""
+            '''Hello, world'''
+            require url for resolve, parse
+            """)
+    assert.equal "Hello, world", m.help
+    assert.equal "Hello, world", m.__doc__
+    # Be extra sure it was a require statement, not a func call
+    assert.equal url, m.url
+    assert.equal url.resolve, m.resolve
+    assert.equal url.parse, m.parse

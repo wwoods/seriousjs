@@ -67,8 +67,14 @@ describe "Classes", ->
     m = sjs.eval """
         class a
           '''This is a test class'''
+        class b
+          '''Also has a docstring'''
+          value: 32
         """
     assert.equal "This is a test class", m.a.help
+    assert.equal "This is a test class", m.a.__doc__
+    assert.equal "Also has a docstring", m.b.__doc__
+    assert.equal 32, m.b.prototype.value
 
   it "Should allow super as an expression", ->
     m = sjs.eval """

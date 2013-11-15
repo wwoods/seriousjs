@@ -75,3 +75,17 @@ describe "Assignment", ->
     assert.deepEqual { a: 3, b: 4 }, r.f()
     assert.deepEqual { a: 3, b: 4 }, r.f({})
 
+
+  it "Should properly assign compound arrays with missing brackets", ->
+    r = sjs.eval """
+        cases = [
+            [ [ 0, 0 ], [ 1, 0 ]
+            [ [ 0, 1 ], [ 0, 1 ]
+            [ [ 1, 0 ], [ 0, 1 ]
+            [ [ 1, 1 ], [ 1, 0 ]
+        """
+    assert.deepEqual [ [ 0, 0 ], [ 1, 0 ] ], r.cases[0]
+    assert.deepEqual [ [ 0, 1 ], [ 0, 1 ] ], r.cases[1]
+    assert.deepEqual [ [ 1, 0 ], [ 0, 1 ] ], r.cases[2]
+    assert.deepEqual [ [ 1, 1 ], [ 1, 0 ] ], r.cases[3]
+

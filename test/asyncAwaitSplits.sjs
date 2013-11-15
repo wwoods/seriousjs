@@ -216,6 +216,78 @@ describe "await splits", ->
       done()
 
 
+  it "Should preserve 'this' context within while", async extern ->
+    m = sjs.eval """
+        class A
+          @value: 88
+          method: async ->
+            v = @value
+            t = 0
+            while t < 2
+              t += 1
+              v += @value
+              await 0
+            return v
+        a = new A()
+        """
+
+    await r = m.a.method()
+    assert.equal 3*88, r
+
+
+  it "Should preserve 'this' context within forHash", async extern ->
+    m = sjs.eval """
+        class A
+          @value: 88
+          method: async ->
+            v = @value
+            tVals = { 0: 0, 1: 1 }
+            for t of tVals
+              v += @value
+              await 0
+            return v
+        a = new A()
+        """
+
+    await r = m.a.method()
+    assert.equal 3*88, r
+
+
+  it "Should preserve 'this' context within forList", async extern ->
+    m = sjs.eval """
+        class A
+          @value: 88
+          method: async ->
+            v = @value
+            tVals = [ 0, 1 ]
+            for t in tVals
+              v += @value
+              await 0
+            return v
+        a = new A()
+        """
+
+    await r = m.a.method()
+    assert.equal 3*88, r
+
+
+  it "Should preserve 'this' context within forRange", async extern ->
+    m = sjs.eval """
+        class A
+          @value: 88
+          method: async ->
+            v = @value
+            for t in [:2]
+              v += @value
+              await 0
+            return v
+        a = new A()
+        """
+
+    await r = m.a.method()
+    assert.equal 3*88, r
+
+
   it "Should keep context with memberId expressions", async extern ->
     m = sjs.eval """
         class B
