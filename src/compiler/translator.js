@@ -1666,6 +1666,8 @@ this.Translator = (function() {
     asyncCall: true,
     await: true,
     forList: true,
+    forHash: true,
+    forRange: true,
     if: true,
     return: true,
     try: true,
