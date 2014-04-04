@@ -13,27 +13,29 @@ rmDir = sjsUtil.rmDir
 describe "bin/seriousjs and dependencies", ->
   modulesDir = path.join(__dirname, '../../node_modules')
   modulesDirBackup = modulesDir + '.bak'
-  before(async extern (done) ->
+  before(async extern ->
     this.timeout(60000)
 
     # Ensure seriousjs is compiled
-    await seriousjs._getEmbeddedFile()
+    await extern seriousjs._getEmbeddedFile()
 
     fs.renameSync(modulesDir, modulesDirBackup)
 
     # Install our dependencies again
-    cp.exec(
+    await extern stdout, stderr = cp.exec(
         "npm install --production ."
         cwd: __dirname + '/../..'
-        (error, stdout, stderr) ->
-          if error != null
-            console.log(stdout)
-            console.log(stderr)
-            assert.equal null, error
-          done()
+    catch e
+      rmDir(modulesDir)
+      fs.renameSync(modulesDirBackup, modulesDir)
+      throw e
+
+    console.log(stdout)
+    console.log(stderr)
 
 
   after ->
+    this.timeout 60000
     rmDir(modulesDir)
     fs.renameSync(modulesDirBackup, modulesDir)
 
@@ -47,36 +49,35 @@ describe "bin/seriousjs and dependencies", ->
           assert.equal "fib(5): 5\nfib(10): 55\nfib(20): 6765\n", stdout
           done()
 
-  it "Should run fibonacci.sjs with args", (done) ->
-    cp.exec(
+
+  it "Should run fibonacci.sjs with args", async extern ->
+    await extern stdout, stderr = cp.exec(
         "bin/seriousjs examples/fibonacci.sjs 8"
         cwd: __dirname + '/../..'
-        (error, stdout, stderr) ->
-          assert.equal "", stderr
-          assert.equal "fib(8): 21\n", stdout
-          done()
 
-  it "Should work with create-app", (done) ->
+    assert.equal "", stderr
+    assert.equal "fib(8): 21\n", stdout
+
+
+  it "Should work with create-app", async extern ->
     this.timeout(120000)
 
     if fs.existsSync(__dirname + "/testApp")
       rmDir(__dirname + "/testApp")
 
-    cp.exec(
+    await extern stdout, stderr = cp.exec(
         "../../bin/seriousjs create-app testApp"
         cwd: __dirname
-        (error, stdout, stderr) ->
-          assert.equal "Installing dependencies...\n", stderr
-          assert.equal "Project testApp created\n", stdout
 
-          # Also ensure that --build works ok
-          cp.exec(
-              "../../../bin/seriousjs index.sjs --build"
-              cwd: __dirname + '/testApp'
-              (error, stdout, stderr) ->
-                console.log("== stdout ==\n#{ stdout }")
-                console.log("== stderr ==\n#{ stderr }")
-                console.log("== error ==\n#{ error }")
-                assert.equal "", stderr
-                assert.equal "Build finished.\n", stdout
-                done()
+    assert.equal "Installing dependencies...\n", stderr
+    assert.equal "Project testApp created\n", stdout
+
+    # Also ensure that --build works ok
+    await extern stdout, stderr = cp.exec(
+        "../../../bin/seriousjs index.sjs --build"
+        cwd: __dirname + '/testApp'
+
+    console.log("== stdout ==\n#{ stdout }")
+    console.log("== stderr ==\n#{ stderr }")
+    assert.equal "", stderr
+    assert.equal "Build finished.\n", stdout
