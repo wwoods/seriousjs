@@ -12,6 +12,10 @@ describe "require statement", ->
     assert.equal "/hey/you",
         sjs.eval("require url as lru\nm = lru.resolve('/hey/there', 'you')").m
 
+  it "should not import original name with as", ->
+    assert.throws ->
+      sjs.eval "require url as lru\nurl.resolve('/hey/there', 'you')"
+
   it "should support for", ->
     # Note that we also keep the name imported!  Test that too.
     assert.equal "/hey/you/world",

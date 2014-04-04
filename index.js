@@ -4,6 +4,8 @@
   */
 
 var self = this;
+var childProcess = require('child_process');
+var console = require('console');
 var fs = require('fs');
 var mmodule = require('module');
 var path = require('path');
@@ -15,6 +17,10 @@ var sjsCompiler = require('./src/compiler/compiler.js');
 
 //Options for all builds... used typically for testing
 var permaOptions = this.permaOptions = {};
+
+//Node JS default event handlers
+self.onAsyncUnhandledError = function(e) { throw e; };
+self.onAsyncSecondaryError = function(e) { console.error(e); };
 
 if (typeof process !== 'undefined'
     && process.mainModule
@@ -98,8 +104,44 @@ var _buildParser = function() {
 };
 
 var _embeddedFile = __dirname + '/lib/seriousjs-embed.js';
-this._buildEmbedded = function() {
+this._buildEmbedded = function(callback) {
   //Compile seriousjs-embed.js.
+  //check prereqs
+  var buildSourceMap = function(callback) {
+    var checked = function(cmd, args, next) {
+      try {
+        childProcess.execFile(cmd, args, { cwd: sourceMapDir }, next);
+      }
+      catch (e) {
+        next(e);
+      }
+    };
+    var realBuild = function(error) {
+      if (error) {
+        callback(error);
+      }
+      else {
+        checked(process.execPath, [ "Makefile.dryice.js" ], callback);
+      }
+    };
+    checked(path.join(process.execPath, '../npm'), [ "install", "." ], 
+        realBuild);
+  };
+
+  var sourceMapDir = __dirname + '/node_modules/source-map';
+  if (!fs.existsSync(sourceMapDir + '/dist/source-map.min.js')) {
+    buildSourceMap(function(error) {
+      if (error) {
+        callback(error);
+      }
+      else {
+        self._buildEmbedded(callback);
+      }
+    });
+    return;
+  }
+
+  //Assemble file
   var contents = [ '(function(root) {' ];
   var compileDir = __dirname + '/src/compiler';
   var addFile = function(name, fpath, useResult) {
@@ -128,14 +170,32 @@ this._buildEmbedded = function() {
       contents.push("\n");
     }
   };
+
   //Clue in the parser source from the built parser
   addFile("parser", _parserFile, true);
   addFile("compiler", compileDir + '/compiler.js');
+  addFile("sourceMap", sourceMapDir + '/dist/source-map.min.js');
 
   //Now, build our "compile" function.
-  contents.push("\nfunction compile(text, options) {\n\
+  contents.push("\n\
+    function compile(text, options) {\n\
       return compiler.compile(parser, text, options);\n\
-  }\nthis.seriousjs = { compile: compile };\n");
+    }\n\
+    compile.__doc__ = compile.__help__ = 'Compiles code into js';\n\
+    function getJsForEval(text, options) {\n\
+      /* Note that we don't run it because eval() uses calling scope */ \n\
+      options = options || {};\n\
+      if (options.sourceMap == null) {\n\
+        options.sourceMap = sourceMap.sourceMap;\n\
+        options.amdModule = true;\n\
+      }\n\
+      return compile(text, options).js;\n\
+    }\n\
+    getJsForEval.__doc__ = getJsForEval.__help__ = 'Turns sjs code into an AMD module which can be added to the browser';\n\
+    this.seriousjs = { compile: compile, getJsForEval: getJsForEval, \n\
+        sourceMap: sourceMap.sourceMap,\n\
+        onAsyncUnhandledError: function(e){throw e;},\n\
+        onAsyncSecondaryError: typeof console!=='undefined'?console.error:function(e){throw e;} };\n");
 
   contents.push("typeof define==='function' && define(function() { return this.seriousjs; });\n");
   contents.push("return this;\n");
@@ -146,6 +206,7 @@ this._buildEmbedded = function() {
   var uglifyJs = require('uglify-js');
   realContent = uglifyJs.minify(realContent, { fromString: true }).code;
   fs.writeFileSync(_embeddedFile, realContent, 'utf8');
+  callback(null, _embeddedFile);
 };
 
 var _getSjsRequire = function(mod) {
@@ -204,9 +265,9 @@ if (parserSource === null) {
 }
 
 /** A method to get the embedded file, while rebuilding it if it is not up to
-  * date.
+  * date.  Calls callback with path, once built.
   */
-function _getEmbeddedFile() {
+function _getEmbeddedFile(callback) {
   var isOk = false;
   if (fs.existsSync(_embeddedFile)) {
     var mtime = fs.statSync(_embeddedFile).mtime;
@@ -218,10 +279,11 @@ function _getEmbeddedFile() {
   }
 
   if (!isOk) {
-    self._buildEmbedded();
+    self._buildEmbedded(callback);
   }
-
-  return _embeddedFile;
+  else {
+    callback(null, _embeddedFile);
+  }
 }
 //Exposed for tests and requireJs file manipulations
 this._getEmbeddedFile = _getEmbeddedFile;
@@ -291,6 +353,7 @@ this.eval = function(text, options) {
     sandbox.clearTimeout = clearTimeout;
     sandbox.setInterval = setInterval;
     sandbox.clearInterval = clearInterval;
+    sandbox.setImmediate = setImmediate;
     mod.filename = sandbox.__filename;
   }
   var code = this.compile(text, options);

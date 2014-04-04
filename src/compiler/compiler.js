@@ -96,7 +96,12 @@ this.compile = function(parser, text, options) {
   if (options.amdModule) {
     var amdParts = self._makeScriptAmd(requires);
     header += amdParts[0];
+    //Bring in our language module for e.g. async throws.
+    header += "var __sjs_seriousjs = seriousjs;\n";
     footer += amdParts[1];
+  }
+  else {
+    header += "var __sjs_seriousjs = require('seriousjs');\n";
   }
 
   var result = writerObj.getOutput(header, footer, options);

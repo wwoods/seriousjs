@@ -5,7 +5,6 @@ require path
 require seriousjs
 require ./util as sjsUtil
 
-_embeddedFile = seriousjs._getEmbeddedFile()
 _requireJsSource = path.join(__dirname, '../../lib/requirejs')
 
 serveWebapp = (app, appPath, { headers = [], shim = [], title = "My Webapp - SeriousJs" }) ->
@@ -64,6 +63,7 @@ setupWebapp = async (app, express, webappPath) ->
     fs.writeFileSync(copyTarget, contents)
 
   # Copy require.js into path...
+  await extern _embeddedFile = seriousjs._getEmbeddedFile()
   copy(_embeddedFile, true)
   copy('require.js')
   copy('css.js')

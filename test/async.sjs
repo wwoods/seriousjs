@@ -175,7 +175,9 @@ describe "async functionality", ->
 
   it "Should not squelch multiple errors from async", ->
     """Ensure that if there are several errors thrown, the non-first ones
-    get thrown again (rather than getting passed to the callback).
+    get thrown again (rather than getting passed to the callback).  
+    Also shouldn't be handled by onSecondaryError since it happened in a
+    callback.
     """
     m = sjs.eval """
         q = async extern ->
@@ -185,13 +187,17 @@ describe "async functionality", ->
               throw 'g'
               n += 1
           return g[0]"""
+
+    threw = true
     try
       m.q(
           (error, r) ->
             throw "Don't squelch me!"
-      assert.fail "Never threw"
+      threw = false
     catch e
       assert.equal "Don't squelch me!", e.message or e
+    if not threw
+      assert.fail "Never threw"
 
 
   it "Should work with a blank return", (done) ->
@@ -370,22 +376,6 @@ describe "async functionality", ->
           m.f()
         catch e
           assert.equal "error", e.message or e
-
-
-  it "Should throw an error within an await condition rather than hiding", ->
-    m = sjs.eval """
-        d = async ->
-          throw "Noodles"
-        f = ->
-          async
-            "abcImOk"
-            await d
-        """
-    try
-      m.f()
-      assert.fail "Never threw"
-    catch e
-      assert.equal "Noodles", e
 
 
   it "Should propagate errors", (done) ->

@@ -99,6 +99,18 @@ describe "await splits", ->
     assert.equal 4, r[5]
 
 
+  it "Should work with awaited intervals and seconds", async extern ->
+    m = sjs.eval """
+        g = async ->
+          s = Date.now()
+          await (0.05 + 0.05)s
+          return Date.now() - s
+        """
+    await r = m.g
+    assert.equal true, 100 <= r
+    assert.equal true, 500 >= r
+
+
   it "Should work with for statements and lists", async extern ->
     m = sjs.eval """
         g = async (val) ->

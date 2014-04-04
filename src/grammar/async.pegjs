@@ -16,6 +16,12 @@ async_expr
   / "await" _ time:await_time {
       //note that "after" will be filled in automagically before we get to
       //the translator.
+      if (time.op == "number" && time.num == 0) {
+        return R({ op: "await", catchAsync: true, after: null,
+            body: [ R({ op: "asyncCall", spec: { asyncExtern: true }, call: {
+              op: "asyncCallee", func: "setImmediate",
+              args: [ { op: "id", id: "callback" } ] } }) ] });
+      }
       return R({
           op: "await",
           catchAsync: true,
@@ -135,9 +141,15 @@ await_time
       interval = interval || 1.0;
       return R({ op: "number", num: parseFloat(time) * interval });
     }
-  / "(" expr:expression ")" {
+  / "(" expr:expression ")" interval:await_interval? {
       //If expr was atom, we're actually an async call, so don't handle here.
-      return expr;
+      interval = interval || 1.0;
+      if (interval != 1.0) {
+        return { op: "*", left: { op: "()", expr: expr }, right: interval };
+      }
+      else {
+        return expr;
+      }
     }
 
 

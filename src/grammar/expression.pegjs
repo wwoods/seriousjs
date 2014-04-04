@@ -2,7 +2,12 @@
 
 expression
   = lambda
-  / base:atom_chain [ \t]+ args:arguments_list
+  / parenless_call
+  / async_expr
+  / ternary_expr
+
+parenless_call
+  = base:atom_chain [ \t]+ args:arguments_list
         & { return args; } {
       //This is the paren-less syntax for calling a function;
       //for instance: "fib n+1"
@@ -10,8 +15,6 @@ expression
       base.chain.push(call);
       return base;
     }
-  / async_expr
-  / ternary_expr
 
 range_expression
   = "[" _ rangeExpr:range_expression_inner (_ "]" / ASSERT_ON_ENDLINE) {
@@ -202,7 +205,8 @@ base_assignable_atom
     }
 
 list_literal
-  = "[" args:arguments_delimited ("]" / ASSERT_ON_ENDLINE) {
+  = "[" CONTINUATION_OPEN args:arguments_delimited? ended:CONTINUATION_END?
+        &{ return args; } ("]" / ASSERT_ON_ENDLINE) {
       return { "op": "list", "elements": args };
     }
 
@@ -215,7 +219,7 @@ atom_mod
   = "(" args:arguments_delimited (")" / ASSERT_ON_ENDLINE) {
       return R({ op: "call", args: args });
     }
-  / _ mod:atom_mod_expr { return mod; }
+  / NEWLINE_SAME? mod:atom_mod_expr { return mod; }
 
 atom_mod_expr
   = "[" _ expr:(range_expression_inner / expression) (_ "]" / ASSERT_ON_ENDLINE) {

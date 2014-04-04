@@ -33,3 +33,16 @@ describe "Indent syntax", ->
     m.f(checkArgs, inner)
     assert.equal 1, seen[0]
 
+
+  it "Should parse array members vs parenless calls correctly", ->
+    assert.deepEqual.message = [ "message" ]
+    try
+      (sjs.eval """q = (assert) -> assert.deepEqual [ "message" ], [ "message" ]""").q(assert)
+      (sjs.eval """q = (assert) -> assert.deepEqual assert.deepEqual[ "message" ], [ "message" ]""").q(assert)
+      assert.throws ->
+        sjs.eval """q = (assert) -> assert.deepEqual[ "message" ], [ "message" ]"""
+      (sjs.eval """q = (assert) -> assert.deepEqual assert.deepEqual\n    [ "message" ], [ "message" ]""").q(assert)
+      assert.throws ->
+        (sjs.eval """q = (assert) -> assert.deepEqual 12, assert.deepEqual(\n    [ "message" ], [ "message" ]""").q(assert)
+    finally
+      delete assert.deepEqual.message

@@ -13,11 +13,11 @@ rmDir = sjsUtil.rmDir
 describe "bin/seriousjs and dependencies", ->
   modulesDir = path.join(__dirname, '../../node_modules')
   modulesDirBackup = modulesDir + '.bak'
-  before (done) ->
+  before(async extern (done) ->
     this.timeout(60000)
 
     # Ensure seriousjs is compiled
-    seriousjs._getEmbeddedFile()
+    await seriousjs._getEmbeddedFile()
 
     fs.renameSync(modulesDir, modulesDirBackup)
 

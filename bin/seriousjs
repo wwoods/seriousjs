@@ -15,30 +15,37 @@ program
   .option("--release")
   .description('compile the language and embeddable script')
   .action(function(options) {
-    //When sjs was require'd, it was compiled.  So we're good on the parser, but
-    //we need to make the seriousjs-embed.js file as well.
-    sjs._buildEmbedded();
+    function postBuild(error) {
+      if (error) {
+        console.error(error);
+        return;
+      }
 
-    //We also have to delete any node_modules in the templates directory, since
-    //npm pack apparently will never ignore node_modules...
-    var sjsUtil = require('../src/binUtil/util');
-    var templatePath = __dirname + '/../templates';
-    var templates = fs.readdirSync(templatePath);
-    for (var i = 0, m = templates.length; i < m; i++) {
-      var templateMods = path.join(templatePath, templates[i], 'node_modules');
-      if (fs.existsSync(templateMods)) {
-        sjsUtil.rmDir(templateMods);
+      //We also have to delete any node_modules in the templates directory, since
+      //npm pack apparently will never ignore node_modules...
+      var sjsUtil = require('../src/binUtil/util');
+      var templatePath = __dirname + '/../templates';
+      var templates = fs.readdirSync(templatePath);
+      for (var i = 0, m = templates.length; i < m; i++) {
+        var templateMods = path.join(templatePath, templates[i], 'node_modules');
+        if (fs.existsSync(templateMods)) {
+          sjsUtil.rmDir(templateMods);
+        }
+      }
+
+      //If --release was specified, also copy to documentation
+      if (options.release) {
+        console.log("Copying lib/seriousjs-embed.js to documentation/lib");
+        var src = path.join(__dirname, "../lib/seriousjs-embed.js");
+        var dest = path.join(__dirname,
+            "../documentation/lib/seriousjs-embed.js");
+        require('child_process').exec("cp " + src + " " + dest);
       }
     }
 
-    //If --release was specified, also copy to documentation
-    if (options.release) {
-      console.log("Copying lib/seriousjs-embed.js to documentation/lib");
-      var src = path.join(__dirname, "../lib/seriousjs-embed.js");
-      var dest = path.join(__dirname,
-          "../documentation/lib/seriousjs-embed.js");
-      require('child_process').exec("cp " + src + " " + dest);
-    }
+    //When sjs was require'd, it was compiled.  So we're good on the parser, but
+    //we need to make the seriousjs-embed.js file as well.
+    sjs._buildEmbedded(postBuild);
   });
 
 program

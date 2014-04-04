@@ -50,15 +50,11 @@ function setup() {
     }
 
     function runScript() {
-        try {
-            compileScript(true);
-            console.clear();
-            eval(jsSide.val());
-        }
-        catch (e) {
-            //Just wait for the window to update
-            console.error(e);
-        }
+        _compileScript(true);
+        console.clear();
+        var jsForEval = seriousjs.getJsForEval(lastVal);
+        //Preserves source-mapped stack traces.
+        $('<script>').html(jsForEval).appendTo("head").remove();
     }
 
     var console = {
@@ -71,16 +67,10 @@ function setup() {
             console._dom.empty().append(
                     '<div class="results-header">Console Output</div>');
             console._dom.show();
-        },
-        error: function(e) {
-            var errorDom = $('<div class="results-error"></div>')
-            errorDom.append(e.stack);
-            console._add(errorDom);
-            realConsole.error(e);
-        },
-        log: function(msg) {
-            console._add("> " + msg);
-            realConsole.log(msg);
+            console._add("Check your browser's dev console!  (this used to "
+                    + "show output, but now that we have source maps working, "
+                    + "and most browsers show line information, it's better "
+                    + "to just check it out there)");
         },
         _add: function(obj) {
             if (!(obj instanceof $)) {

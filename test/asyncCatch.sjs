@@ -112,3 +112,25 @@ describe "Async catch/finally", ->
         """
     await r = m.g
     assert.equal 22, r
+
+
+  it "Should work with nested asyncs with catches and closures", async extern ->
+    m = sjs.eval """
+        g = async (v) ->
+          await (v * 10)ms
+          throw "I'm an error"
+          return v + 1
+        f = async ->
+          values = []
+          async g
+          catch e
+            values.push(e)
+          for a in [ 1, 2, 3 ]
+            async g a
+            catch e
+              values.push(e + ", " + a)
+          return values
+        """
+    await r = m.f
+    s = "I'm an error"
+    assert.deepEqual [ s, s + ", 1", s + ", 2", s + ", 3" ], r

@@ -6,6 +6,23 @@
         <link rel="stylesheet" type="text/css" href="documentation/css/doc.css" />
         <link rel="stylesheet" type="text/css" href="documentation/css/interpreter.css" />
         <script type="text/javascript" src="documentation/lib/seriousjs-embed.js"></script>
+        <script>
+            //Since we're using AMD modules (for source maps) but don't have
+            //require.js installed in this demo, make our own define() function
+            function define(reqs, f) {
+                if (f == null) {
+                    f = reqs;
+                    reqs = null;
+                }
+                if (typeof f !== 'function') {
+                    console.log(f);
+                    console.error("Not a function?");
+                }
+                else {
+                    f();
+                }
+            }
+        </script>
         <!-- This script is for debugging only; it should not load when used with remote version -->
         <script type="text/javascript" src="lib/seriousjs-embed.js"></script>
         <script type="text/javascript" src="documentation/lib/jquery-1.9.1.min.js"></script>
@@ -20,7 +37,10 @@
                     <td>Javascript</td>
                 </tr>
                 <tr class="code-panels">
-                    <td><textarea class="seriousjs">
+                    <td>
+                        <!-- firefox workaround... -->
+                        <div class="firefox-fix"><div class="firefox-fix-inner">
+                        <textarea class="seriousjs">
 # Welcome to SeriousJS' interactive interpreter
 ### Block comments
 like this ###
@@ -65,22 +85,27 @@ jqueryGetter = (url, callback) ->
     console.log("Getting #{ url } with callback #{ callback }")
     $.ajax(
             url
+            crossDomain: true
             success: (data) ->
                 console.log(data.substring(0, 100))
                 callback(null, data)
             error: (jqXhr, textStatus, errorThrown) ->
-                callback("#{ textStatus } / #{ errorThrown }")
+                callback("jqueryGetter error: #{ textStatus } / #{ errorThrown }")
 
-method = async () ->
+# Extern means callable without async / await keywords
+method = async extern () ->
     async progressDemo
     for a in ['http://www.google.com', 'http://www.yahoo.com', 'http://www.bing.com']
-        async jqueryGetter a
+        async extern jqueryGetter a
+        catch e
+            console.log "Error getting #{ a }: #{ e }"
 
 method (error, result) ->
     console.log error
     console.log result
-</textarea></td>
-                    <td><textarea class="javascript"></textarea></td>
+</textarea></div></div></td>
+                    <td><div class="firefox-fix"><div class="firefox-fix-inner"><textarea class="javascript"></textarea>
+                        </div></div></td>
                 </tr>
                 <tr>
                     <td></td>

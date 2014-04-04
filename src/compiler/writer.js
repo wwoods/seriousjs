@@ -23,14 +23,17 @@ var ASYNC = {
 
 var allFeatures = {
   async: ""
-      + "__asyncCheck=function(obj,error){"
+      /** thrown means we caught something rather than getting an error from a
+          callback. */
+      + "__asyncCheck=function(obj,error,thrown){"
       + (ASYNC.debug ? " console.log(obj.s + ' check - ' + obj.c);" : "")
-      + " if(obj." + ASYNC.TRIGGERED + " && error!==obj." + ASYNC.TRIGGERED + "){"
-      + (ASYNC.debug ? " console.log(obj.s + ' abort');" : "")
-      + (ASYNC.debug ? " console.log(obj.f + ' vs ' + error);" : "")
-      //Even if we've triggered already, if it's a new error, don't just
-      //disappear it.  Log it by throwing it.
-      + "  if(error){throw error}"
+      /** If we've been triggered before, then this is NOT a primary error.  If
+          it was thrown, it was thrown from another handler, and we should
+          re-throw it.  If it wasn't, it's a secondary error. */
+      + " if(obj." + ASYNC.TRIGGERED + "){"
+      + "  if (!error) { return; }"
+      + "  if (thrown) { throw error; }"
+      + "  __sjs_seriousjs.onAsyncSecondaryError(error);"
       + "  return"
       + " }"
       + " obj." + ASYNC.COUNT + "--;"
@@ -62,20 +65,21 @@ var allFeatures = {
       + "__asyncTrigger=function(obj,error,result){"
       //Guard for ASYNC.TRIGGERED being false is in asyncCheck.
       + " obj." + ASYNC.TRIGGERED + "=true;"
-      + (ASYNC.debug ? " console.log(obj.s + ' trigger - ' + error || result);" : "")
+      + (ASYNC.debug ? " console.log(obj.s + ' trigger - ' + (error ? '(error) ' + error : result));" : "")
+      //Async blocks with no error callback or the callback doesn't handle
+      //errors
       + " if(obj." + ASYNC.NOERROR + "||!obj." + ASYNC.RESULT_CALLBACK + "){"
+      + (ASYNC.debug ? " console.log(obj.s + ' - noError or noCallback');" : "")
       + "  if(error){"
-      //We set triggered to the error so that we can detect double-catch
-      //scenarios.  When there is no callback, the exception is re-raised.  If
-      //this happens inside of the "after" part of an await block, but that is
-      //happening in the same context as the original try block (in other words,
-      //after is called by the body), then we'll re-catch the error, but see
-      //that we've already been triggered.  This is a workaround for that.
-      + "   obj." + ASYNC.TRIGGERED + "=error;"
-      + "   throw error"
+      //This async block has no error handling, or doesn't have a callback.  So,
+      //this is an unhandled error.  We have no one to give it to either way.
+      //Note that we should NOT call the result callback if there is an error,
+      //since noerror behavior is to just "drop" the thread.
+      + "   __sjs_seriousjs.onAsyncUnhandledError(error)"
       + "  }"
-      + "  obj." + ASYNC.RESULT_CALLBACK + " && obj." + ASYNC.RESULT_CALLBACK
-      +       ".call(obj." + ASYNC.THIS + ",result);"
+      + "  else if (obj." + ASYNC.RESULT_CALLBACK + ") {"
+      + "   obj." + ASYNC.RESULT_CALLBACK + ".call(obj." + ASYNC.THIS + ",result);"
+      + "  }"
       + " }"
       + " else {"
       + "  obj." + ASYNC.RESULT_CALLBACK + " && obj." + ASYNC.RESULT_CALLBACK
@@ -322,12 +326,15 @@ this.Closure = Closure = (function() {
     writer.write(this.getAsyncDataVar() + "." + ASYNC.COUNT + "++");
   };
 
-  Closure.prototype.asyncCheck = function(writer, errorVar) {
+  Closure.prototype.asyncCheck = function(writer, errorVar, wasThrown) {
     writer.write("__asyncCheck(");
     writer.write(this.getAsyncDataVar());
     if (errorVar) {
       writer.write(",");
       writer.write(errorVar);
+    }
+    if (wasThrown) {
+      writer.write(",true");
     }
     writer.write(")");
   };
@@ -341,7 +348,7 @@ this.Closure = Closure = (function() {
     //Add 1 to count since we'll also trigger in the finally block!
     this.asyncAddCall(w, "error: ' + __error + '");
     w.write(";");
-    this.asyncCheck(w, "__error");
+    this.asyncCheck(w, "__error", true);
     w.newline(-1);
     w.write("}finally{");
     w.newline(1);

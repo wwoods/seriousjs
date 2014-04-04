@@ -1,4 +1,23 @@
 
+/** Wtf, firefox.  14 years?  https://bugzilla.mozilla.org/show_bug.cgi?id=35168
+    */
+.firefox-fix {
+    position: relative;
+    height: 100%;
+    width: 100%;
+}
+
+.firefox-fix-inner {
+    position: absolute;
+    top: 0;
+    right: 0.5em;
+    bottom: 0;
+    left: 0;
+    border: solid 1px #888;
+    padding: 0.25em;
+    margin-top: 0.25em;
+}
+
 .interpreter table {
     width: 100%;
 }
@@ -12,11 +31,14 @@
 .interpreter textarea {
     position: absolute;
     top: 0;
-    right: 0.5em;
-    bottom: 0;
     left: 0;
+    width: 100%;
+    height: 100%;
     font-family: monospace;
     font-size: 9pt;
+    margin: 0;
+    padding: 0;
+    border: 0;
 }
 
 .interpreter textarea.javascript {

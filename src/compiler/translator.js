@@ -21,6 +21,54 @@ this.Translator = (function() {
       });
     }
   };
+  var VariableClosure = (function() {
+    var cType = (function() {
+      function cType(closure) {
+        this.closure = closure;
+        this.leaks = {};
+      }
+      cType.prototype.leak = function(name) {
+        this.leaks[name] = true;
+      };
+      cType.prototype.toString = function() {
+        var r = [];
+        for (var v in this.closure.vars) {
+          if (this.closure.vars[v] !== "used" || this.leaks.hasOwnProperty(v)) {
+            //Assigned
+            continue;
+          }
+          r.push(v);
+        }
+        return r.join(",");
+      };
+      return cType;
+    })();
+
+    function VariableClosure(w) {
+      this.w = w;
+      this.c = w.startClosure({ isClosure: true });
+      this.args = new cType(this.c);
+      w.write("(function(");
+      w.write(this.args);
+      w.write("){");
+      w.write(this.c);
+    }
+    VariableClosure.prototype.close = function() {
+      this.w.endClosure();
+      this.w.write("}).apply(this, [");
+      this.w.write(this.args);
+      this.w.write("]);");
+    };
+    /** AFTER a variable has been assigned, leaking it will make it be declared
+        at the parent closure's scope, and this VariableClosure() will not proxy
+        its definition (since technically it's defined within).  Used for async
+        catch and finally callbacks. */
+    VariableClosure.prototype.leak = function(name) {
+      this.args.leak(name);
+      this.c.vars[name] = "used";
+    };
+    return VariableClosure;
+  })();
   var opTable = {
     "->": function(e, n, w, options) {
           var nearClosure = w.getClosure();
@@ -225,11 +273,19 @@ this.Translator = (function() {
           //a "new thread", so we only accept certain await closures.
           var cAsyncParent = w.getClosure({ catchAsync: true });
 
+          var outerClosure = null;
+          if (cAsyncParent !== null && !cAsyncParent.props.isAwait) {
+            //If we're not being waited on, we need a closure in case we're in
+            //e.g. a for loop
+            outerClosure = new VariableClosure(w);
+          }
+
           //async blocks are always inside a closure.  So use the closure as
           //our asyncParent.
           var c = w.startClosure({ isAsync: true,
               asyncParent: w.getClosure({ isAsyncOrClosure: true }) });
-          if (c.props.asyncParent.props.isClosure) {
+          if (c.props.asyncParent.props.isClosure
+              && !c.props.asyncParent.props.isFunction) {
             //Belongs to this async block, so flag it
             c.props.asyncParent.setAsyncDataVar(c.getAsyncDataVar());
           }
@@ -244,7 +300,6 @@ this.Translator = (function() {
             c.setAsyncCallback(parentCallback);
           }
 
-          //Set up catch and finally.
           c.asyncSetupCatchFinally(w, e, n.catchStmt, n.finallyStmt);
 
           w.goToNode(n);
@@ -264,6 +319,10 @@ this.Translator = (function() {
           w.newline(-1);
           c.asyncCloseTry(w);
           w.endClosure();
+
+          if (outerClosure) {
+            outerClosure.close();
+          }
         },
      "asyncCall": function(e, n, w) {
           w.usesFeature("async");
@@ -752,35 +811,9 @@ this.Translator = (function() {
           w.write(")");
         },
      "closure": function(e, n, w) {
-          var cType = (function() {
-            function cType(closure) {
-              this.closure = closure;
-            }
-            cType.prototype.toString = function() {
-              var r = [];
-              for (var v in this.closure.vars) {
-                if (this.closure.vars[v] !== "used") {
-                  //Assigned
-                  continue;
-                }
-                r.push(v);
-              }
-              return r.join(",");
-            };
-            return cType;
-          })();
-
-          var c = w.startClosure({ isClosure: true });
-          var args = new cType(c);
-          w.write("(function(");
-          w.write(args);
-          w.write("){");
-          w.write(c);
+          var c = new VariableClosure(w);
           e.translate(n.body);
-          w.endClosure();
-          w.write("}).apply(this, [");
-          w.write(args);
-          w.write("])");
+          c.close();
         },
      "comment": function(e, n, w) {
           var lines = n.comment.split(/\n/g);

@@ -178,6 +178,13 @@ Classes and @-binding:
     t.f (method) -> method()
 
 
+Changelog
+---------
+
+* 2014-4-3 - Fixed list of lists parsing, async throwing, async catch blocks in
+  a for loop, onAsyncUnhandledError, onAsyncSecondaryError
+
+
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/wwoods/seriousjs/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
