@@ -7,7 +7,7 @@ function setup() {
     var jsSide = $('.interpreter .javascript');
     var lastVal = "";
     var showErrorTimer = null;
-    sjsSide.bind('keyup', function(e) {
+    sjsSide.bind('keydown', function(e) {
         compileScript();
         if (e.which === 13 && (e.ctrlKey || e.metaKey)) {
             runScript();
