@@ -7,6 +7,7 @@ require ../ as sjs
 describe "seriousjs-embed.js", ->
   built = [ null ]
   before async extern ->
+    @timeout 10000
     await extern sjs._buildEmbedded()
     built[0] = sandbox = vm.Script.createContext()
     vm.runInContext(

@@ -354,6 +354,7 @@ this.eval = function(text, options) {
     sandbox.setInterval = setInterval;
     sandbox.clearInterval = clearInterval;
     sandbox.setImmediate = setImmediate;
+    sandbox.clearImmediate = clearImmediate;
     mod.filename = sandbox.__filename;
   }
   var code = this.compile(text, options);

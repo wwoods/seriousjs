@@ -455,6 +455,10 @@ this.Translator = (function() {
           }
           var funcContext = null;
           var funcToCall = n.call.func;
+          if (funcToCall === "setImmediate") {
+            //Browser support for browsers who don't have it
+            w.usesFeature("setImmediate");
+          }
           //Do the check
           if (!n.spec.asyncExtern && !n.spec.asyncNoError) {
             if (n.call.func.op !== "id") {

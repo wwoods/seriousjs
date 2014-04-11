@@ -153,6 +153,11 @@ var allFeatures = {
       + " return child;"
       + "}",
   hasProp: "__hasProp = {}.hasOwnProperty",
+  setImmediate: ""
+      + "setImmediate=(typeof setImmediate == 'undefined'?"
+      +   "function(f){return setTimeout(f, 0);}:setImmediate),"
+      + "clearImmediate=(typeof clearImmediate == 'undefined'?"
+      +   "clearTimeout:clearImmediate)",
   uses: ""
       + "__extendsUse = function(obj, mixin) {"
       + " if(mixin.prototype){"

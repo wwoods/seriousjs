@@ -16,19 +16,19 @@ async_expr
   / "await" _ time:await_time {
       //note that "after" will be filled in automagically before we get to
       //the translator.
-      if (time.op == "number" && time.num == 0) {
-        return R({ op: "await", catchAsync: true, after: null,
-            body: [ R({ op: "asyncCall", spec: { asyncExtern: true }, call: {
-              op: "asyncCallee", func: "setImmediate",
-              args: [ { op: "id", id: "callback" } ] } }) ] });
+      var method = "setTimeout";
+      var args = [ { op: "id", id: "callback" }, time ];
+      if (time.op === "number" && time.num == 0) {
+        method = "setImmediate";
+        args.pop();
       }
       return R({
           op: "await",
           catchAsync: true,
           after: null,
           body: [ R({ op: "asyncCall", spec: { asyncExtern: true }, call: {
-            op: "asyncCallee", func: "setTimeout",
-            args: [ { op: "id", id: "callback" }, time ] } }) ]
+            op: "asyncCallee", func: method,
+            args: args } }) ]
       });
     }
   / "await" _ call:async_call {
