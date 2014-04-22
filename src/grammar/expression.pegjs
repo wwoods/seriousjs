@@ -225,6 +225,6 @@ atom_mod_expr
   = "[" _ expr:(range_expression_inner / expression) (_ "]" / ASSERT_ON_ENDLINE) {
       return { "op": "arrayMember", "expr": expr };
     }
-  / "." id:Identifier {
+  / "." id:IdentifierExceptJsKeyword {
       return { "op": "member", "id": id };
     }

@@ -1,11 +1,16 @@
-Identifier "identifier"
+Identifier "identifier (not keyword)"
   = !ReservedWord name:IdentifierName {
       return R({ "op": "id", "id": name });
     }
 
+IdentifierExceptJsKeyword "identifier (except js keyword)"
+  = !ReservedWordJs name:IdentifierName {
+      return R({ op: "id", id: name });
+    }
+
 IdentifierMaybeMember
   = "@class" { return R({ op: "memberClass" }); }
-  / "@" id:Identifier { return R({ op: "memberId", id: id.id }); }
+  / "@" id:IdentifierExceptJsKeyword { return R({ op: "memberId", id: id.id }); }
   / "@" { return R({ op: "memberSelf" }); }
   / Identifier
   / "this" { return R({ op: "id", id: "this" }); }
