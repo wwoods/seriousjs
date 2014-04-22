@@ -124,7 +124,7 @@ this._buildEmbedded = function(callback) {
         checked(process.execPath, [ "Makefile.dryice.js" ], callback);
       }
     };
-    checked(path.join(process.execPath, '../npm'), [ "install", "." ], 
+    checked(path.join(process.execPath, '../npm'), [ "install", "." ],
         realBuild);
   };
 
@@ -195,7 +195,7 @@ this._buildEmbedded = function(callback) {
     this.seriousjs = { compile: compile, getJsForEval: getJsForEval, \n\
         sourceMap: sourceMap.sourceMap,\n\
         onAsyncUnhandledError: function(e){throw e;},\n\
-        onAsyncSecondaryError: typeof console!=='undefined'?console.error:function(e){throw e;} };\n");
+        onAsyncSecondaryError: typeof console!=='undefined'?function(e){console.error(e)}:function(e){throw e;} };\n");
 
   contents.push("typeof define==='function' && define(function() { return this.seriousjs; });\n");
   contents.push("return this;\n");
