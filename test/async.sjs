@@ -175,7 +175,7 @@ describe "async functionality", ->
 
   it "Should not squelch multiple errors from async", ->
     """Ensure that if there are several errors thrown, the non-first ones
-    get thrown again (rather than getting passed to the callback).  
+    get thrown again (rather than getting passed to the callback).
     Also shouldn't be handled by onSecondaryError since it happened in a
     callback.
     """
@@ -240,6 +240,16 @@ describe "async functionality", ->
       done()
 
 
+  it "Should detect when a callback argument is not a callback", (done) ->
+    """That is, if a parameter is passed that we did not expect, then it should
+    not be coerced into the callback.  This affects e.g. event callbacks."""
+    m = sjs.eval """
+        f = async extern ->
+          return "haha"
+        """
+    m.f "apples"
+
+
   it "Should not cascade beyond first undefined", ->
     m = sjs.eval """
         f = async extern (data1, data2) ->
@@ -288,7 +298,7 @@ describe "async functionality", ->
           await inner
           return "FailWhale"
         """
-    m.f (error) -> 
+    m.f (error) ->
       assert.equal "NOOOoooooo", error and error.message or error
       assert.equal true, error.stack.indexOf('/eval:13') >= 0
       done()
