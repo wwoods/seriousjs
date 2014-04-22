@@ -12,12 +12,22 @@ app = express()
 # all environments
 app.set('port', process.env.PORT or 3000)
 app.set('views', __dirname + '/server/views')
-app.use(express.favicon())
-app.use(express.logger('dev'))
-app.use(express.bodyParser())
-app.use(express.methodOverride())
-app.use(app.router)
 
+# Basic logging
+lastDate = [ "" ]
+app.use async extern (req, res) ->
+  n = new Date()
+  pad = (t) ->
+    return ("00" + t).slice(-2)
+  d = "#{ n.getFullYear() }-#{ pad(n.getMonth()+1) }-#{ pad(n.getDate()) }T"
+  if d == lastDate[0]
+    d = ""
+  else
+    lastDate[0] = d
+  h = "#{ pad(n.getHours()) }:#{ pad(n.getMinutes()) }:#{ pad(n.getSeconds()) }"
+  console.log("#{ d }#{ h } #{ req.method } #{ req.url }")
+
+# Core server bootstrapping
 async
   # Link our webapp into /src, optionally building an optimized version
   await r = seriousjs.requireJs().setupWebapp(app, express,
@@ -29,11 +39,7 @@ async
   # Initialize application
   await sjsAppOptions = server.init(app)
 
-  # development only
-  if 'development' == app.get('env')
-    app.use(express.errorHandler())
-
-  # Expose a basic HTML page to serve the app at /src
+  # Expose a basic HTML page to serve the app from /webapp under /src
   seriousjs.requireJs().serveWebapp(
       app, '/',
       shim: sjsAppOptions.scripts
