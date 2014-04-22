@@ -181,6 +181,8 @@ Classes and @-binding:
 Changelog
 ---------
 
+* 2014-4-21 - Updated create-app template.  Added test as a TODO.  Updated
+  version / npm registry with latest changes.
 * 2014-4-3 - Fixed list of lists parsing, async throwing, async catch blocks in
   a for loop, onAsyncUnhandledError, onAsyncSecondaryError
 

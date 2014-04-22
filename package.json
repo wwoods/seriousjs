@@ -1,7 +1,7 @@
 {
   "name": "seriousjs",
   "preferGlobal": true,
-  "version": "0.1.7",
+  "version": "0.1.8",
   "author": "Walt Woods <woodswalben@gmail.com>",
   "description": "An improved javascript syntax with tools for developing large-scale applications and websites",
   "bin": {
@@ -13,14 +13,14 @@
   },
   "main": "./index.js",
   "dependencies": {
-    "commander": ">=0.0.0",
-    "uglify-js": ">=2.0.0",
-    "source-map": ">=0.1.27",
-    "source-map-support": "0.2.1"
+    "commander": "2.2.x",
+    "uglify-js": "2.4.x",
+    "source-map": "0.1.x",
+    "source-map-support": "0.2.x"
   },
   "devDependencies": {
-    "mocha": ">=1.8",
-    "requirejs": "2.1.2"
+    "mocha": "1.x",
+    "requirejs": "2.1.x"
   },
   "repository": {
     "type": "git",
@@ -28,6 +28,6 @@
   },
   "license": "MIT",
   "engines": {
-    "node": ">=0.7"
+    "node": ">=0.10"
   }
 }
