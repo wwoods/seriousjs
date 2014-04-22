@@ -1,7 +1,10 @@
 ReservedWord "ReservedWord"
   = (ReservedWordSjs / ReservedWordJs) !IdentifierPart
 
-ReservedWordSjs
+ReservedWordSjs "SeriousJS ReservedWord"
+  = ReservedWordSjsInner !IdentifierPart
+
+ReservedWordSjsInner
   = "and"
   / "async"
   / "await"
