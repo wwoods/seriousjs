@@ -1,5 +1,5 @@
 ReservedWord "ReservedWord"
-  = (ReservedWordSjs / ReservedWordJs) !IdentifierPart
+  = (ReservedWordSjsInner / ReservedWordJs) !IdentifierPart
 
 ReservedWordSjs "SeriousJS ReservedWord"
   = ReservedWordSjsInner !IdentifierPart
@@ -21,6 +21,9 @@ ReservedWordSjsInner
   / "undefined"
 
 ReservedWordJs
+  = ReservedWordJsInner !IdentifierPart
+
+ReservedWordJsInner
   = "break"
   / "case"
   / "catch"
