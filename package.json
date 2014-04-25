@@ -1,7 +1,7 @@
 {
   "name": "seriousjs",
   "preferGlobal": true,
-  "version": "0.1.8",
+  "version": "0.1.9",
   "author": "Walt Woods <woodswalben@gmail.com>",
   "description": "An improved javascript syntax with tools for developing large-scale applications and websites",
   "bin": {

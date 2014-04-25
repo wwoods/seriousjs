@@ -181,8 +181,12 @@ Classes and @-binding:
 Changelog
 ---------
 
+### 0.1.9
 * 2014-4-24 - Made create-static template, for sites with no server component.
-  Check if callback is function for async, if it's not, unset it.
+  Check if callback is function for async, if it's not, unset it.  Fixed parse
+  error with arguments separated by newlines.
+
+### 0.1.8
 * 2014-4-21 - Updated create-app template.  Added test as a TODO.  Updated
   version / npm registry with latest changes.
 * 2014-4-3 - Fixed list of lists parsing, async throwing, async catch blocks in
