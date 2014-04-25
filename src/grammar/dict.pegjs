@@ -50,9 +50,8 @@ dict_arguments_list
     }
 
 dict_argument
-  = CONTINUATION_START arg:dict_argument_inner? CONTINUATION_END
+  = CONTINUATION_OPEN arg:dict_argument_inner? CONTINUATION_END?
       & { return arg; } { return arg; }
-  / dict_argument_inner
 
 dict_argument_inner
   = id:(Identifier / string / NumberLiteral) _ ":" _ expr:expression {

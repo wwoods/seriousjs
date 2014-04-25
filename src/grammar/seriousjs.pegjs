@@ -262,5 +262,7 @@ argument
   = head:dict_argument tail:(ARG_SEP dict_argument)* {
     return { op: "dict", elements: getArray(head, tail, 1) };
   }
-  / expression
+  / CONTINUATION_OPEN expr:expression? CONTINUATION_END? & { return expr; } {
+      return expr;
+    }
 
