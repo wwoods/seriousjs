@@ -47,6 +47,8 @@ ternary_expr
       return R(r);
     }
 
+// For the time being, we don't parenthesize these, meaning we rely on
+// javascript's precedence
 logic_op
   = "and"
   / "or"
@@ -78,12 +80,24 @@ compare_expr
     }
 
 instance_expr
-  = head:shift_expr tail:(_ "instanceof" _ shift_expr)? {
+  = head:bitwise_expr tail:(_ "instanceof" _ bitwise_expr)? {
       var r = head;
       if (tail) {
         r = { op: "instanceof", left: r, right: tail[3] };
       }
       return R(r);
+    }
+
+// For the time being, we don't parenthesize these, meaning we rely on
+// javascript's precedence
+bitwise_op
+  = "|"
+  / "^"
+  / "&"
+
+bitwise_expr
+  = head:shift_expr tail:(_ bitwise_op _ shift_expr)* {
+      return R(getBinary(head, tail, 1, 3));
     }
 
 shift_op
@@ -141,6 +155,7 @@ unary_op
   = "new" _ { return "unary_new"; }
   / "typeof" _ { return "typeof"; }
   / "-" { return "unary_negate"; }
+  / "~" { return "bitwise_negate"; }
 
 base_atom
   = dict_literal

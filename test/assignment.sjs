@@ -30,6 +30,15 @@ describe "Assignment", ->
     assert.equal 16, m.a
     assert.equal 15, m.b
     assert.equal 255, m.c
+  it "Should work with octal", ->
+    m = sjs.eval """
+        a = 0400
+        b = 0700
+        c = 0020
+        """
+    assert.equal 256, m.a
+    assert.equal 448, m.b
+    assert.equal 16, m.c
   it "Should work with multi-line dicts and strings", ->
     m = sjs.eval """
         a =
@@ -88,4 +97,20 @@ describe "Assignment", ->
     assert.deepEqual [ [ 0, 1 ], [ 0, 1 ] ], r.cases[1]
     assert.deepEqual [ [ 1, 0 ], [ 0, 1 ] ], r.cases[2]
     assert.deepEqual [ [ 1, 1 ], [ 1, 0 ] ], r.cases[3]
+
+
+  it "Should not use arithmetic with missing commas", ->
+    """If this test fails, then -2\n-7 becomes -2 - 7, or -9."""
+    r = sjs.eval """
+        wBig = []
+        wBig.push(
+            1, 2, 3, 4
+            5, 6, 7, -2
+            -7, 8, 9, 10
+            11, 12, 13, -8
+            -13, 14, 15, 16
+        """
+    assert.deepEqual [ 1, 2, 3, 4, 5, 6, 7, -2, -7, 8, 9, 10, 11, 12, 13, -8,
+        -13, 14, 15, 16 ], r.wBig
+    assert.equal 20, r.wBig.length
 

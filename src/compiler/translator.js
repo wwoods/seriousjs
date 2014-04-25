@@ -1583,6 +1583,10 @@ this.Translator = (function() {
           e.translate(n.right);
           w.write(")");
         },
+     "bitwise_negate": function(e, n, w) {
+          w.write("~");
+          e.translate(n.right);
+        },
      "unary_negate": function(e, n, w) {
           w.write("-");
           e.translate(n.right);
@@ -1639,6 +1643,9 @@ this.Translator = (function() {
      "<": binary,
      "<<": binary,
      ">>": binary,
+     "&": binary,
+     "|": binary,
+     "^": binary,
      "==": function(e, n, w) {
           e.translate(n.left);
           w.write(" === ");
@@ -1691,6 +1698,9 @@ this.Translator = (function() {
      "-=": binary,
      "*=": binary,
      "/=": binary,
+     "&=": binary,
+     "|=": binary,
+     "^=": binary,
   };
 
   var badOpsForGoto = {

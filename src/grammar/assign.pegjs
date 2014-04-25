@@ -5,6 +5,9 @@ assign_op
   / "-="
   / "*="
   / "/="
+  / "&="
+  / "|="
+  / "^="
 
 assign_stmt
   = head:assign_clause+ tail:expression {

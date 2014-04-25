@@ -1,5 +1,6 @@
 NumberLiteral
   = HexIntegerLiteral
+  / OctalLiteral
   / DecimalLiteral
 
 DecimalLiteral
@@ -25,6 +26,12 @@ DecimalDigits
 DecimalDigit
   = [0-9]
 
+OctalDigit
+  = [0-7]
+
+OctalDigits
+  = digits:OctalDigit+ { return digits.join(""); }
+
 NonZeroDigit
   = [1-9]
 
@@ -38,6 +45,9 @@ ExponentIndicator
 
 SignedInteger
   = sign:[-+]? digits:DecimalDigits { return sign + digits; }
+
+OctalLiteral
+  = "0" digits:OctalDigits { return parseInt(digits, 8); }
 
 HexIntegerLiteral
   = "0" [xX] digits:HexDigit+ { return parseInt("0x" + digits.join("")); }

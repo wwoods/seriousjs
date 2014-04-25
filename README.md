@@ -187,6 +187,11 @@ Changelog
   a for loop, onAsyncUnhandledError, onAsyncSecondaryError
 
 
+TODO
+----
+
+* i[??] Random choose operator?  Would be handy to have that built in...  Probably should think that one through though.
+
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/wwoods/seriousjs/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 

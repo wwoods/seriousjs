@@ -47,3 +47,13 @@ describe "typeof operator", ->
 describe "modulus operator", ->
   it "Should work", ->
     assert.equal 3, sjs.eval("r = 7 % 4").r
+
+describe "bitwise operators", ->
+  it "Should work", ->
+    assert.equal 7, sjs.eval("r = 3 | 4").r
+    assert.equal 0, sjs.eval("r = 3 & 4").r
+    assert.equal 5, sjs.eval("r = 3 ^ 6").r
+    assert.equal 7, sjs.eval("r = 3\nr |= 4").r
+    assert.equal 0, sjs.eval("r = 3\nr &= 4").r
+    assert.equal 5, sjs.eval("r = 3\nr ^= 6").r
+    assert.equal -9, sjs.eval("r = ~8").r

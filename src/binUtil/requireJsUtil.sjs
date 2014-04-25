@@ -41,13 +41,18 @@ setupWebapp = async (app, express, webappPath) ->
   module and not seriousjs'.
 
   Calls callback with true if app should continue executing (not just a build),
-  false if it should terminate.
+  false if it should terminate.  If true is returned, then app is configured
+  with /src pointing to the given webappPath.  Additionally creates a .requirejs
+  directory within webappPath, populated with the necessary bootstrap scripts
+  needed for this application to work.
+
+  app and express are optional, for static compilation.
   """
   target = path.resolve(path.join(webappPath, '.requirejs'))
   if not fs.existsSync(target)
     fs.mkdirSync(target)
 
-  copy = (name, isAbsolute) ->
+  copy = (name, {< isAbsolute = false, replace = [] }) ->
     copySource = name
     if not isAbsolute
       copySource = path.join(_requireJsSource, name)
@@ -60,15 +65,20 @@ setupWebapp = async (app, express, webappPath) ->
       fs.unlinkSync(copyTarget)
 
     contents = fs.readFileSync(copySource, 'utf8')
+    for r in replace
+      contents = contents.replace(r[0], r[1])
     fs.writeFileSync(copyTarget, contents)
 
   # Copy require.js into path...
   await extern _embeddedFile = seriousjs._getEmbeddedFile()
-  copy(_embeddedFile, true)
+  copy(_embeddedFile, isAbsolute: true)
   copy('require.js')
   copy('css.js')
   copy('sjs.js')
-  copy('loader.js')
+  loaderOptions = {}
+  if not app?
+    loaderOptions.replace = [ [ /\.\/src/g, "./" ] ]
+  copy('loader.js', loaderOptions)
   copy('app.build.js')
 
   # Now that it's set up, check for compiles and whatnot.
@@ -78,18 +88,19 @@ setupWebapp = async (app, express, webappPath) ->
     # Exit without calling callback or any setup.
     return false
 
-  # Link shim folder, which is never compiled
-  app.use('/src/shim', express.static(path.join(webappPath, 'shim')))
+  if app?
+    # Link shim folder, which is never compiled
+    app.use('/src/shim', express.static(path.join(webappPath, 'shim')))
 
-  # Link the app to /src and run callback to start the server
-  if '--built' in process.argv
-    # Compiled mode
-    await _buildApp(path.join(target, '..'))
-    app.use('/src', express.static(path.join(webappPath, '../build.webapp')))
-  else
-    # Debug mode
-    app.use('/src/shared', express.static(path.join(webappPath, '../shared'))
-    app.use('/src', express.static(webappPath))
+    # Link the app to /src and run callback to start the server
+    if '--built' in process.argv
+      # Compiled mode
+      await _buildApp(path.join(target, '..'))
+      app.use('/src', express.static(path.join(webappPath, '../build.webapp')))
+    else
+      # Debug mode
+      app.use('/src/shared', express.static(path.join(webappPath, '../shared'))
+      app.use('/src', express.static(webappPath))
 
   # Return true to say the app can start
   return true
