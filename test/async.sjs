@@ -240,7 +240,7 @@ describe "async functionality", ->
       done()
 
 
-  it "Should detect when a callback argument is not a callback", (done) ->
+  it "Should detect when a callback argument is not a callback", ->
     """That is, if a parameter is passed that we did not expect, then it should
     not be coerced into the callback.  This affects e.g. event callbacks."""
     m = sjs.eval """

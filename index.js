@@ -64,6 +64,9 @@ if (require.extensions) {
     module.paths.push(path.join(__dirname, '..'));
     //Ensure the module is using our require statement
     module.require = _getSjsRequire(module);
+    //Note - syntax errors at this point will have the generated line, not the
+    //source line.  This is what we want, since that means the sjs -> js
+    //compilation process is flawed.
     module._compile(compiled.js, filename);
   };
 }

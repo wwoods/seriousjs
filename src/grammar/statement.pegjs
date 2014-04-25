@@ -51,6 +51,7 @@ statement_no_body
   / stmt:assign_stmt { return stmt; }
   / stmt:class_stmt { return stmt; }
   / stmt:throw_stmt { return stmt; }
+  / stmt:delete_stmt { return stmt; }
   / stmt:async_stmt { return stmt; }
   / "break" { return R({ op: "break" }); }
   / "continue" { return R({ op: "continue" }); }
@@ -144,4 +145,10 @@ try_stmt_finally
 throw_stmt
   = "throw" _ body:expression {
       return R({ op: "throw", body: body });
+    }
+
+
+delete_stmt
+  = "delete" _ body:expression {
+      return R({ op: "delete", body: body });
     }

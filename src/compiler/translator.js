@@ -149,6 +149,9 @@ this.Translator = (function() {
             w.write("__asyncCheckCall(__inner__);");
           }
           if (asyncCallback !== null && !n.spec.asyncNoCascade) {
+            //Note that we only cascade down - that is, if the programmer
+            //specifies zero arguments and two get used, putting the callback
+            //at the end, we will assume that there was no callback.
             w.write("if(");
             w.write(asyncCallback);
             w.write("===undefined){");
@@ -173,9 +176,13 @@ this.Translator = (function() {
                 w.write("else ");
               }
               hasWrittenAsyncSub = true;
+              //Check if it's defined first - we only want to cascade to the
+              //first defined argument, not beyond.
               w.write("if(typeof ");
               e.translate(parmId);
               w.write('!=="undefined"){');
+              //If it's a function, use it, otherwise assume that there was no
+              //callback specified.
               w.write("if(typeof ");
               e.translate(parmId);
               w.write('==="function"){');
@@ -188,6 +195,18 @@ this.Translator = (function() {
               w.write("}}");
             }
             w.write("}");
+            //If it was defined, was it a function?  There's a chance that the
+            //caller was using a non-callback, in e.g. the case of bound UI
+            //events that we are using an async function for, not anticipating
+            //any number of parameters being passed.  In general, using async
+            //functions as callbacks can be a good thing, so we're making not
+            //throwing an error the default behavior over confusing "obj.r.call
+            //is not a function" messages.
+            w.write("else if(typeof ");
+            w.write(asyncCallback);
+            w.write('!=="function"){');
+            w.write(asyncCallback);
+            w.write("=undefined}");
           }
           w.write(c);
           if (c.props.isAsync) {
@@ -842,6 +861,10 @@ this.Translator = (function() {
           w.write("." + w.ASYNC.LOOP_STATE);
           w.write("=" + w.ASYNC.LOOP_STATE_CONTINUE);
           w.write(";return");
+        },
+     "delete": function(e, n, w) {
+          w.write("delete ");
+          e.translate(n.body);
         },
      "dict": function(e, n, w) {
           //Bracket must happen first, since return statements will become
