@@ -55,10 +55,8 @@ class_statement_inner
       return R({ op: "=prop", id: id, descriptor: desc });
     }
   / id:class_assign_id _ ":" _ val:class_assign_right {
-      if (id.op === "memberId" && val.op !== "->") {
-        throw new Error("Cannot use @id assignments at class level for "
-            + "non-methods.  Has no effect!");
-      }
+      //Disallowing a memberId to be assigned to a non-lambda is done in
+      //the translator.
       return R({ op: "=", left: id, right: val });
     }
 

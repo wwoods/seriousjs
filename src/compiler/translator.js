@@ -1706,6 +1706,12 @@ this.Translator = (function() {
             w.write(" = ");
             var rightOptions = {};
             var cc = w.getClosure({ isClass: true });
+            if (cc && cc === w.getClosure()
+                && e.isNodeMemberId(n.left)
+                && n.right.op !== "->") {
+              throw new Error("Cannot use @id assignments at class level for "
+                  + "non-methods.  Has no effect!");
+            }
             if (cc
                 && e.getNodeAsId(n.left) !== null
                 && n.right.op === "->"
