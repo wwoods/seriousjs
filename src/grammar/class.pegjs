@@ -51,8 +51,32 @@ class_statement
 
 
 class_statement_inner
-  = id:assignable_atom _ ":" _ val:class_assign_right {
+  = "property" _ id:assignable_atom desc:class_property_body {
+      return R({ op: "=prop", id: id, descriptor: desc });
+    }
+  / id:class_assign_id _ ":" _ val:class_assign_right {
+      if (id.op === "memberId" && val.op !== "->") {
+        throw new Error("Cannot use @id assignments at class level for "
+            + "non-methods.  Has no effect!");
+      }
       return R({ op: "=", left: id, right: val });
+    }
+
+
+class_property_body
+  = INDENT_BLOCK_START desc:dict_literal? BLOCK_END &{ return desc; } {
+      return desc;
+    }
+  / _ getter:lambda {
+      return R({ op: "dict", elements: [ { op: "keyValue", key: "get", 
+          value: getter } ] });
+    }
+
+
+class_assign_id
+  = IdentifierExceptJsKeyword
+  / "@" id:IdentifierExceptJsKeyword {
+      return R({ op: "memberId", id: id.id });
     }
 
 

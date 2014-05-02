@@ -1,6 +1,8 @@
 #! /usr/bin/env seriousjs
 """Updates the .requirejs resource directory with the latest embeddable version
-of SeriousJs.
+of SeriousJs.  Also attempts to use npm's http-server to host the webpage,
+unless --update is specified, in which case only SeriousJS provided files are
+updated.
 """
 
 require child_process as cp
@@ -10,7 +12,7 @@ if module? and not module.parent?
   async
     await seriousjs.requireJs().setupWebapp(null, null, __dirname)
 
-    if '--server' in process.argv
+    if not '--update' in process.argv
       # Run a basic server if we can
 
       ps = cp.spawn('http-server', [ '-p', 8080, '-c-1' ], stdio: 'inherit')

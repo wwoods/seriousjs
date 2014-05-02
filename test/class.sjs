@@ -152,10 +152,10 @@ describe "Classes", ->
         """
     assert.equal 42, m.unbound.call(value: 42)
 
-  it "Should use @ in class definitions for class-level variables", ->
+  it "Should share vars in class definitions", ->
     m = sjs.eval """
         class a
-          @b: {}
+          b: {}
         i = new a()
         # Should affect class, and vice-versa
         a.b['a'] = 'a'
@@ -167,8 +167,9 @@ describe "Classes", ->
   it "Should use @ in class definitions for class functions", ->
     m = sjs.eval """
         class a
-          @value: 88
+          value: 88
           @method: () ->
+            '''always called in context of a'''
             return @value
         i = new a()
         i.value = 76
@@ -176,6 +177,13 @@ describe "Classes", ->
     assert.equal 88, m.a.method()
     # Should bind to class, meaning we'll get 88, not 76
     assert.equal 88, m.i.method()
+
+  it "Should disallow @id assignments that aren't functions", ->
+    """Note that these do nothing, since scope is shared."""
+    assert.throws -> sjs.eval """
+        class A
+          @value: 8
+        """
 
   it "Should disallow @class in class definitions", ->
     assert.throws -> sjs.eval """
@@ -207,9 +215,6 @@ describe "Classes", ->
     assert.equal 56, outer[0]
 
   it "Should work with class variables", ->
-    """Note that class variables actually operate on the prototype, since
-    prototypes are inherited but the classes themselves are not.
-    """
     m = sjs.eval """
         class a
           v: 6
@@ -219,7 +224,7 @@ describe "Classes", ->
         q.inc()
         q.inc()
         """
-    assert.equal 8, m.a.prototype.v
+    assert.equal 8, m.a.v
 
   it "Should throw error for bad member expressions", ->
     try
@@ -282,6 +287,53 @@ describe "Classes", ->
         """
     assert.equal 55, m.inst.test()
 
+  it "Should work with uses and properties", ->
+    m = sjs.eval """
+        calls = [ 0 ]
+        class mixerBase
+          fixed: 88
+          property value
+            get: ->
+              calls[0] += 1
+              return 42
+        class mixerDerive1 extends mixerBase
+        class mixer extends mixerDerive1
+
+        class A uses mixer
+          constructor: ->
+            @value
+            @value
+
+        a = new A()
+        """
+    assert.equal 2, m.calls[0]
+    assert.equal 88, m.a.fixed
+    assert.equal 42, m.a.value
+    assert.equal 3, m.calls[0]
+
+  it "Should count property methods as class methods", ->
+    m = sjs.eval """
+        class A
+          b: 8
+          property c
+            get: ->
+              inner = (j) ->
+                return @b + j
+              return inner(3)
+        a = new A()
+        a.b = 99
+        """
+    assert.equal 102, m.a.c
+    assert.equal 11, m.A.c
+
+  it "Should work with properties with just a lambda", ->
+    m = sjs.eval """
+        class A
+          property b -> 82
+        a = new A()
+        """
+    assert.equal 82, m.a.b
+
   it "Should work with uses with multiple mixins", ->
     m = sjs.eval """
         class mix1
@@ -295,8 +347,35 @@ describe "Classes", ->
         """
     assert.equal 1, m.inst.test()
     assert.equal 2, m.inst.test2()
-    # mix2 should override since it was specified last
-    assert.equal 3, m.inst.test3()
+    # mix1 should override since it was specified first (priority is class
+    # specified, mix ins, parent class)
+    assert.equal 0, m.inst.test3()
+
+  it "Should work with properties", ->
+    m = sjs.eval """
+        class A
+          property v
+            get: -> 88
+        """
+    # Weird side-effect of flat classes, but this is perfectly valid.
+    assert.equal 88, m.A.v
+    assert.equal 88, (new m.A()).v
+
+  it "Should probably do inheritance right...", ->
+    m = sjs.eval """
+        class A
+          value: 88
+        class B extends A
+        oldValue = B.value
+        b = new B()
+        B.value = 16
+        c = new B()
+        """
+    assert.equal 88, m.A.value
+    assert.equal 88, m.oldValue
+    assert.equal 16, m.B.value
+    assert.equal 16, m.b.value
+    assert.equal 16, m.c.value
 
   it "Should disallow = in body", ->
     assert.throws -> sjs.eval """
@@ -335,7 +414,7 @@ describe "Classes", ->
     """
     m = sjs.eval """
         class Object
-          @dict: 
+          dict: 
               inner: 8  #j
           method: ->
             return 6

@@ -49,10 +49,13 @@ function setup() {
         }
     }
 
+    var invocation = 0;
     function runScript() {
         _compileScript(true);
         console.clear();
         var jsForEval = seriousjs.getJsForEval(lastVal);
+        invocation++;
+        realConsole.log("==== Run #" + invocation + " ====");
         //Preserves source-mapped stack traces.
         $('<script>').html(jsForEval).appendTo("head").remove();
     }

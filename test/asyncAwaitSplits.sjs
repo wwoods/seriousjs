@@ -231,7 +231,7 @@ describe "await splits", ->
   it "Should preserve 'this' context within while", async extern ->
     m = sjs.eval """
         class A
-          @value: 88
+          value: 88
           method: async ->
             v = @value
             t = 0
@@ -250,7 +250,7 @@ describe "await splits", ->
   it "Should preserve 'this' context within forHash", async extern ->
     m = sjs.eval """
         class A
-          @value: 88
+          value: 88
           method: async ->
             v = @value
             tVals = { 0: 0, 1: 1 }
@@ -268,7 +268,7 @@ describe "await splits", ->
   it "Should preserve 'this' context within forList", async extern ->
     m = sjs.eval """
         class A
-          @value: 88
+          value: 88
           method: async ->
             v = @value
             tVals = [ 0, 1 ]
@@ -286,7 +286,7 @@ describe "await splits", ->
   it "Should preserve 'this' context within forRange", async extern ->
     m = sjs.eval """
         class A
-          @value: 88
+          value: 88
           method: async ->
             v = @value
             for t in [:2]

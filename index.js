@@ -174,6 +174,16 @@ this._buildEmbedded = function(callback) {
     }
   };
 
+  var addSjsFile = function(name, fpath, context) {
+    //Adds a .sjs file in the context of the seriousjs object.
+    var fc = fs.readFileSync(fpath, 'utf8');
+    r = sjsCompiler.compile(self.parser, fc, {});
+    contents.push("(function(exports) {\n");
+    contents.push(r.js.replace(/ = require\(['"]seriousjs['"]\)/g,
+            ' = ' + context));
+    contents.push("}).call(" + context + "," + context + ");\n");
+  };
+
   //Clue in the parser source from the built parser
   addFile("parser", _parserFile, true);
   addFile("compiler", compileDir + '/compiler.js');
@@ -198,7 +208,12 @@ this._buildEmbedded = function(callback) {
     this.seriousjs = { compile: compile, getJsForEval: getJsForEval, \n\
         sourceMap: sourceMap.sourceMap,\n\
         onAsyncUnhandledError: function(e){throw e;},\n\
-        onAsyncSecondaryError: typeof console!=='undefined'?function(e){console.error(e)}:function(e){throw e;} };\n");
+        onAsyncSecondaryError: typeof console!=='undefined'?function(e){console.error(e)}:function(e){throw e;}\n\
+    };\n");
+
+  //Include builtin functionality for seriousjs module
+  addSjsFile("builtins", __dirname + '/src/builtin/seriousjs.sjs',
+      'this.seriousjs');
 
   contents.push("typeof define==='function' && define(function() { return this.seriousjs; });\n");
   contents.push("return this;\n");
@@ -377,3 +392,15 @@ this.evalFile = function(filename) {
 
 
 this.requireJs = function() { return require('./src/binUtil/requireJsUtil'); };
+
+//Install builtins
+var __builtin__ = require('./src/builtin/seriousjs');
+for (var keys = Object.keys(__builtin__), i = 0, m = keys.length;
+    i < m; i++) {
+  var k = keys[i];
+  if (k[0] == "_" || k == "help") {
+    continue;
+  }
+  self[keys[i]] = __builtin__[keys[i]];
+}
+

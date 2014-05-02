@@ -138,17 +138,14 @@ var allFeatures = {
       + "return dict;"
       + "}",
   extends: ""
+      //We need our class, when constructed, to inherit from our class itself,
+      //which further inherits from parent.  This allows us to naturally refer
+      //to child.x as a class var, which still has access from our instances.
+      //The only way to do this seems to be writing __proto__.  
+      //Object.setPrototypeOf does not yet appear provided by nodejs.
       + "__extends = function(child, parent) {"
-      + " for(var key in parent) {"
-      + "  if(__hasProp.call(parent,key)){"
-      + "   child[key] = parent[key];"
-      + "  }"
-      + " }"
-      + " function ctor() {"
-      + "  this.constructor = child;"
-      + " }"
-      + " ctor.prototype = parent.prototype;"
-      + " child.prototype = new ctor();"
+      + " child.__proto__ = parent.prototype;"
+      + " child.prototype = child;"
       + " child.__super__ = parent.prototype;"
       + " return child;"
       + "}",
@@ -160,11 +157,32 @@ var allFeatures = {
       +   "clearTimeout:clearImmediate)",
   uses: ""
       + "__extendsUse = function(obj, mixin) {"
+      + " var props, key, d;"
       + " if(mixin.prototype){"
       + "  mixin = mixin.prototype;"
       + " }"
-      + " for(var key in mixin) {"
-      + "  obj.prototype[key] = mixin[key];"
+      //Since we can't get non-enumerable properties through "in", we have
+      //to walk the inheritance chain and use getOwnPropertyNames, using 
+      //getOwnPropertyDescriptor to distinguish between properties and
+      //attributes
+      + " while (mixin !== null) {"
+      + "  props = Object.getOwnPropertyNames(mixin);"
+      + "  for(var i = 0, m = props.length; i < m; i++) {"
+      + "   key = props[i];"
+      //In order to get our desired priority resolution order, don't overwrite
+      //properties.
+      + "   if (obj.prototype.hasOwnProperty(key)) {"
+      + "    continue;"
+      + "   }"
+      + "   d = Object.getOwnPropertyDescriptor(mixin, key);"
+      + "   if (d === undefined) {"
+      + "    obj.prototype[key] = mixin[key];"
+      + "   }"
+      + "   else {"
+      + "    Object.defineProperty(obj.prototype, key, d);"
+      + "   }"
+      + "  }"
+      + "  mixin = Object.getPrototypeOf(mixin);"
       + " }"
       + "}"
   };

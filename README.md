@@ -181,6 +181,10 @@ Classes and @-binding:
 Changelog
 ---------
 
+* 2014-5-2 - Much improved class inheritance (changes __proto__ hack so that the
+  child function actually chains from the parent function).  Added property
+  support to classes.  Added Event and EventMixin builtins on seriousjs module.
+
 ### 0.1.9
 * 2014-4-24 - Made create-static template, for sites with no server component.
   Check if callback is function for async, if it's not, unset it.  Fixed parse

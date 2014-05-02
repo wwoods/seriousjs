@@ -73,7 +73,8 @@ this.Translator = (function() {
     "->": function(e, n, w, options) {
           var nearClosure = w.getClosure();
           var isClassMethod = (options.isConstructorFor
-              || nearClosure.props.className);
+              || nearClosure.props.className
+              || nearClosure.props.isClassProperty);
           var c = w.startClosure({
               isClassMethod: isClassMethod,
               methodName: options.methodName,
@@ -779,11 +780,20 @@ this.Translator = (function() {
           w.endArgs();
           w.write(") {");
           w.write(c);
+          //sjs inheritance: http://jsfiddle.net/842nm/
           if (n.parent) {
             w.usesFeature("extends");
             w.write("__extends(");
             e.translate(n.name);
             w.write(", _super);");
+          }
+          else {
+            //See extends for the reasoning, but all classes in sjs are their
+            //own prototypes.
+            e.translate(n.name);
+            w.write(".prototype=");
+            e.translate(n.name);
+            w.write(";");
           }
           for (var i = 0, m = n.uses.length; i < m; i++) {
             w.usesFeature("uses");
@@ -1716,6 +1726,24 @@ this.Translator = (function() {
               w.endClosure();
             }
           }
+        },
+     "=prop": function(e, n, w) {
+          var c = w.getClosure();
+          if (!c.props.className) {
+            throw new Error("property definition outside of class?");
+          }
+
+          w.write("Object.defineProperty(");
+          w.write(c.props.className);
+          w.write('.prototype, "');
+          e.translate(n.id);
+          w.write('",');
+          //Fake closure to stop using prototype in dictionary.
+          w.startClosure({ noIndent: true, isFunction: true,
+              isClassProperty: true });
+          e.translate(n.descriptor);
+          w.endClosure();
+          w.write(");");
         },
      "+=": binary,
      "-=": binary,
