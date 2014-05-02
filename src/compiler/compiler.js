@@ -94,10 +94,11 @@ this.compile = function(parser, text, options) {
   }
 
   if (options.amdModule) {
+    //NOTE - amdModules are ALWAYS run in a context where __sjs_seriousjs is
+    //the seriousjs module!  This is used for e.g. async throws, and also
+    //whenever seriousjs is required for builtins (like Event).
     var amdParts = self._makeScriptAmd(requires);
     header += amdParts[0];
-    //Bring in our language module for e.g. async throws.
-    header += "var __sjs_seriousjs = seriousjs;\n";
     footer += amdParts[1];
   }
   else {
@@ -139,7 +140,8 @@ this.compile = function(parser, text, options) {
 this._makeScriptAmd = function(requires) {
   /** Bootstrap a script with the given requires to AMD format.  Note that we
     really shouldn't insert any newlines before script, since that would screw
-    up our mapping.
+    up our mapping.  Also, responsible for mapping "require seriousjs" to our
+    seriousjs object.
 
     Returns a [ header, footer ] to wrap the code in.
     */
@@ -149,9 +151,6 @@ this._makeScriptAmd = function(requires) {
   for (var i = 0, m = requires.length; i < m; i++) {
     var reqChain = requires[i].defs;
     for (var j = 0, k = reqChain.length; j < k; j++) {
-      if (varNames.length > 0) {
-        header.push(",");
-      }
       var fromPart = reqChain[j].from;
       if (fromPart.indexOf('!') < 0) {
         //Assume sjs loader for convenience.
@@ -160,8 +159,18 @@ this._makeScriptAmd = function(requires) {
       else if (fromPart.indexOf("js!") === 0) {
         fromPart = fromPart.slice(3);
       }
-      header.push("'" + fromPart + "'");
-      varNames.push(reqChain[j].as);
+      if (fromPart !== "sjs!seriousjs") {
+        if (varNames.length > 0) {
+          header.push(",");
+        }
+        header.push("'" + fromPart + "'");
+        varNames.push(reqChain[j].as);
+        forPartAssigns.push("this." + reqChain[j].as + "=" + reqChain[j].as);
+      }
+      else {
+        forPartAssigns.push(reqChain[j].as + "=this." + reqChain[j].as
+            + "=__sjs_seriousjs");
+      }
 
       var forParts = reqChain[j].forParts;
       if (forParts !== null) {

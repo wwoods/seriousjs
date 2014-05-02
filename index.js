@@ -205,7 +205,7 @@ this._buildEmbedded = function(callback) {
       return compile(text, options).js;\n\
     }\n\
     getJsForEval.__doc__ = getJsForEval.__help__ = 'Turns sjs code into an AMD module which can be added to the browser';\n\
-    this.seriousjs = { compile: compile, getJsForEval: getJsForEval, \n\
+    this.seriousjs = this.__sjs_seriousjs = { compile: compile, getJsForEval: getJsForEval, \n\
         sourceMap: sourceMap.sourceMap,\n\
         onAsyncUnhandledError: function(e){throw e;},\n\
         onAsyncSecondaryError: typeof console!=='undefined'?function(e){console.error(e)}:function(e){throw e;}\n\
