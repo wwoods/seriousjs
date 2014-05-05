@@ -148,6 +148,8 @@ this._makeScriptAmd = function(requires) {
   var header = [ "define([" ], footer = [];
   var varNames = [];
   var forPartAssigns = [];
+  //For this. assigns without a local var (are in func params)
+  var thisPartAssigns = [];
   for (var i = 0, m = requires.length; i < m; i++) {
     var reqChain = requires[i].defs;
     for (var j = 0, k = reqChain.length; j < k; j++) {
@@ -165,7 +167,7 @@ this._makeScriptAmd = function(requires) {
         }
         header.push("'" + fromPart + "'");
         varNames.push(reqChain[j].as);
-        forPartAssigns.push("this." + reqChain[j].as + "=" + reqChain[j].as);
+        thisPartAssigns.push("this." + reqChain[j].as + "=" + reqChain[j].as);
       }
       else {
         forPartAssigns.push(reqChain[j].as + "=this." + reqChain[j].as
@@ -188,6 +190,10 @@ this._makeScriptAmd = function(requires) {
   if (forPartAssigns.length > 0) {
     header.push("var ");
     header.push(forPartAssigns.join(","));
+    header.push(";");
+  }
+  if (thisPartAssigns.length > 0) {
+    header.push(thisPartAssigns.join(";"));
     header.push(";");
   }
   footer.push("\n}).call(exports, exports);return exports});");
