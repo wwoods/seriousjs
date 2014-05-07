@@ -61,7 +61,7 @@ function setup() {
             $('<script>').html(jsForEval).appendTo("head").remove();
         }
         catch (e) {
-            console.log("WUTUP");
+            realConsole.log("Script threw: " + e + "; " + e.stack);
         }
     }
 
