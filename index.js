@@ -212,8 +212,11 @@ this._buildEmbedded = function(callback) {
     };\n");
 
   //Include builtin functionality for seriousjs module
-  addSjsFile("builtins", __dirname + '/src/builtin/seriousjs.sjs',
-      'this.seriousjs');
+  var builtins = fs.readdirSync(__dirname + '/src/builtin');
+  for (var i = 0, m = builtins.length; i < m; i++) {
+    addSjsFile("builtins", __dirname + '/src/builtin/' + builtins[i],
+        'this.seriousjs');
+  }
 
   contents.push("typeof define==='function' && define(function() { return this.seriousjs; });\n");
   contents.push("return this;\n");
@@ -394,13 +397,15 @@ this.evalFile = function(filename) {
 this.requireJs = function() { return require('./src/binUtil/requireJsUtil'); };
 
 //Install builtins
-var __builtin__ = require('./src/builtin/seriousjs');
-for (var keys = Object.keys(__builtin__), i = 0, m = keys.length;
-    i < m; i++) {
-  var k = keys[i];
-  if (k[0] == "_" || k == "help") {
-    continue;
+var __builtins__ = fs.readdirSync(__dirname + '/src/builtin');
+for (var bi = 0, bm = __builtins__.length; bi < bm; bi++) {
+  var __builtin__ = require('./src/builtin/' + __builtins__[bi]);
+  for (var keys = Object.keys(__builtin__), i = 0, m = keys.length;
+      i < m; i++) {
+    var k = keys[i];
+    if (k[0] == "_" || k == "help") {
+      continue;
+    }
+    self[keys[i]] = __builtin__[keys[i]];
   }
-  self[keys[i]] = __builtin__[keys[i]];
 }
-

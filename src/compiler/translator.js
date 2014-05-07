@@ -87,19 +87,32 @@ this.Translator = (function() {
           c.setVarUsed("arguments", true);
           var hasInnerWrapper = false;
           if (n.doc || n.spec.async) {
-            hasInnerWrapper = true;
-            w.write("(function() {");
-          }
-          if (n.doc) {
-            w.write("var __doc__ = ");
-            w.newline();
-            e.translate(n.doc);
-            w.write(";");
+            if (!options.isConstructorFor) {
+              hasInnerWrapper = true;
+              w.write("(function() {");
+              if (n.doc) {
+                w.write("var __doc__ = ");
+                w.newline();
+                e.translate(n.doc);
+                w.write(";");
+              }
+            }
+            else if (n.spec.async) {
+              throw new Error("Constructors cannot be async!");
+            }
           }
           if (hasInnerWrapper) {
             w.write("    var __inner__ = ");
           }
           if (options.isConstructorFor) {
+            //For generated code readability, assign __doc__ to a variable above
+            //the constructor rather than after it.
+            if (n.doc) {
+              w.write("var __doc__ = ");
+              w.newline();
+              e.translate(n.doc);
+              w.write(";");
+            }
             w.write("function ");
             w.write(options.isConstructorFor);
             w.write("(");
@@ -248,7 +261,17 @@ this.Translator = (function() {
           w.newline(-1);
           w.write("}");
           if (n.doc) {
-            w.write("; __inner__.__doc__ = __inner__.help = __doc__");
+            if (hasInnerWrapper) {
+              w.write("; __inner__.__doc__ = __inner__.help = __doc__");
+            }
+            else {
+              //Constructor
+              w.write("; ");
+              w.write(options.isConstructorFor);
+              w.write(".__doc__ = ");
+              w.write(options.isConstructorFor);
+              w.write(".help = __doc__");
+            }
           }
           if (n.spec.async) {
             w.write("; __inner__." + w.ASYNC.FUNCTION_ISASYNC + "=true");
@@ -825,11 +848,18 @@ this.Translator = (function() {
             e.translate(fakeConstructor);
           }
           if (n.docString) {
+            w.write(";");
             e.translate(n.name);
             w.write(".__doc__=");
             e.translate(n.name);
             w.write(".help=");
             e.translate(n.docString);
+            if (c.props.classConstructor.doc) {
+              //Prepend to constructor docstring, with two newlines separating.
+              w.write("+'\\n\\n'+");
+              e.translate(n.name);
+              w.write(".__doc__");
+            }
           }
           w.write(";return ");
           e.translate(n.name);

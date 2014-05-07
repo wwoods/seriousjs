@@ -57,7 +57,12 @@ function setup() {
         invocation++;
         realConsole.log("==== Run #" + invocation + " ====");
         //Preserves source-mapped stack traces.
-        $('<script>').html(jsForEval).appendTo("head").remove();
+        try {
+            $('<script>').html(jsForEval).appendTo("head").remove();
+        }
+        catch (e) {
+            console.log("WUTUP");
+        }
     }
 
     var console = {

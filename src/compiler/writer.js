@@ -144,7 +144,12 @@ var allFeatures = {
       //The only way to do this seems to be writing __proto__.  
       //Object.setPrototypeOf does not yet appear provided by nodejs.
       + "__extends = function(child, parent) {"
-      + " child.__proto__ = parent.prototype;"
+      + " if (typeof Object.setPrototypeOf === 'function') {"
+      + "  Object.setPrototypeOf(child, parent.prototype);"
+      + " }"
+      + " else {"
+      + "  child.__proto__ = parent.prototype;"
+      + " }"
       + " child.prototype = child;"
       + " child.__super__ = parent.prototype;"
       + " return child;"

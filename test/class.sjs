@@ -68,13 +68,26 @@ describe "Classes", ->
         class a
           '''This is a test class'''
         class b
-          '''Also has a docstring'''
+          '''Has a class docstring'''
           value: 32
+          constructor: ->
+            '''also a constructor docstring!!!'''
+            @value = 64
         """
     assert.equal "This is a test class", m.a.help
     assert.equal "This is a test class", m.a.__doc__
-    assert.equal "Also has a docstring", m.b.__doc__
+    assert.equal "Has a class docstring\n\nalso a constructor docstring!!!", m.b.__doc__
     assert.equal 32, m.b.prototype.value
+
+  it "Should disallow async constructors", ->
+    assert.throws ->
+      sjs.eval """
+          class a
+            constructor: async ->
+              @value = 8
+              await 0
+              @value = 9
+          """
 
   it "Should allow super as an expression", ->
     m = sjs.eval """
