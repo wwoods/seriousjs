@@ -128,9 +128,19 @@ try_stmt_catch
     }
 
 try_stmt_catch_inner
-  = "catch" id:(_ Identifier)? cond:(_ "if" _ expression)? body:try_stmt_catch_body {
-      return R({ op: "catchCondition", id: id && id[1], cond: cond && cond[3],
+  = "catch" id:(_ Identifier)? cond:try_stmt_catch_cond? body:try_stmt_catch_body {
+      if (cond.op === 'instanceof' && cond.left === undefined) {
+        cond.left = id && id[1];
+      }
+      return R({ op: "catchCondition", id: id && id[1], cond: cond,
           body: body });
+    }
+
+try_stmt_catch_cond
+  = _ "if" _ expr:expression { return R(expr); }
+  / _ "instanceof" _ t:expression { 
+      //right is filled in by try_stmt_catch_inner
+      return R({ op: 'instanceof', right: t });
     }
 
 try_stmt_catch_body

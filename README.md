@@ -181,6 +181,8 @@ Classes and @-binding:
 Changelog
 ---------
 
+* 2014-5-8 - catch e instanceof Error shortcut for catching by type.
+
 * 2014-5-2 - Much improved class inheritance (changes __proto__ hack so that the
   child function actually chains from the parent function).  Added property
   support to classes.  Added Event and EventMixin builtins on seriousjs module.

@@ -51,6 +51,23 @@ describe "try statement", ->
           result = 99
         """).result
 
+  it "Should work with instanceof shortcut", ->
+    assert.equal 83, (sjs.eval """
+        result = 0
+        class Hobble extends Error
+        try
+          throw new Hobble()
+        catch e instanceof Hobble
+          result = 83
+        """).result
+    assert.throws ->
+      sjs.eval """
+          class Hobble extends Error
+          try
+            throw new Error()
+          catch e instanceof Hobble
+          """
+
   it "Should throw an error if unconditional catch isn't last", ->
     assert.throws ->
       sjs.compile """

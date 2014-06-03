@@ -266,7 +266,7 @@ var _isNewerThan = function(mtime, target) {
     var targetMtime = fs.statSync(target).mtime;
     if (targetMtime > mtime) {
       //Use > to avoid rebuilding when the SeriousJS package is installed.
-      console.log(target + " changed; rebuilding");
+      process.stderr.write(target + " changed; rebuilding\n");
       return true;
     }
   }

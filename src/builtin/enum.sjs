@@ -1,7 +1,8 @@
 
 class Enum
   """A class that can be constructed with a list of states, and potentially
-  a mapping of several states to a single (preferred) state.
+  a mapping of several states to a single internal state with a single preferred
+  label.
 
   Example:
     e = new Enum("APPLES", "PEARS", ORANGES: -1, DEFAULT: "PEARS")
