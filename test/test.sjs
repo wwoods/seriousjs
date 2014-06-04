@@ -29,4 +29,3 @@ describe "Compile", ->
     it "Should group multi-line lists correctly", ->
       m = sjs.eval("a = [\n    1,2\n    3,4\n    5,6")
       assert.deepEqual [1,2,3,4,5,6], m.a
-

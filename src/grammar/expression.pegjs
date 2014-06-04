@@ -7,7 +7,9 @@ expression
   / ternary_expr
 
 parenless_call
-  = base:atom_chain [ \t]+ args:arguments_list
+  //Note that we restrict the base to not be parens to prevent math equations
+  //like (3 + 4) / 5 / 2 from becoming (3 + 4)(/5/ (2))
+  = base:atom_chain_no_unary &{ return base.atom.op !== "()" && base.atom.op !== "regex"; } [ \t]+ args:arguments_list
         & { return args; } {
       //This is the paren-less syntax for calling a function;
       //for instance: "fib n+1"
@@ -143,12 +145,17 @@ super_expr
 
 atom_chain
   = super_expr
-  / un:unary_op* base:base_atom chain:atom_mod* {
-      var r = R({ op: "atom", atom: base, chain: chain });
+  / un:unary_op* base:atom_chain_no_unary {
+      var r = base;
       for (var i = un.length - 1; i >= 0; --i) {
-        r = { op: un[i], right: r };
+        r = R({ op: un[i], right: r });
       }
       return r;
+    }
+
+atom_chain_no_unary
+  = base:base_atom chain:atom_mod* {
+      return R({ op: "atom", atom: base, chain: chain });
     }
 
 unary_op

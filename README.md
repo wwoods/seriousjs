@@ -181,6 +181,9 @@ Classes and @-binding:
 Changelog
 ---------
 
+* 2014-6-3 - Fix bug where (3+5) 4 is valid syntax for calling a nonsense
+  function.  Is an issue with e.g. (3 + 5) / 4 / 8.
+
 * 2014-5-8 - catch e instanceof Error shortcut for catching by type.
 
 * 2014-5-2 - Much improved class inheritance (changes __proto__ hack so that the
@@ -203,6 +206,8 @@ TODO
 ----
 
 * i[??] Random choose operator?  Would be handy to have that built in...  Probably should think that one through though.
+
+* for..else.  Else is triggered when loop is completed without break.
 
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/wwoods/seriousjs/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
