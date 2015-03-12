@@ -57,15 +57,16 @@ describe "Line Continuations", ->
         a = ->
           b = ->
             f = (m) ->
-              m() + 8
+              return m() + 8
             method = (a, b, c) ->
-              a + b + c(44)
-            f -> method(
+              return a + b + c(44)
+            return f -> method(
                 2
                 20
                 (v) ->
                   v += 8
                   return v
+          return b
     """
     assert.equal 82, m.a()()
 

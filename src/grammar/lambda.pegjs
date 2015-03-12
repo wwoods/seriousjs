@@ -6,6 +6,16 @@ lambda_op
 
 
 lambda
+  //CONTINUATION_END requires ASSERT_ON_ENDLINE, but we always want to pop
+  //both.  Additionally, one-line lambdas don't need an endline, as they may
+  //be bounded by e.g. parenthesis.  So, CONTINUATION_ENDs are optional here.
+  = &{ return indentBlockStart(0, { isLambda: true }); } CONTINUATION_OPEN
+        l:lambda_inner? CONTINUATION_END? CONTINUATION_END? &{ return l; } {
+      return l;
+    }
+
+
+lambda_inner
   = spec:lambda_spec parms:lambda_args? op:lambda_op
         body:lambda_body {
       if (!parms) {
@@ -13,7 +23,7 @@ lambda
       }
       log("Finished lambda at " + _pos());
       return { op: op, parms: parms, body: body.body, doc: body.doc,
-          spec: spec };
+          spec: spec, returnImplied: body.returnImplied };
     }
 
 
@@ -86,7 +96,7 @@ lambda_body
         head:(assign_stmt / expression)?
         CONTINUATION_END? // Doesn't have to be end of line
         & { return head; } {
-      return R({ body: [ head ] });
+      return R({ body: [ head ], returnImplied: true });
     }
   / INDENT_BLOCK_START doc:lambda_doc? inner:statement_list_inner? BLOCK_END
         & { return inner; } {

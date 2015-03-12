@@ -60,4 +60,3 @@ describe "seriousjs-embed.js", ->
     assert.equal 0, m.happiness[0]
     m.a.trigger "happy", 6
     assert.equal 6, m.happiness[0]
-

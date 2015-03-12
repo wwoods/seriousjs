@@ -171,23 +171,23 @@ describe "Classes", ->
           b: {}
         i = new a()
         # Should affect class, and vice-versa
-        a.b['a'] = 'a'
+        a::b['a'] = 'a'
         i.b['b'] = 'b'
         """
-    assert.equal 'a', m.a.b['a']
-    assert.equal 'b', m.a.b['b']
+    assert.equal 'a', m.a::b['a']
+    assert.equal 'b', m.a::b['b']
 
   it "Should use @ in class definitions for class functions", ->
     m = sjs.eval """
         class a
           value: 88
           @method: () ->
-            '''always called in context of a'''
+            '''always called in context of a.prototype'''
             return @value
         i = new a()
         i.value = 76
         """
-    assert.equal 88, m.a.method()
+    assert.equal 88, m.a::method()
     # Should bind to class, meaning we'll get 88, not 76
     assert.equal 88, m.i.method()
 
@@ -237,7 +237,7 @@ describe "Classes", ->
         q.inc()
         q.inc()
         """
-    assert.equal 8, m.a.v
+    assert.equal 8, m.a::v
 
   it "Should throw error for bad member expressions", ->
     try
@@ -337,7 +337,7 @@ describe "Classes", ->
         a.b = 99
         """
     assert.equal 102, m.a.c
-    assert.equal 11, m.A.c
+    assert.equal 11, m.A::c
 
   it "Should work with properties with just a lambda", ->
     m = sjs.eval """
@@ -371,22 +371,26 @@ describe "Classes", ->
             get: -> 88
         """
     # Weird side-effect of flat classes, but this is perfectly valid.
-    assert.equal 88, m.A.v
+    assert.equal 88, m.A::v
     assert.equal 88, (new m.A()).v
 
-  it "Should probably do inheritance right...", ->
+  it "Should probably do inheritance the javascript way", ->
     m = sjs.eval """
         class A
           value: 88
         class B extends A
-        oldValue = B.value
+        oldValue = B::value
+        oldValueArr = B::['value']
         b = new B()
-        B.value = 16
+        B::value = 16
         c = new B()
         """
-    assert.equal 88, m.A.value
+    assert.equal 88, m.A.prototype.value
+    assert.equal undefined, m.A.value
     assert.equal 88, m.oldValue
-    assert.equal 16, m.B.value
+    assert.equal 88, m.oldValueArr
+    assert.equal 16, m.B.prototype.value
+    assert.equal undefined, m.B.value
     assert.equal 16, m.b.value
     assert.equal 16, m.c.value
 
@@ -427,7 +431,7 @@ describe "Classes", ->
     """
     m = sjs.eval """
         class Object
-          dict: 
+          dict:
               inner: 8  #j
           method: ->
             return 6

@@ -146,16 +146,17 @@ this.Translator = (function() {
           w.write(") {");
           w.newline(1);
           if (options.isBoundToClass) {
+            //Bind to the prototype
             w.write("if(this!==");
             w.write(nearClosure.props.className);
-            w.write("){");
+            w.write(".prototype){");
             w.write("return ");
             w.write(nearClosure.props.className);
             w.write(".");
             w.write(options.methodName);
             w.write(".apply(");
             w.write(nearClosure.props.className);
-            w.write(",arguments);");
+            w.write(".prototype,arguments);");
             w.write("}");
           }
           if (n.spec.async && !n.spec.asyncExtern && !n.spec.asyncNoError) {
@@ -250,7 +251,7 @@ this.Translator = (function() {
             w.write("}");
           }
           w.newline();
-          e.translate(n.body, { isReturnClosure: !options.isConstructorFor });
+          e.translate(n.body, { isReturnClosure: n.returnImplied });
           if (c.props.isAsync) {
             //Whole method must be in a try..catch..finally.  It's imperative
             //that we call our result.
@@ -285,6 +286,10 @@ this.Translator = (function() {
           if (hasInnerWrapper) {
             w.write("; return __inner__; })()");
           }
+        },
+     "::": function(e, n, w) {
+          w.write(".prototype");
+          e.translate(n.expr);
         },
      "and": function(e, n, w) {
           e.translate(n.left);
@@ -809,14 +814,6 @@ this.Translator = (function() {
             w.write("__extends(");
             e.translate(n.name);
             w.write(", _super);");
-          }
-          else {
-            //See extends for the reasoning, but all classes in sjs are their
-            //own prototypes.
-            e.translate(n.name);
-            w.write(".prototype=");
-            e.translate(n.name);
-            w.write(";");
           }
           for (var i = 0, m = n.uses.length; i < m; i++) {
             w.usesFeature("uses");

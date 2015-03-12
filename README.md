@@ -181,6 +181,11 @@ Classes and @-binding:
 Changelog
 ---------
 
+* 2015-3-12 - Classes back to being aligned with javascript, :: operator for
+  accessing prototype, more comprehensive testing, lambdas always start their
+  own continuation (if they are in params, a one-line lambda has two indents
+  rather than one), return statements are implied ONLY for one-line lambdas.
+
 * 2014-6-3 - Fix bug where (3+5) 4 is valid syntax for calling a nonsense
   function.  Is an issue with e.g. (3 + 5) / 4 / 8.
 
@@ -211,4 +216,3 @@ TODO
 
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/wwoods/seriousjs/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-

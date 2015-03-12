@@ -8,8 +8,9 @@
   var debug = false;
 
   //Modified console.log; returns true always and can be turned off
-  var log = function() { return true; };
-  if (debug) {
+  var log;
+
+  function debugOn() {
     log = function(m) {
       m = Array(depth * tabspace).join(" ") + m;
       if (pos > 0) {
@@ -22,6 +23,18 @@
     tIndent += "BLOCK_END";
     options.trace = tIndent + " list_literal";
     options.trace = true;
+  }
+
+  function debugOff() {
+    log = function() { return true; };
+    options.trace = null;
+  }
+
+  if (debug) {
+    debugOn();
+  }
+  else {
+    debugOff();
   }
 
   var indentWidth = 2;
@@ -265,4 +278,3 @@ argument
   / CONTINUATION_OPEN expr:expression? CONTINUATION_END? & { return expr; } {
       return expr;
     }
-

@@ -30,9 +30,13 @@ function getBlockIndent() {
 function getBlockList() {
   var bi = [];
   for (var i = 0, m = blockIndents.length; i < m; i++) {
-    bi.push(blockIndents[i].indent);
+    var b = blockIndents[i].indent;
+    if (blockIndents[i].isContinuation) {
+      b += 'c';
+    }
+    bi.push(b);
   }
-  return "Blocks: " + bi.join(',');
+  return "Blocks: " + bi.join(',') + "; current " + state.indent;
 }
 
 function stateUpdate(newIndent) {
@@ -111,11 +115,15 @@ function indentBlockStart(levels, options) {
 
   var bpos = _pos();
   var baseBlockIndex = blockIndents.length - 1;
-  if (!options.isContinuation) {
-    //Starting a non-continuation; we need to indent from either the last-used
-    //continuation, or the last non-continuation indent.
-    while (state.indent < blockIndents[baseBlockIndex].indent
-        && blockIndents[baseBlockIndex].isContinuation) {
+  var baseBlock = null;
+
+  if (options.isLambda) {
+    baseBlock = { indent: state.indent };
+  }
+  else if (!options.isContinuation) {
+    //Starting a non-continuation; we need to indent from the last
+    //non-continuation indent.
+    while (blockIndents[baseBlockIndex].isContinuation) {
       baseBlockIndex -= 1;
     }
   }
@@ -133,8 +141,10 @@ function indentBlockStart(levels, options) {
       levels = 0;
     }
   }
-  var baseBlock = blockIndents[baseBlockIndex];
 
+  if (baseBlock === null) {
+    baseBlock = blockIndents[baseBlockIndex];
+  }
   var block = {
     indent: baseBlock.indent + levels,
     pos: bpos

@@ -177,7 +177,7 @@ this._buildEmbedded = function(callback) {
   var addSjsFile = function(name, fpath, context) {
     //Adds a .sjs file in the context of the seriousjs object.
     var fc = fs.readFileSync(fpath, 'utf8');
-    r = sjsCompiler.compile(self.parser, fc, {});
+    var r = sjsCompiler.compile(self.parser, fc, {});
     contents.push("(function(exports) {\n");
     contents.push(r.js.replace(/ = require\(['"]seriousjs['"]\)/g,
             ' = ' + context));
@@ -205,10 +205,17 @@ this._buildEmbedded = function(callback) {
       return compile(text, options).js;\n\
     }\n\
     getJsForEval.__doc__ = getJsForEval.__help__ = 'Turns sjs code into an AMD module which can be added to the browser';\n\
+    function rethrowError(e) {\n\
+        "/* https://code.google.com/p/chromium/issues/detail?id=60240 */ +
+        "if (navigator.userAgent.toLowerCase().indexOf('chrome') > -1) {\n\
+            throw e.stack;\n\
+        }\n\
+        throw e;\n\
+    }\n\
     this.seriousjs = this.__sjs_seriousjs = { compile: compile, getJsForEval: getJsForEval, \n\
         sourceMap: sourceMap.sourceMap,\n\
-        onAsyncUnhandledError: function(e){throw e;},\n\
-        onAsyncSecondaryError: typeof console!=='undefined'?function(e){console.error(e)}:function(e){throw e;}\n\
+        onAsyncUnhandledError: rethrowError,\n\
+        onAsyncSecondaryError: typeof console!=='undefined'?function(e){console.error(e)}:rethrowError\n\
     };\n");
 
   //Include builtin functionality for seriousjs module

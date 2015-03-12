@@ -141,17 +141,62 @@ var allFeatures = {
       //We need our class, when constructed, to inherit from our class itself,
       //which further inherits from parent.  This allows us to naturally refer
       //to child.x as a class var, which still has access from our instances.
-      //The only way to do this seems to be writing __proto__.  
+      //The only way to do this seems to be writing __proto__.
       //Object.setPrototypeOf does not yet appear provided by nodejs.
       + "__extends = function(child, parent) {"
+      //+ " function ctorDummy() {this.constructor = function(){};}"
+      //+ " ctorDummy.prototype = parent.prototype;"
+      /*
+      + " var pp = parent.prototype;"
       + " if (typeof Object.setPrototypeOf === 'function') {"
-      + "  Object.setPrototypeOf(child, parent.prototype);"
+      + "  Object.setPrototypeOf(child, pp);"
       + " }"
       + " else {"
-      + "  child.__proto__ = parent.prototype;"
+      + "  child.__proto__ = pp;"
       + " }"
       + " child.prototype = child;"
-      + " child.__super__ = parent.prototype;"
+      + " child.__super__ = pp;"
+      */
+      /*
+      + " var pp = parent.prototype;"
+      + " var cp = {};"
+      + " if (typeof Object.setPrototypeOf === 'function') {"
+      + "  Object.setPrototypeOf(child, pp);"
+      + "  Object.setPrototypeOf(cp, child);"
+      + " }"
+      + " else {"
+      + "  child.__proto__ = pp;"
+      + "  cp.__proto__ = child;"
+      + " }"
+      + " child.prototype = cp;"
+      + " child.__super__ = pp;"
+      //Regretfully, functions are objects with properties defined from the
+      //start.  The only thing we DO want carried over with a non-undefined
+      //value is name.  cp will be accessed as child.prototype or new
+      //child().__proto__.
+      + " var fnProps = Object.getOwnPropertyNames(child);"
+      //Getter and setter that adheres to traditional inheritance... except it
+      //misses the mark for setting Class.length = 8.  Class.prototype.length
+      //would work, but not Class.length
+
+      + " function getGetter(prop) {"
+      + "  var innerProp = '__' + prop;"
+      + "  return function() {"
+      + "   if (this.hasOwnProperty(innerProp)) return this[innerProp];"
+      + "   return pp[prop];"
+      + "  }"
+      + " }"
+      + " for (var i = 0, m = fnProps.length; i < m; i++) {"
+      + "  if (fnProps[i] === 'name') continue;"
+      + "  Object.defineProperty(cp, fnProps[i], { writable: true, "
+      +     "configurable: true });"
+      + " }"
+      */
+      + " var pp = parent.prototype;"
+      + " function ctor() { this.constructor = child; }"
+      + " ctor.prototype = pp;"
+      + " child.prototype = new ctor();"
+      + " child.__super__ = pp;"
       + " return child;"
       + "}",
   hasProp: "__hasProp = {}.hasOwnProperty",
@@ -167,7 +212,7 @@ var allFeatures = {
       + "  mixin = mixin.prototype;"
       + " }"
       //Since we can't get non-enumerable properties through "in", we have
-      //to walk the inheritance chain and use getOwnPropertyNames, using 
+      //to walk the inheritance chain and use getOwnPropertyNames, using
       //getOwnPropertyDescriptor to distinguish between properties and
       //attributes
       + " while (mixin !== null) {"

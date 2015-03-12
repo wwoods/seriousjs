@@ -214,6 +214,7 @@ assignable_atom
               || end.op === 'memberId'
               || end.op === 'member'
               || end.op === 'arrayMember'
+              || end.op === '::'
               ;
         } {
       var r = R({ op: "atom", unary: [], atom: base, chain: chain });
@@ -249,4 +250,10 @@ atom_mod_expr
     }
   / "." id:IdentifierExceptJsKeyword {
       return { "op": "member", "id": id };
+    }
+  / "::" "[" _ expr:expression (_ "]" / ASSERT_ON_ENDLINE) {
+      return { "op": "::", expr: { op: "list", elements: [ expr ] } };
+    }
+  / "::" id:IdentifierExceptJsKeyword {
+      return { op: "::", expr: { op: "member", id: id } };
     }
